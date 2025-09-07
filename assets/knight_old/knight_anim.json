@@ -1,0 +1,224 @@
+{
+    "anims": [
+        {
+            "key": "hurt",
+            "type": "frames",
+            "repeat": -1,
+            "frameRate": 8,
+            "frames": [
+                {
+                    "key": "knight",
+                    "frame": "00_hurt"
+                },
+                {
+                    "key": "knight",
+                    "frame": "01_hurt"
+                },
+                {
+                    "key": "knight",
+                    "frame": "02_hurt"
+                },
+                {
+                    "key": "knight",
+                    "frame": "03_hurt"
+                }
+            ]
+        },
+        {
+            "key": "jump",
+            "type": "frames",
+            "repeat": -1,
+            "frameRate": 8,
+            "frames": [
+                {
+                    "key": "knight",
+                    "frame": "00_jump"
+                },
+                {
+                    "key": "knight",
+                    "frame": "01_jump"
+                },
+                {
+                    "key": "knight",
+                    "frame": "02_jump"
+                },
+                {
+                    "key": "knight",
+                    "frame": "03_jump"
+                },
+                {
+                    "key": "knight",
+                    "frame": "04_jump"
+                }
+            ]
+        },
+        {
+            "key": "defend",
+            "type": "frames",
+            "repeat": -1,
+            "frameRate": 8,
+            "frames": [
+                {
+                    "key": "knight",
+                    "frame": "00_defend"
+                },
+                {
+                    "key": "knight",
+                    "frame": "01_defend"
+                },
+                {
+                    "key": "knight",
+                    "frame": "02_defend"
+                },
+                {
+                    "key": "knight",
+                    "frame": "03_defend"
+                },
+                {
+                    "key": "knight",
+                    "frame": "04_defend"
+                },
+                {
+                    "key": "knight",
+                    "frame": "05_defend"
+                }
+            ]
+        },
+        {
+            "key": "attack_2",
+            "type": "frames",
+            "repeat": -1,
+            "frameRate": 8,
+            "frames": [
+                {
+                    "key": "knight",
+                    "frame": "00_attack_2"
+                },
+                {
+                    "key": "knight",
+                    "frame": "01_attack_2"
+                },
+                {
+                    "key": "knight",
+                    "frame": "02_attack_2"
+                },
+                {
+                    "key": "knight",
+                    "frame": "03_attack_2"
+                },
+                {
+                    "key": "knight",
+                    "frame": "04_attack_2"
+                }
+            ]
+        },
+        {
+            "key": "attack_1",
+            "type": "frames",
+            "repeat": -1,
+            "frameRate": 8,
+            "frames": [
+                {
+                    "key": "knight",
+                    "frame": "00_attack_1"
+                },
+                {
+                    "key": "knight",
+                    "frame": "01_attack_1"
+                },
+                {
+                    "key": "knight",
+                    "frame": "02_attack_1"
+                },
+                {
+                    "key": "knight",
+                    "frame": "03_attack_1"
+                },
+                {
+                    "key": "knight",
+                    "frame": "04_attack_1"
+                },
+                {
+                    "key": "knight",
+                    "frame": "05_attack_1"
+                }
+            ]
+        },
+        {
+            "key": "walk",
+            "type": "frames",
+            "repeat": -1,
+            "frameRate": 8,
+            "frames": [
+                {
+                    "key": "knight",
+                    "frame": "00_walk"
+                },
+                {
+                    "key": "knight",
+                    "frame": "01_walk"
+                },
+                {
+                    "key": "knight",
+                    "frame": "02_walk"
+                },
+                {
+                    "key": "knight",
+                    "frame": "03_walk"
+                },
+                {
+                    "key": "knight",
+                    "frame": "04_walk"
+                },
+                {
+                    "key": "knight",
+                    "frame": "05_walk"
+                },
+                {
+                    "key": "knight",
+                    "frame": "06_walk"
+                },
+                {
+                    "key": "knight",
+                    "frame": "07_walk"
+                }
+            ]
+        },
+        {
+            "key": "idle",
+            "type": "frames",
+            "repeat": -1,
+            "frameRate": 8,
+            "frames": [
+                {
+                    "key": "knight",
+                    "frame": "00_idle"
+                },
+                {
+                    "key": "knight",
+                    "frame": "01_idle"
+                },
+                {
+                    "key": "knight",
+                    "frame": "02_idle"
+                },
+                {
+                    "key": "knight",
+                    "frame": "03_idle"
+                },
+                {
+                    "key": "knight",
+                    "frame": "04_idle"
+                },
+                {
+                    "key": "knight",
+                    "frame": "05_idle"
+                },
+                {
+                    "key": "knight",
+                    "frame": "06_idle"
+                }
+            ]
+        }
+    ]
+}

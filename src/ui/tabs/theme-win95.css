@@ -1,0 +1,36 @@
+/* Apply theme by wrapping container in [data-theme="win95"] */
+[data-theme='win95'] {
+    --ui-text: #000;
+    --ui-accent: #000080;
+    --ui-surface: #dcdcdc;
+    --ui-surface-2: #c0c0c0;
+    --ui-bg: #dcdcdc;
+    --ui-border: #808080;
+    --ui-border-width: 2px;
+    --ui-radius: 0;
+
+    --ui-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #fff, inset -2px -2px 0 #404040, inset 2px 2px 0 #dcdcdc;
+
+    --hdr-bg: linear-gradient(#e6e6e6, #d3d3d3);
+    --hdr-border: 1px solid #808080;
+    --hdr-font: 700 12px/1 'Tahoma', 'MS Sans Serif', system-ui, sans-serif;
+
+    --tabs-bg: #c0c0c0;
+    --tab-gap: 2px;
+    --tab-btn-pad: 4px 10px 3px;
+    --tab-radius: 0;
+    --tab-border: 2px solid #808080;
+    --tab-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #fff, inset -2px -2px 0 #404040, inset 2px 2px 0 #dcdcdc;
+    --tab-hover-bg: #e8e8e8;
+
+    --tab-active-bg: #b8b8b8;
+    --tab-active-border: 2px solid #808080;
+    --tab-active-shadow: inset -1px -1px 0 #fff, inset 1px 1px 0 #808080, inset -2px -2px 0 #dcdcdc,
+        inset 2px 2px 0 #404040;
+
+    --tab-accent-h: 2px;
+    --tab-accent-radius: 0;
+
+    --panel-pad: 10px;
+    --panel-bg: #dcdcdc;
+}

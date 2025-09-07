@@ -1,0 +1,154 @@
+/* ==== RETRO (Win95/98) TAB THEME ======================================= */
+/* Palette + metrics */
+.tab-container {
+    --retro-bg: #c0c0c0; /* classic dialog gray */
+    --retro-face: #dcdcdc; /* raised face */
+    --retro-dark: #808080; /* dark edge */
+    --retro-darker: #404040; /* shadow edge */
+    --retro-light: #ffffff; /* light edge */
+    --retro-text: #000000;
+    --retro-accent: #000080; /* Win95 blue */
+    --retro-hover: #e8e8e8;
+    --retro-active: #b8b8b8;
+    --retro-font: 'Tahoma', 'MS Sans Serif', system-ui, sans-serif;
+
+    color: var(--retro-text);
+    background: var(--retro-bg);
+    border: 2px solid var(--retro-dark);
+    /* 3D raised frame */
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light),
+        inset -2px -2px 0 var(--retro-darker), inset 2px 2px 0 var(--retro-face);
+    border-radius: 0;
+    overflow: hidden;
+    font-family: var(--retro-font);
+}
+
+/* subtle dithered plastic feel */
+.tab-container::before {
+    content: '';
+    display: block;
+    height: 18px;
+    background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.18) 0 2px, rgba(255, 255, 255, 0) 2px 4px);
+    border-bottom: 1px solid var(--retro-dark);
+}
+
+/* ===== Tabs header row (toolbar strip) */
+.tab-container .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: var(--retro-bg);
+    border-bottom: 2px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+.tab-container .tabs::-webkit-scrollbar {
+    height: 12px;
+}
+.tab-container .tabs::-webkit-scrollbar-thumb {
+    background: var(--retro-dark);
+    border: 2px solid var(--retro-bg);
+}
+
+/* ===== Tab buttons (raised, beveled) */
+.tab-links {
+    position: relative;
+    appearance: none;
+    border: 2px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light),
+        inset -2px -2px 0 var(--retro-darker), inset 2px 2px 0 var(--retro-face);
+    background: var(--retro-face);
+    color: var(--retro-text);
+    padding: 4px 10px 3px;
+    border-radius: 0;
+    font: 12px/1 var(--retro-font);
+    cursor: default;
+    white-space: nowrap;
+}
+.tab-links:hover {
+    background: var(--retro-hover);
+}
+
+.tab-links:focus-visible {
+    outline: 1px dotted var(--retro-text);
+    outline-offset: -4px;
+}
+
+/* Active tab: pressed look + top border merges with content */
+.tab-links.active {
+    background: var(--retro-active);
+    /* invert bevel for pressed */
+    box-shadow: inset -1px -1px 0 var(--retro-light), inset 1px 1px 0 var(--retro-dark),
+        inset -2px -2px 0 var(--retro-face), inset 2px 2px 0 var(--retro-darker);
+    border-bottom-color: var(--retro-active);
+}
+.tab-links.active::after {
+    /* tiny accent line like selected title bar */
+    content: '';
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    top: 1px;
+    height: 2px;
+    background: var(--retro-accent);
+}
+
+/* Optional close button if you have one */
+.tab-close {
+    margin-left: 8px;
+    width: 14px;
+    height: 14px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
+    background: var(--retro-face);
+    color: var(--retro-text);
+    font: 12px/1 var(--retro-font);
+    padding: 0;
+}
+.tab-close:hover {
+    background: var(--retro-hover);
+}
+
+/* ===== Panels (sunken 3D client area) */
+.tab-content {
+    display: none;
+    background: var(--retro-face);
+    padding: 10px;
+    min-height: 220px;
+
+    /* sunken panel look */
+    border-top: 2px solid var(--retro-light);
+    box-shadow: inset 1px 1px 0 var(--retro-light), inset -1px -1px 0 var(--retro-dark),
+        inset 2px 2px 0 var(--retro-face), inset -2px -2px 0 var(--retro-darker);
+}
+.tab-content.active {
+    display: block;
+}
+
+/* Retro form bits inside panels */
+.tab-content button,
+.tab-content input,
+.tab-content select {
+    font: 12px/1 var(--retro-font);
+    color: var(--retro-text);
+    background: var(--retro-face);
+    border: 2px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
+    border-radius: 0;
+    padding: 3px 6px;
+}
+.tab-content button:hover {
+    background: var(--retro-hover);
+}
+.tab-content button:active {
+    box-shadow: inset -1px -1px 0 var(--retro-light), inset 1px 1px 0 var(--retro-dark);
+    background: var(--retro-active);
+}
+
+/* If you show icons/emoji in tab labels, keep them crisp */
+.tab-links .tab-icon {
+    image-rendering: pixelated;
+}

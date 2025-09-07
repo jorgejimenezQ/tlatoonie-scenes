@@ -1,0 +1,34 @@
+[data-theme='mac9'] {
+    --ui-text: #000;
+    --ui-accent: #0a84ff;
+    --ui-surface: #efefef;
+    --ui-surface-2: #e6e6e6;
+    --ui-bg: #f4f4f4;
+    --ui-border: #b9b9b9;
+    --ui-border-width: 1px;
+    --ui-radius: 10px;
+
+    --ui-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+
+    --hdr-bg: linear-gradient(#fdfdfd, #e9e9e9);
+    --hdr-border: 1px solid #cfcfcf;
+    --hdr-font: 600 12px/1 'Chicago', system-ui, sans-serif;
+    --hdr-transform: none;
+    --hdr-tracking: 0;
+
+    --tabs-bg: #efefef;
+    --tab-gap: 6px;
+    --tab-radius: 10px 10px 0 0;
+    --tab-border: 1px solid #cfcfcf;
+    --tab-bg: #f8f8f8;
+    --tab-hover-bg: #ffffff;
+
+    --tab-active-bg: #ffffff;
+    --tab-active-border: 1px solid #bdbdbd;
+    --tab-active-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+    --tab-accent-h: 0; /* no accent bar */
+
+    --panel-bg: #ffffff;
+    --panel-pad: 18px;
+    --focus-outline: 2px solid color-mix(in oklab, #0a84ff 60%, transparent);
+}

@@ -1,0 +1,36 @@
+[data-theme='synthwave'] {
+    --ui-text: #f5f5ff;
+    --ui-accent: #ff2bd6;
+    --ui-surface: #0b0e1a;
+    --ui-surface-2: #11162a;
+    --ui-bg: #090b16;
+    --ui-border: #2a2f46;
+    --ui-border-width: 1px;
+    --ui-radius: 12px;
+
+    --ui-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 43, 214, 0.06);
+
+    --hdr-bg: linear-gradient(90deg, #1a0b2b, #0b1a2b);
+    --hdr-border: 1px solid #2a2f46;
+    --hdr-font: 700 11px/1 'Orbitron', system-ui, sans-serif;
+    --hdr-transform: uppercase;
+    --hdr-tracking: 0.08em;
+
+    --tabs-bg: #11162a;
+    --tab-gap: 6px;
+    --tab-border: 1px solid #293050;
+    --tab-bg: #141b33;
+    --tab-hover-bg: #19224a;
+
+    --tab-active-bg: #0f1428;
+    --tab-active-border: 1px solid #3a4270;
+    --tab-active-shadow: 0 0 0 1px rgba(255, 43, 214, 0.18), 0 8px 20px rgba(0, 0, 0, 0.35);
+    --tab-accent-h: 2px;
+    --tab-accent-radius: 2px;
+
+    --panel-bg: radial-gradient(1200px 400px at 10% -10%, rgba(255, 43, 214, 0.08), transparent),
+        radial-gradient(1200px 400px at 90% -10%, rgba(0, 255, 255, 0.08), transparent), #0b0e1a;
+
+    --focus-outline: 2px solid #ff2bd6;
+    --focus-offset: 1px;
+}

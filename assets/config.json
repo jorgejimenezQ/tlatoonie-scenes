@@ -1,0 +1,30 @@
+{
+    "assets": {
+        "spriteSheets": [
+            {
+                "id": "knight",
+                "atlasPath": "/knight/knight_atlas.json",
+                "imagePath": "/knight/knight.png"
+            },
+            { "id": "tiles", "atlasPath": "/tiles/tiles_atlas.json", "imagePath": "/tiles/tiles.png" }
+        ],
+        "animations": [
+            {
+                "sheetId": "knight",
+                "id": "knight",
+                "animationPath": "/knight/knight_anim.json",
+                "speed": 10
+            }
+        ],
+        "fonts": [
+            {
+                "id": "Audiowide",
+                "fontPath": "/font/Audiowide.ttf"
+            },
+            {
+                "id": "bitcount",
+                "fontPath": "/font/bitcount.ttf"
+            }
+        ]
+    }
+}

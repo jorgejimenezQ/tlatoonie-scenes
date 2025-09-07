@@ -1,0 +1,71 @@
+/* ---- Dock layout ---- */
+.dock-root {
+    --dock-bg: #0f1115;
+    --dock-surface: #151821;
+    --dock-border: #2a3040;
+    --dock-size-left: 320px; /* initial */
+    --dock-size-right: 360px; /* initial */
+    --dock-size-bottom: 260px; /* if you add bottom later */
+    position: relative;
+    inset: 0;
+    display: grid;
+    height: 100%;
+    grid-template-columns: var(--dock-size-left) 6px 1fr 6px var(--dock-size-right);
+    grid-template-rows: 1fr;
+    background: var(--dock-bg);
+}
+
+/* Zones */
+.dock-left,
+.dock-right,
+.dock-bottom {
+    background: #151821;
+    border-right: 1px solid var(--dock-border);
+    overflow: hidden;
+}
+.dock-right {
+    border-right: none;
+    border-left: 1px solid var(--dock-border);
+}
+
+.dock-center {
+    position: relative;
+    overflow: hidden;
+    background: #0c0e12;
+}
+
+/* Splitters */
+.dock-splitter {
+    background: transparent;
+    position: relative;
+    z-index: 5;
+}
+.dock-splitter:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+.dock-splitter.vertical {
+    cursor: col-resize;
+}
+.dock-splitter.horizontal {
+    cursor: row-resize;
+}
+
+/* Canvas fills center */
+.dock-center canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Optional header in docks if you want */
+.dock-header {
+    font: 600 12px/1 system-ui, Segoe UI, Roboto, sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8b93a7;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--dock-border);
+    background: linear-gradient(180deg, #181c25 0%, #141826 100%);
+}
+
+/* Use the tabs styles from earlier for content inside docks */

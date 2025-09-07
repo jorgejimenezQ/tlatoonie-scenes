@@ -1,0 +1,33 @@
+[data-theme='crt'] {
+    --ui-text: #a6ff7a;
+    --ui-accent: #a6ff7a;
+    --ui-surface: #061006;
+    --ui-surface-2: #0b1a0b;
+    --ui-bg: #020602;
+    --ui-border: #0f2a0f;
+    --ui-border-width: 1px;
+    --ui-radius: 4px;
+
+    --ui-shadow: 0 0 20px rgba(166, 255, 122, 0.08);
+
+    --hdr-bg: #061006;
+    --hdr-border: 1px solid #0f2a0f;
+    --hdr-font: 600 11px/1 ui-monospace, monospace;
+    --hdr-transform: none;
+
+    --tabs-bg: #061006;
+    --tab-gap: 2px;
+    --tab-border: 1px solid #0f2a0f;
+    --tab-bg: #0b1a0b;
+    --tab-hover-bg: #0e230e;
+
+    --tab-active-bg: #0e230e;
+    --tab-active-border: 1px solid #1e4d1e;
+    --tab-active-shadow: inset 0 0 0 1px #153a15;
+    --tab-accent-h: 0;
+
+    --panel-bg: repeating-linear-gradient(180deg, rgba(166, 255, 122, 0.06) 0 2px, rgba(0, 0, 0, 0) 2px 4px), #061006;
+
+    --focus-outline: 1px dashed #a6ff7a;
+    --focus-offset: 2px;
+}

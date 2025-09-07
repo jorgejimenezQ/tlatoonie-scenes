@@ -1,0 +1,98 @@
+/* tabs.base.css */
+.tab-container {
+    font-family: system-ui, Segoe UI, Roboto, sans-serif;
+    color: var(--ui-text);
+    background: var(--ui-surface);
+    border: var(--ui-border-width, 1px) solid var(--ui-border);
+    border-radius: var(--ui-radius, 8px);
+    box-shadow: var(--ui-shadow, none);
+    overflow: hidden;
+    cursor: grab;
+    min-width: 400px;
+    min-height: 500px;
+}
+
+.tab-container.ui-draggable-dragging {
+    cursor: grabbing;
+}
+
+/* header strip / title */
+.tab-container::before {
+    content: attr(data-title);
+    display: block;
+    padding: var(--hdr-pad, 8px 12px);
+    background: var(--hdr-bg, transparent);
+    color: var(--hdr-fg, var(--ui-text));
+    border-bottom: var(--hdr-border, 1px solid var(--ui-border));
+    font: var(--hdr-font, 600 12px/1 system-ui, sans-serif);
+    letter-spacing: var(--hdr-tracking, 0.04em);
+    text-transform: var(--hdr-transform, uppercase);
+}
+
+/* tabs row */
+.tabs {
+    display: flex;
+    gap: var(--tab-gap, 4px);
+    padding: var(--tab-pad, 6px);
+    background: var(--tabs-bg, var(--ui-surface-2, var(--ui-surface)));
+    border-bottom: var(--tabs-border, 1px solid var(--ui-border));
+    overflow-x: auto;
+}
+
+/* tab button */
+.tab-links {
+    appearance: none;
+    cursor: pointer;
+    white-space: nowrap;
+    background: var(--tab-bg, transparent);
+    color: var(--tab-fg, var(--ui-muted));
+    border: var(--tab-border, 1px solid transparent);
+    border-radius: var(--tab-radius, 6px 6px 0 0);
+    padding: var(--tab-btn-pad, 8px 12px);
+    font: var(--tab-font, 500 13px/1 system-ui, sans-serif);
+    box-shadow: var(--tab-shadow, none);
+}
+.tab-links:hover {
+    background: var(--tab-hover-bg, rgba(255, 255, 255, 0.05));
+    color: var(--ui-text);
+}
+.tab-links:focus-visible {
+    outline: var(--focus-outline, 2px solid var(--ui-accent));
+    outline-offset: var(--focus-offset, 2px);
+}
+
+.tab-links.active {
+    background: var(--tab-active-bg, var(--ui-surface));
+    color: var(--ui-text);
+    border: var(--tab-active-border, 1px solid var(--ui-border));
+    box-shadow: var(--tab-active-shadow, none);
+    position: relative;
+}
+.tab-links.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: var(--tab-accent-h, 0);
+    background: var(--ui-accent);
+    border-radius: var(--tab-accent-radius, 0);
+}
+
+/* panels */
+.tab-content {
+    display: none;
+    background: var(--panel-bg, var(--ui-bg, var(--ui-surface)));
+    padding: var(--panel-pad, 16px);
+}
+.tab-content.active {
+    display: block;
+}
+
+/* small bits */
+.tab-title {
+    pointer-events: none;
+}
+.tab-icon {
+    margin-right: 6px;
+}
