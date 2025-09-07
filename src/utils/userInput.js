@@ -81,15 +81,16 @@ function getMouseInCanvas(e, canvas) {
     const xCss = e.clientX - rect.left - bL - padL;
     const yCss = e.clientY - rect.top - bT - padT;
 
-    // Content-box size in CSS pixels
-    const contentW = rect.width - (padL + padR + bL + bR);
-    const contentH = rect.height - (padT + padB + bT + bB);
+    // // Content-box size in CSS pixels
+    // const contentW = rect.width - (padL + padR + bL + bR);
+    // const contentH = rect.height - (padT + padB + bT + bB);
 
-    // Scale to the backing buffer
-    const scaleX = canvas.width / contentW;
-    const scaleY = canvas.height / contentH;
+    // // Scale to the backing buffer
+    // const scaleX = canvas.width / contentW;
+    // const scaleY = canvas.height / contentH;
 
-    return { x: xCss * scaleX, y: yCss * scaleY };
+    // return { x: xCss * scaleX, y: yCss * scaleY };
+    return { x: xCss, y: yCss };
 }
 
 // function addAction(e, type, scene) {

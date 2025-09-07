@@ -73,8 +73,8 @@ class Play_Scene extends Scene {
         console.log('the tile map config');
         console.log(this.#mapConfig);
         this.#mapConfig.numTiles = new Vector(
-            this.gameEngine.width / this.#mapConfig.tileSize.x,
-            this.gameEngine.height / this.#mapConfig.tileSize.y
+            this.gameEngine.logicalWidth / this.#mapConfig.tileSize.x,
+            this.gameEngine.logicalHeight / this.#mapConfig.tileSize.y
         );
         // this.#gridTiles = new Array(this.#mapConfig.numTiles);
 
@@ -158,8 +158,7 @@ class Play_Scene extends Scene {
 
             if (this.#drawCollisions) {
                 let bBoxRect = this.#centeredBoundingRect(entity);
-                // this.gameEngine.drawRect(bBoxRect.topLeft, bBoxRect.size, 'rgba(205, 29, 41, 1)');
-                this.gameEngine.drawRect(new Vector(0, 0), new Vector(192, 168), 'rgba(205, 29, 41, 1)');
+                this.gameEngine.drawRect(bBoxRect.topLeft, bBoxRect.size, 'rgba(205, 29, 41, 1)');
             }
 
             if (this.drawTexture) {
@@ -265,8 +264,8 @@ class Play_Scene extends Scene {
         this.#ensureGridPattern();
         if (!this.#gridPattern) return;
         // console.log('rendering grid pattern');
-        const w = Math.max(0, this.gameEngine.width | 0);
-        const h = Math.max(0, this.gameEngine.height | 0);
+        const w = Math.max(0, this.gameEngine.logicalWidth | 0);
+        const h = Math.max(0, this.gameEngine.logicalHeight | 0);
         const tsX = this.#mapConfig.tileSize.x | 0;
         const tsY = this.#mapConfig.tileSize.y | 0;
 

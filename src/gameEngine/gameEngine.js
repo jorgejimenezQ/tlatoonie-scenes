@@ -337,6 +337,26 @@ class GameEngine extends EventTarget {
         return this.#canvasCTX.canvas.height;
     }
 
+    /** Device pixel ratio in effect for the main ctx */
+    get dpr() {
+        const m = this.#canvasCTX.getTransform?.();
+        return m && m.a ? m.a : window.devicePixelRatio || 1;
+    }
+    /**
+     * The width of the canvas in logical (CSS) units.
+     *
+     * This is the width of the canvas, divided by the device pixel ratio.
+     *
+     * @returns {number} The width of the canvas in logical units.
+     */
+    get logicalWidth() {
+        return this.width / this.dpr;
+    }
+
+    get logicalHeight() {
+        return this.height / this.dpr;
+    }
+
     /**
      * The canvas context (2D drawing context) for the game canvas.
      *
