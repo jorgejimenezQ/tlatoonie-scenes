@@ -1,0 +1,973 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: .vscode/*, ./assets/*, **/*.json, **/*.svg, **/*.png
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+createTabs.js
+tabs-retro.css
+tabs.base.css
+tabs.js
+theme-crt.css
+theme-light.css
+theme-mac9.css
+theme-synthwave.css
+theme-win95.css
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="createTabs.js">
+import { Tabs } from './tabs';
+import { CustomEvents } from '../../utils/enums';
+
+/**
+ * Creates the default tabs for the editor.
+ * @param {Tab} tab - an object with the following properties:
+ *   id: string, title: string, icon?: string, tooltip?: string,
+ *   closable?: boolean, badge?: string|number,
+ *   mount?: (root: HTMLElement)=>void, unmount?: (root: HTMLElement)=>void,
+ *   onShow?: (root: HTMLElement)=>void, onHide?: (root: HTMLElement)=>void,
+ *   active?: boolean
+ * @returns {Tabs} - the created tabs instance
+ */
+function createTabs(tab, gameEngine) {
+    // Sprites panel
+    tab.addTab({
+        id: 'sprites',
+        title: 'Sprites',
+        icon: '🖼️',
+        tooltip: 'Browse sprites',
+        active: true,
+        // closable: true,
+
+        async mount(root) {
+            root.innerHTML = `
+        <div class="panel-row">
+            <div><label>Filter</label><input id="spriteFilter" placeholder="name"></div>
+            <div id="spriteGrid" style="display:grid;grid-template-columns:repeat(auto-fill,72px);margin-top:10px;"></div>
+        </div>`;
+
+            async function loadSprites() {
+                try {
+                    let spriteBlob = [];
+                    const sheets = gameEngine.assets.spriteSheets;
+                    for (let sheetId of sheets.keys()) {
+                        const sheet = sheets.get(sheetId);
+                        for (let i = 0; i < sheet.frames.length; i++) {
+                            const frame = sheet.frames[i].frame;
+                            const osCanvas = new OffscreenCanvas(frame.w, frame.h);
+                            const ctx2d = osCanvas.getContext('2d');
+                            ctx2d.imageSmoothingEnabled = false;
+                            const bmp = await gameEngine.spriteCache.get(
+                                sheet.image,
+                                frame.x,
+                                frame.y,
+                                frame.w,
+                                frame.h,
+                                'none'
+                            );
+
+                            ctx2d.drawImage(bmp, 0, 0);
+                            const blob = await osCanvas.convertToBlob({ type: 'image/png' });
+
+                            spriteBlob.push({
+                                url: URL.createObjectURL(blob),
+                                sheetId: sheetId,
+                                sheet,
+                                frame: sheet.frames[i],
+                            });
+                        }
+                    }
+                    return spriteBlob;
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            const elSpriteGrid = $('#spriteGrid');
+            const blobs = await loadSprites();
+            console.log(blobs);
+            for (let blob of blobs) {
+                const box = document.createElement('div');
+                box.style.width = '100%';
+                box.style.aspectRatio = '1 / 1';
+                box.style.display = 'grid';
+                box.style.placeItems = 'center';
+                box.style.background = 'var(--ui-bg-muted, rgba(0,0,0,.04))';
+                box.style.border = '1px solid var(--ui-border, rgba(0,0,0,.12))';
+                box.style.borderRadius = '6px';
+                box.style.cursor = 'pointer';
+
+                const img = new Image();
+                img.src = blob.url;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.imageRendering = 'pixelated';
+                img.style.objectFit = 'fill';
+                img.style.objectPosition = 'center';
+                img.decoding = 'async';
+                img.loading = 'lazy';
+                box.appendChild(img);
+                elSpriteGrid.append(box);
+
+                // console.log('event', { sheetId: blob.key, sheet: blob.sheet });
+                box.addEventListener('click', (e) => {
+                    gameEngine.width;
+                    // console.log('event', { sheetId: blob.key, sheet: blob.sheet, frame: blob.frame });
+                    gameEngine.dispatchEvent(
+                        new CustomEvent(CustomEvents.SPRITE.SELECT, {
+                            detail: {
+                                sheetId: blob.sheetId,
+                                sheet: blob.sheet,
+                                frame: blob.frame,
+                            },
+                        })
+                    );
+                });
+            }
+        },
+        onShow(root) {
+            /* refresh if needed */
+        },
+    });
+
+    // Animations panel
+    tab.addTab({
+        id: 'animations',
+        title: 'Animations',
+        icon: '🎞️',
+        tooltip: 'Browse animations',
+        mount(root) {
+            root.innerHTML = `
+        <div>
+            <button id="btnPlay">Play</button>
+            <button id="btnPause">Pause</button>
+            <div id="animPreview" style="height:160px;border:1px solid var(--ui-border);margin-top:8px;border-radius:8px;"></div>
+        </div>`;
+            // Hook your engine’s preview canvas here…
+        },
+    });
+
+    tab.addTab({
+        id: 'actions',
+        title: 'Actions',
+        icon: '⚙️',
+        tooltip: 'Browse actions',
+        mount(root) {
+            root.innerHTML = `
+        <div>
+            <button id="btnPlay">Play</button>
+            <button id="btnPause">Pause</button>
+            <div id="animPreview" style="height:160px;border:1px solid var(--ui-border);margin-top:8px;border-radius:8px;"></div>
+        </div>`;
+            // Hook your engine’s preview canvas here...
+        },
+    });
+
+    // Tiles panel
+    tab.addTab({
+        id: 'tiles',
+        title: 'Tiles',
+        icon: '🧱',
+        badge: 0,
+        tooltip: 'Tile editor',
+        mount(root) {
+            root.innerHTML = `<div id="tileset" style="display:flex; gap:10px;">
+        <canvas id="tilesetCanvas" width="256" height="256" style="border:1px solid var(--ui-border)"></canvas>
+        <div>
+            <label>Brush Size</label>
+            <select id="brush"><option>1×1</option><option>2×2</option><option>3×3</option></select>
+            <div style="margin-top:8px"><button id="place">Place</button> <button id="erase">Erase</button></div>
+        </div>
+        </div>`;
+        },
+    });
+
+    // Listen to tab lifecycle if you need cross-module behavior
+    tab.addEventListener('tab:select', (e) => {
+        // e.detail.id -> 'sprites' | 'animations' | 'tiles'
+    });
+}
+
+export { createTabs };
+</file>
+
+<file path="tabs-retro.css">
+/* ==== RETRO (Win95/98) TAB THEME ======================================= */
+/* Palette + metrics */
+.tab-container {
+    --retro-bg: #c0c0c0; /* classic dialog gray */
+    --retro-face: #dcdcdc; /* raised face */
+    --retro-dark: #808080; /* dark edge */
+    --retro-darker: #404040; /* shadow edge */
+    --retro-light: #ffffff; /* light edge */
+    --retro-text: #000000;
+    --retro-accent: #000080; /* Win95 blue */
+    --retro-hover: #e8e8e8;
+    --retro-active: #b8b8b8;
+    --retro-font: 'Tahoma', 'MS Sans Serif', system-ui, sans-serif;
+
+    color: var(--retro-text);
+    background: var(--retro-bg);
+    border: 2px solid var(--retro-dark);
+    /* 3D raised frame */
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light),
+        inset -2px -2px 0 var(--retro-darker), inset 2px 2px 0 var(--retro-face);
+    border-radius: 0;
+    overflow: hidden;
+    font-family: var(--retro-font);
+}
+
+/* subtle dithered plastic feel */
+.tab-container::before {
+    content: '';
+    display: block;
+    height: 18px;
+    background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.18) 0 2px, rgba(255, 255, 255, 0) 2px 4px);
+    border-bottom: 1px solid var(--retro-dark);
+}
+
+/* ===== Tabs header row (toolbar strip) */
+.tab-container .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: var(--retro-bg);
+    border-bottom: 2px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+.tab-container .tabs::-webkit-scrollbar {
+    height: 12px;
+}
+.tab-container .tabs::-webkit-scrollbar-thumb {
+    background: var(--retro-dark);
+    border: 2px solid var(--retro-bg);
+}
+
+/* ===== Tab buttons (raised, beveled) */
+.tab-links {
+    position: relative;
+    appearance: none;
+    border: 2px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light),
+        inset -2px -2px 0 var(--retro-darker), inset 2px 2px 0 var(--retro-face);
+    background: var(--retro-face);
+    color: var(--retro-text);
+    padding: 4px 10px 3px;
+    border-radius: 0;
+    font: 12px/1 var(--retro-font);
+    cursor: default;
+    white-space: nowrap;
+}
+.tab-links:hover {
+    background: var(--retro-hover);
+}
+
+.tab-links:focus-visible {
+    outline: 1px dotted var(--retro-text);
+    outline-offset: -4px;
+}
+
+/* Active tab: pressed look + top border merges with content */
+.tab-links.active {
+    background: var(--retro-active);
+    /* invert bevel for pressed */
+    box-shadow: inset -1px -1px 0 var(--retro-light), inset 1px 1px 0 var(--retro-dark),
+        inset -2px -2px 0 var(--retro-face), inset 2px 2px 0 var(--retro-darker);
+    border-bottom-color: var(--retro-active);
+}
+.tab-links.active::after {
+    /* tiny accent line like selected title bar */
+    content: '';
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    top: 1px;
+    height: 2px;
+    background: var(--retro-accent);
+}
+
+/* Optional close button if you have one */
+.tab-close {
+    margin-left: 8px;
+    width: 14px;
+    height: 14px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
+    background: var(--retro-face);
+    color: var(--retro-text);
+    font: 12px/1 var(--retro-font);
+    padding: 0;
+}
+.tab-close:hover {
+    background: var(--retro-hover);
+}
+
+/* ===== Panels (sunken 3D client area) */
+.tab-content {
+    display: none;
+    background: var(--retro-face);
+    padding: 10px;
+    min-height: 220px;
+
+    /* sunken panel look */
+    border-top: 2px solid var(--retro-light);
+    box-shadow: inset 1px 1px 0 var(--retro-light), inset -1px -1px 0 var(--retro-dark),
+        inset 2px 2px 0 var(--retro-face), inset -2px -2px 0 var(--retro-darker);
+}
+.tab-content.active {
+    display: block;
+}
+
+/* Retro form bits inside panels */
+.tab-content button,
+.tab-content input,
+.tab-content select {
+    font: 12px/1 var(--retro-font);
+    color: var(--retro-text);
+    background: var(--retro-face);
+    border: 2px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
+    border-radius: 0;
+    padding: 3px 6px;
+}
+.tab-content button:hover {
+    background: var(--retro-hover);
+}
+.tab-content button:active {
+    box-shadow: inset -1px -1px 0 var(--retro-light), inset 1px 1px 0 var(--retro-dark);
+    background: var(--retro-active);
+}
+
+/* If you show icons/emoji in tab labels, keep them crisp */
+.tab-links .tab-icon {
+    image-rendering: pixelated;
+}
+</file>
+
+<file path="tabs.base.css">
+/* tabs.base.css */
+.tab-container {
+    font-family: system-ui, Segoe UI, Roboto, sans-serif;
+    color: var(--ui-text);
+    background: var(--ui-surface);
+    border: var(--ui-border-width, 1px) solid var(--ui-border);
+    border-radius: var(--ui-radius, 8px);
+    box-shadow: var(--ui-shadow, none);
+    overflow: hidden;
+    cursor: grab;
+    min-width: 400px;
+    min-height: 500px;
+}
+
+.tab-container.ui-draggable-dragging {
+    cursor: grabbing;
+}
+
+/* header strip / title */
+.tab-container::before {
+    content: attr(data-title);
+    display: block;
+    padding: var(--hdr-pad, 8px 12px);
+    background: var(--hdr-bg, transparent);
+    color: var(--hdr-fg, var(--ui-text));
+    border-bottom: var(--hdr-border, 1px solid var(--ui-border));
+    font: var(--hdr-font, 600 12px/1 system-ui, sans-serif);
+    letter-spacing: var(--hdr-tracking, 0.04em);
+    text-transform: var(--hdr-transform, uppercase);
+}
+
+/* tabs row */
+.tabs {
+    display: flex;
+    gap: var(--tab-gap, 4px);
+    padding: var(--tab-pad, 6px);
+    background: var(--tabs-bg, var(--ui-surface-2, var(--ui-surface)));
+    border-bottom: var(--tabs-border, 1px solid var(--ui-border));
+    overflow-x: auto;
+}
+
+/* tab button */
+.tab-links {
+    appearance: none;
+    cursor: pointer;
+    white-space: nowrap;
+    background: var(--tab-bg, transparent);
+    color: var(--tab-fg, var(--ui-muted));
+    border: var(--tab-border, 1px solid transparent);
+    border-radius: var(--tab-radius, 6px 6px 0 0);
+    padding: var(--tab-btn-pad, 8px 12px);
+    font: var(--tab-font, 500 13px/1 system-ui, sans-serif);
+    box-shadow: var(--tab-shadow, none);
+}
+.tab-links:hover {
+    background: var(--tab-hover-bg, rgba(255, 255, 255, 0.05));
+    color: var(--ui-text);
+}
+.tab-links:focus-visible {
+    outline: var(--focus-outline, 2px solid var(--ui-accent));
+    outline-offset: var(--focus-offset, 2px);
+}
+
+.tab-links.active {
+    background: var(--tab-active-bg, var(--ui-surface));
+    color: var(--ui-text);
+    border: var(--tab-active-border, 1px solid var(--ui-border));
+    box-shadow: var(--tab-active-shadow, none);
+    position: relative;
+}
+.tab-links.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: var(--tab-accent-h, 0);
+    background: var(--ui-accent);
+    border-radius: var(--tab-accent-radius, 0);
+}
+
+/* panels */
+.tab-content {
+    display: none;
+    background: var(--panel-bg, var(--ui-bg, var(--ui-surface)));
+    padding: var(--panel-pad, 16px);
+    max-height: 400px;
+    overflow: auto;
+}
+.tab-content.active {
+    display: block;
+}
+
+/* small bits */
+.tab-title {
+    pointer-events: none;
+}
+.tab-icon {
+    margin-right: 6px;
+}
+</file>
+
+<file path="tabs.js">
+export class Tabs extends EventTarget {
+    /**
+     * @param {HTMLElement} container  Wrapper element where the tabs UI will render.
+     * @param {{title?:string, storageKey?:string}} [opts]
+     */
+    constructor(container, opts = {}) {
+        super();
+        this.container = container;
+        this.title = opts.title ?? 'Panels';
+        this.storageKey = opts.storageKey ?? 'ui.tabs.v2';
+        this.tabs = new Map(); // id -> meta
+        this.order = []; // tab id order
+        this.activeId = null;
+
+        this.#buildShell();
+        this.#restore();
+        this.#wireKeyboardNav();
+    }
+
+    // ---------- Public API ----------
+
+    /**
+     * Add a tab.
+     * @param {{
+     *   id:string, title:string, icon?:string, tooltip?:string,
+     *   closable?:boolean, badge?:string|number,
+     *   mount?:(root:HTMLElement)=>void, unmount?:(root:HTMLElement)=>void,
+     *   onShow?:(root:HTMLElement)=>void, onHide?:(root:HTMLElement)=>void,
+     *   active?:boolean
+     * }} conf
+     */
+    addTab(conf) {
+        if (!conf?.id || !conf?.title) throw new Error('addTab requires {id, title}');
+        if (this.tabs.has(conf.id)) throw new Error(`Tab '${conf.id}' already exists`);
+
+        // Elements
+        const btn = document.createElement('button');
+        btn.className = 'tab-links';
+        btn.type = 'button';
+        btn.role = 'tab';
+        btn.id = `tab-${conf.id}`;
+        btn.dataset.tabId = conf.id;
+        btn.setAttribute('aria-selected', 'false');
+        btn.setAttribute('tabindex', '-1');
+        if (conf.tooltip) btn.title = conf.tooltip;
+
+        const label = document.createElement('span');
+        label.className = 'tab-title';
+        label.textContent = conf.title;
+
+        if (conf.icon) {
+            const ic = document.createElement('span');
+            ic.className = 'tab-icon';
+            ic.textContent = conf.icon;
+            btn.append(ic);
+        }
+        btn.append(label);
+
+        const badge = document.createElement('span');
+        badge.className = 'tab-badge';
+        if (conf.badge != null) {
+            badge.textContent = String(conf.badge);
+            btn.append(badge);
+        }
+
+        let closeBtn = null;
+        if (conf.closable) {
+            closeBtn = document.createElement('button');
+            closeBtn.className = 'tab-close';
+            closeBtn.type = 'button';
+            closeBtn.setAttribute('aria-label', `Close ${conf.title}`);
+            closeBtn.textContent = '×';
+            btn.append(closeBtn);
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removeTab(conf.id);
+            });
+        }
+
+        const panel = document.createElement('div');
+        panel.className = 'tab-content';
+        panel.id = conf.id;
+        panel.role = 'tabpanel';
+        panel.setAttribute('aria-labelledby', btn.id);
+        panel.hidden = true;
+
+        this.tablist.append(btn);
+        this.contentRegion.append(panel);
+
+        const meta = {
+            ...conf,
+            button: btn,
+            badgeEl: badge,
+            panel,
+            mounted: false,
+        };
+        this.tabs.set(conf.id, meta);
+        this.order.push(conf.id);
+
+        btn.addEventListener('click', () => this.select(conf.id));
+
+        this.#persist();
+
+        this.dispatchEvent(new CustomEvent('tab:add', { detail: { id: conf.id } }));
+
+        const shouldAutoSelect =
+            conf.active || (this.activeId == null && (!this._restoredActiveId || this._restoredActiveId === conf.id));
+
+        if (shouldAutoSelect) this.select(conf.id);
+
+        if (!this.order.includes(conf.id)) this.order.push(conf.id);
+    }
+
+    /** Remove a tab by id. */
+    removeTab(id) {
+        const meta = this.tabs.get(id);
+        if (!meta) return;
+        if (meta.unmount && meta.mounted) meta.unmount(meta.panel);
+        meta.button.remove();
+        meta.panel.remove();
+        this.tabs.delete(id);
+        this.order = this.order.filter((x) => x !== id);
+
+        if (this.activeId === id) {
+            const next = this.order[this.order.length - 1] || null; // select previous tab if any
+            this.activeId = null;
+            if (next) this.select(next);
+        }
+        this.#persist();
+        this.dispatchEvent(new CustomEvent('tab:remove', { detail: { id } }));
+    }
+
+    /** Select a tab by id. */
+    select(id) {
+        if (!this.tabs.has(id)) return;
+
+        const prev = this.activeId ? this.tabs.get(this.activeId) : null;
+        const next = this.tabs.get(id);
+
+        // Deactivate previous
+        if (prev) {
+            prev.button.classList.remove('active');
+            prev.button.setAttribute('aria-selected', 'false');
+            prev.button.setAttribute('tabindex', '-1');
+            prev.panel.hidden = true;
+            prev.panel.classList.remove('active');
+            prev.onHide?.(prev.panel);
+        }
+
+        // Activate next
+        this.activeId = id;
+        next.button.classList.add('active');
+        next.button.setAttribute('aria-selected', 'true');
+        next.button.setAttribute('tabindex', '0');
+        next.panel.hidden = false;
+        next.panel.classList.add('active');
+        next.button.focus({ preventScroll: true });
+
+        // Lazy mount
+        if (!next.mounted && next.mount) {
+            next.mount(next.panel);
+            next.mounted = true;
+        }
+        next.onShow?.(next.panel);
+
+        this.#persist();
+        this.dispatchEvent(new CustomEvent('tab:select', { detail: { id } }));
+    }
+
+    /** Update tab metadata: title, icon, badge, tooltip. */
+    update(id, patch = {}) {
+        const t = this.tabs.get(id);
+        if (!t) return;
+        if (patch.title) t.panel.setAttribute('aria-label', patch.title);
+        if (patch.title) t.button.querySelector('.tab-title').textContent = patch.title;
+        if (patch.icon != null) {
+            let ic = t.button.querySelector('.tab-icon');
+            if (patch.icon === '' || patch.icon === false) {
+                ic?.remove();
+            } else {
+                if (!ic) {
+                    ic = document.createElement('span');
+                    ic.className = 'tab-icon';
+                    t.button.prepend(ic);
+                }
+                ic.textContent = patch.icon;
+            }
+        }
+        if ('badge' in patch) {
+            if (patch.badge == null || patch.badge === '') {
+                t.badgeEl.textContent = '';
+                t.badgeEl.style.display = 'none';
+            } else {
+                t.badgeEl.textContent = String(patch.badge);
+                t.badgeEl.style.display = '';
+            }
+        }
+        if (patch.tooltip != null) t.button.title = patch.tooltip;
+    }
+
+    /** Returns the active tab id or null. */
+    get active() {
+        return this.activeId;
+    }
+
+    /** Reorder tabs by array of ids. */
+    reorder(ids) {
+        if (!Array.isArray(ids)) return;
+        // keep only known ids in given order + append any missing
+        const set = new Set(ids.filter((id) => this.tabs.has(id)));
+        this.order = [...set, ...this.order.filter((id) => !set.has(id))];
+        // apply DOM order
+        this.order.forEach((id) => this.tablist.append(this.tabs.get(id).button));
+        this.#persist();
+        this.dispatchEvent(new CustomEvent('tab:reorder', { detail: { order: this.order.slice() } }));
+    }
+
+    // ---------- Private ----------
+
+    #buildShell() {
+        this.container.classList.add('tab-container');
+        // Optional title bar
+        const titleBar = document.createElement('div');
+        titleBar.className = 'tab-titlebar';
+        titleBar.textContent = this.title;
+
+        const tablist = document.createElement('div');
+        tablist.className = 'tabs';
+        tablist.role = 'tablist';
+        tablist.setAttribute('aria-label', this.title);
+
+        const content = document.createElement('div');
+        content.className = 'tab-contents';
+
+        this.container.replaceChildren(titleBar, tablist, content);
+        this.tablist = tablist;
+        this.contentRegion = content;
+    }
+
+    #wireKeyboardNav() {
+        this.tablist.addEventListener('keydown', (e) => {
+            const ids = this.order;
+            if (!ids.length) return;
+            const idx = ids.indexOf(this.activeId);
+            if (e.key === 'ArrowRight') {
+                this.select(ids[(idx + 1) % ids.length]);
+                e.preventDefault();
+            } else if (e.key === 'ArrowLeft') {
+                this.select(ids[(idx - 1 + ids.length) % ids.length]);
+                e.preventDefault();
+            } else if (e.key === 'Home') {
+                this.select(ids[0]);
+                e.preventDefault();
+            } else if (e.key === 'End') {
+                this.select(ids[ids.length - 1]);
+                e.preventDefault();
+            } else if (e.ctrlKey && e.key === 'Tab') {
+                this.select(ids[(idx + (e.shiftKey ? -1 : 1) + ids.length) % ids.length]);
+                e.preventDefault();
+            }
+        });
+    }
+
+    #persist() {
+        try {
+            const data = { order: this.order, activeId: this.activeId };
+            localStorage.setItem(this.storageKey, JSON.stringify(data));
+        } catch {}
+    }
+
+    #restore() {
+        try {
+            const raw = localStorage.getItem(this.storageKey);
+            if (!raw) return;
+            const { order, activeId } = JSON.parse(raw);
+            if (Array.isArray(order)) {
+                // keep unique strings only
+                this.order = [...new Set(order.filter((id) => typeof id === 'string'))];
+            }
+            // don't set active yet; just remember it
+            this._restoredActiveId = typeof activeId === 'string' ? activeId : null;
+            this.activeId = null;
+        } catch {}
+    }
+}
+</file>
+
+<file path="theme-crt.css">
+[data-theme='crt'] {
+    --ui-text: #a6ff7a;
+    --ui-accent: #a6ff7a;
+    --ui-surface: #061006;
+    --ui-surface-2: #0b1a0b;
+    --ui-bg: #020602;
+    --ui-border: #0f2a0f;
+    --ui-border-width: 1px;
+    --ui-radius: 4px;
+
+    --ui-shadow: 0 0 20px rgba(166, 255, 122, 0.08);
+
+    --hdr-bg: #061006;
+    --hdr-border: 1px solid #0f2a0f;
+    --hdr-font: 600 11px/1 ui-monospace, monospace;
+    --hdr-transform: none;
+
+    --tabs-bg: #061006;
+    --tab-gap: 2px;
+    --tab-border: 1px solid #0f2a0f;
+    --tab-bg: #0b1a0b;
+    --tab-hover-bg: #0e230e;
+
+    --tab-active-bg: #0e230e;
+    --tab-active-border: 1px solid #1e4d1e;
+    --tab-active-shadow: inset 0 0 0 1px #153a15;
+    --tab-accent-h: 0;
+
+    --panel-bg: repeating-linear-gradient(180deg, rgba(166, 255, 122, 0.06) 0 2px, rgba(0, 0, 0, 0) 2px 4px), #061006;
+
+    --focus-outline: 1px dashed #a6ff7a;
+    --focus-offset: 2px;
+}
+</file>
+
+<file path="theme-light.css">
+[data-theme='lighting'] {
+    --ui-text: #f5f5ff;
+    --ui-accent: #ff2bd6;
+    --ui-surface: #060f368d;
+    --ui-surface-2: #060f368d;
+    --ui-bg: #090b1600;
+    --ui-border: #0d101e;
+    --ui-border-width: 1px;
+    --ui-radius: 12px;
+
+    --ui-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 43, 214, 0.06);
+
+    /* Header */
+    --hdr-bg: linear-gradient(90deg, #1a0b2b, #0b1a2b);
+    --hdr-border: 1px solid #2a2f46;
+    --hdr-font: 700 11px/1 'Orbitron', system-ui, sans-serif;
+    --hdr-transform: uppercase;
+    --hdr-tracking: 0.08em;
+
+    --tabs-bg: #11162a7d;
+    --tab-gap: 6px;
+    --tab-border: 1px solid #293050;
+    --tab-bg: #141b33;
+    --tab-hover-bg: #19224a;
+
+    --tab-active-bg: #0f142853;
+    --tab-active-border: 1px solid #3a4270;
+    --tab-active-shadow: 0 0 0 1px rgba(255, 43, 214, 0.18), 0 8px 20px rgba(0, 0, 0, 0.35);
+    --tab-accent-h: 2px;
+    --tab-accent-radius: 2px;
+
+    --panel-bg: radial-gradient(1200px 400px at 10% -10%, rgba(255, 43, 214, 0.08), transparent),
+        radial-gradient(1200px 400px at 90% -10%, rgba(0, 255, 255, 0.08), transparent), #0b0e1a40;
+
+    --focus-outline: 2px solid #ff2bd6;
+    --focus-offset: 1px;
+}
+</file>
+
+<file path="theme-mac9.css">
+[data-theme='mac9'] {
+    --ui-text: #000;
+    --ui-accent: #0a84ff;
+    --ui-surface: #efefef;
+    --ui-surface-2: #e6e6e6;
+    --ui-bg: #f4f4f4;
+    --ui-border: #b9b9b9;
+    --ui-border-width: 1px;
+    --ui-radius: 10px;
+
+    --ui-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+
+    --hdr-bg: linear-gradient(#fdfdfd, #e9e9e9);
+    --hdr-border: 1px solid #cfcfcf;
+    --hdr-font: 600 12px/1 'Chicago', system-ui, sans-serif;
+    --hdr-transform: none;
+    --hdr-tracking: 0;
+
+    --tabs-bg: #efefef;
+    --tab-gap: 6px;
+    --tab-radius: 10px 10px 0 0;
+    --tab-border: 1px solid #cfcfcf;
+    --tab-bg: #f8f8f8;
+    --tab-hover-bg: #ffffff;
+
+    --tab-active-bg: #ffffff;
+    --tab-active-border: 1px solid #bdbdbd;
+    --tab-active-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+    --tab-accent-h: 0; /* no accent bar */
+
+    --panel-bg: #ffffff;
+    --panel-pad: 18px;
+    --focus-outline: 2px solid color-mix(in oklab, #0a84ff 60%, transparent);
+}
+</file>
+
+<file path="theme-synthwave.css">
+[data-theme='synthwave'] {
+    --ui-text: #f5f5ff;
+    --ui-accent: #ff2bd6;
+    --ui-surface: #0b0e1a;
+    --ui-surface-2: #11162a;
+    --ui-bg: #090b16;
+    --ui-border: #2a2f46;
+    --ui-border-width: 1px;
+    --ui-radius: 12px;
+
+    --ui-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 43, 214, 0.06);
+
+    --hdr-bg: linear-gradient(90deg, #1a0b2b, #0b1a2b);
+    --hdr-border: 1px solid #2a2f46;
+    --hdr-font: 700 11px/1 'Orbitron', system-ui, sans-serif;
+    --hdr-transform: uppercase;
+    --hdr-tracking: 0.08em;
+
+    --tabs-bg: #11162a;
+    --tab-gap: 6px;
+    --tab-border: 1px solid #293050;
+    --tab-bg: #141b33;
+    --tab-hover-bg: #19224a;
+
+    --tab-active-bg: #0f1428;
+    --tab-active-border: 1px solid #3a4270;
+    --tab-active-shadow: 0 0 0 1px rgba(255, 43, 214, 0.18), 0 8px 20px rgba(0, 0, 0, 0.35);
+    --tab-accent-h: 2px;
+    --tab-accent-radius: 2px;
+
+    --panel-bg: radial-gradient(1200px 400px at 10% -10%, rgba(255, 43, 214, 0.08), transparent),
+        radial-gradient(1200px 400px at 90% -10%, rgba(0, 255, 255, 0.08), transparent), #0b0e1a;
+
+    --focus-outline: 2px solid #ff2bd6;
+    --focus-offset: 1px;
+}
+</file>
+
+<file path="theme-win95.css">
+/* Apply theme by wrapping container in [data-theme="win95"] */
+[data-theme='win95'] {
+    --ui-text: #000;
+    --ui-accent: #000080;
+    --ui-surface: #dcdcdc;
+    --ui-surface-2: #c0c0c0;
+    --ui-bg: #dcdcdc;
+    --ui-border: #808080;
+    --ui-border-width: 2px;
+    --ui-radius: 0;
+
+    --ui-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #fff, inset -2px -2px 0 #404040, inset 2px 2px 0 #dcdcdc;
+
+    --hdr-bg: linear-gradient(#e6e6e6, #d3d3d3);
+    --hdr-border: 1px solid #808080;
+    --hdr-font: 700 12px/1 'Tahoma', 'MS Sans Serif', system-ui, sans-serif;
+
+    --tabs-bg: #c0c0c0;
+    --tab-gap: 2px;
+    --tab-btn-pad: 4px 10px 3px;
+    --tab-radius: 0;
+    --tab-border: 2px solid #808080;
+    --tab-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #fff, inset -2px -2px 0 #404040, inset 2px 2px 0 #dcdcdc;
+    --tab-hover-bg: #e8e8e8;
+
+    --tab-active-bg: #b8b8b8;
+    --tab-active-border: 2px solid #808080;
+    --tab-active-shadow: inset -1px -1px 0 #fff, inset 1px 1px 0 #808080, inset -2px -2px 0 #dcdcdc,
+        inset 2px 2px 0 #404040;
+
+    --tab-accent-h: 2px;
+    --tab-accent-radius: 0;
+
+    --panel-pad: 10px;
+    --panel-bg: #dcdcdc;
+}
+</file>
+
+</files>

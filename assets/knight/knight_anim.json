@@ -28,7 +28,7 @@
             "key": "jump",
             "type": "frames",
             "repeat": -1,
-            "frameRate": 8,
+            "frameRate": 1,
             "frames": [
                 {
                     "key": "knight",
@@ -148,7 +148,7 @@
             "key": "walk",
             "type": "frames",
             "repeat": -1,
-            "frameRate": 8,
+            "frameRate": 10,
             "frames": [
                 {
                     "key": "knight",
@@ -188,7 +188,7 @@
             "key": "idle",
             "type": "frames",
             "repeat": -1,
-            "frameRate": 8,
+            "frameRate": 10,
             "frames": [
                 {
                     "key": "knight",

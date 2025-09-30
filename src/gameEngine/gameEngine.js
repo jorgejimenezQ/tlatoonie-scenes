@@ -1,17 +1,18 @@
 import { resolveConfiguration, waitForSpriteSheets } from '../utils/file';
-import { ActionKeys, ActionTypes, CustomEvents, SceneNames } from '../utils/enums';
+import { ActionKeys, ActionTypes, CustomEvents, SceneNames, ScalePolicies, EntityTypes } from '../utils/enums';
 import { Play_Scene } from '../scene/play_scene';
 import { Scene } from '../scene/scene';
 import { Vector } from 'vecti';
 import { initUserInput } from '../utils/userInput';
 import { Action } from '../action/action';
 import { printSpriteCacheStats, SpriteCacheGPU } from '../utils/spriteCacheGPU';
+import { getScaledSpriteLayout, getScaledSpriteSize } from '../utils/sprite';
 
 class GameEngine extends EventTarget {
     /**
      * Map of all scenes in the game
      *
-     * @type {Map<string, Scene>}
+     * @type {Map<string, Play_Scene>}
      */
     #sceneMap = new Map();
     // #assets = new Assets();
@@ -23,6 +24,7 @@ class GameEngine extends EventTarget {
     #currentScene = '';
     #simulationSpeed = 1;
     #isRunning = true;
+    #DEBUG;
 
     /**
      * The canvas context
@@ -35,18 +37,32 @@ class GameEngine extends EventTarget {
      */
     #assets;
     #configPath;
-    #fps;
     updates = 0;
     renders = 0;
     spriteCache = null;
     #pointerCoords = new Vector(0, 0);
+    #frameCount = 0;
 
-    constructor(path, ctx, fps = 60) {
+    /**
+     * Sprite selection
+     * {
+     * details
+     * }
+     */
+    #spriteSelected = null;
+
+    /**
+     * Creates a new GameEngine instance
+     * @param {string} path - the path to the game configuration file
+     * @param {CanvasRenderingContext2D} ctx - the canvas context to render the game on
+     * @param {number} fps - the target frames per second for the game (default: 60)
+     */
+    constructor(path, ctx, debug = false) {
         super();
 
-        this.#fps = fps;
         this.#configPath = path;
         this.#canvasCTX = ctx;
+        this.#DEBUG = debug;
     }
 
     async init() {
@@ -59,10 +75,10 @@ class GameEngine extends EventTarget {
         // Wait for all images to load before proceeding
         await waitForSpriteSheets(this.#assets);
 
-        for (let animation of this.getAnimations().values()) {
-            let sheetImage = this.getImage(animation.sheetId);
-            let frames = animation.frames.map((frame) => {
-                const r = this.getSpriteData(animation.sheetId, frame.frame);
+        for (let sheet of this.#assets.spriteSheets.values()) {
+            let sheetImage = sheet.image;
+            let frames = sheet.frames.map((frame) => {
+                const r = frame.frame;
                 return { sx: r.x, sy: r.y, sw: r.w, sh: r.h };
             });
 
@@ -72,11 +88,11 @@ class GameEngine extends EventTarget {
         }
 
         console.log('assets loaded', this.#assets);
-        // console.log('sprite cache prewarmed', this.spriteCache.map, this.spriteCache.inflight);
+
         // this.#canvasCTX.drawImage(this.#assets.spriteSheets.get('knight').image, 0, 0);
         this.changeScene(SceneNames.Play, new Play_Scene(this));
         initUserInput(this);
-
+        console.log('sprite cache prewarmed', this.spriteCache.map, this.spriteCache.inflight);
         printSpriteCacheStats(this.spriteCache);
 
         this.#addEventListeners();
@@ -104,18 +120,19 @@ class GameEngine extends EventTarget {
         });
     }
 
-    update(dt) {
-        if (!this.isRunning()) return;
-        // Handle user input early to capture key presses even when paused
-        this.sUserInput();
-
+    fixedUpdate(dt) {
         // If the game was turned off stop the loop
         // TODO: FOLLOW-UP handle reset and game end better
         if (!this.isRunning()) return;
 
         // call the update for the current scene
         // TODO: uncomment once we have an inherited Scene
-        this.#sceneMap.get(this.#currentScene).update(dt);
+        this.#sceneMap.get(this.#currentScene).fixedUpdate(dt);
+    }
+
+    onFrameEnd({ fps, fixedDt, elapsedTime, simulatedTime, leftOverTime, numUpdateSteps }) {
+        // stats: { fps, fixedDt, elapsedTime, simulatedTime, leftOverTime, numUpdateSteps}
+        this.#sceneMap.get(this.#currentScene).onFrameEnd(elapsedTime, numUpdateSteps);
     }
 
     render(alpha) {
@@ -123,31 +140,10 @@ class GameEngine extends EventTarget {
         // Clear the canvas
         this.#canvasCTX.clearRect(0, 0, this.#canvasCTX.canvas.width, this.#canvasCTX.canvas.height);
 
-        // this.#canvasCTX.font = '12px serif';
-        // this.#canvasCTX.fillStyle = 'green';
-        // this.#canvasCTX.fillText(this.test.prop1, 10, 50);
-
         // Call the scene's render method
-        // TODO: uncomment once we have an inherited Scene
-        // this.getCurrentScene.sRender(alpha);
         this.#sceneMap.get(this.#currentScene).sRender(alpha);
     }
 
-    sUserInput() {
-        // TODO: handle user input
-        // if (this.#keys['KeyG']) {
-        //     // dispatch a custom stopped event
-        //     this.dispatchEvent(new Event(CustomEvents.GAME_STOPPED));
-        //     // TODO: FOLLOW-UP pause or stop the game
-        //     this.#isRunning = false;
-        // }
-        // if (this.#keys['KeyR']) {
-        //     // dispatch a custom stopped event
-        //     this.dispatchEvent(new Event(CustomEvents.GAME_STOPPED));
-        //     // TODO: FOLLOW-UP pause or stop the game
-        //     this.#isRunning = false;
-        // }
-    }
     quit() {
         // TODO: quit the game
         this.#isRunning = false;
@@ -194,20 +190,38 @@ class GameEngine extends EventTarget {
      * @param {Vector} size - The size of the sprite in the canvas.
      */
     async drawSprite(sheetId, spriteName, pos, scale) {
-        let spriteSheet = this.#assets.spriteSheets.get(sheetId);
-        let img = spriteSheet.image;
-        let sprite = spriteSheet.frameMap.get(spriteName);
-        let size = new Vector(sprite.frame.w * scale.x, sprite.frame.h * scale.y);
-        let bpm = await this.spriteCache.get(
+        const sheet = this.#assets.spriteSheets.get(sheetId);
+        const img = sheet.image;
+        const sprite = sheet.frameMap.get(spriteName);
+        const frame = sprite.frame;
+        const tr = new Vector(frame.w, frame.h);
+        if (sheet.trimmedRect) {
+            tr.x = sheet.trimmedRect.width;
+            tr.y = sheet.trimmedRect.height;
+        }
+
+        // const sx = Math.abs(scale.x);
+        // let scaledBox = getScaledSpriteSize(tr, scale, ScalePolicies.UNIFORM_Y, null);
+        let { drawSize, logicalSizeScaled, trimmedTopLeft, trimmedCenter, kx, ky } = getScaledSpriteLayout(
+            tr,
+            new Vector(frame.w, frame.h),
+            scale,
+            ScalePolicies.UNIFORM_Y,
+            pos,
+            null
+        );
+
+        const bmp = await this.spriteCache.get(
             img,
-            sprite.frame.x,
-            sprite.frame.y,
-            sprite.frame.w,
-            sprite.frame.h,
+            frame.x,
+            frame.y,
+            frame.w,
+            frame.h,
             scale.x >= 0 ? 'none' : 'flipX'
         );
 
-        this.#canvasCTX.drawImage(bpm, pos.x, pos.y, size.x, size.y);
+        // this.#canvasCTX.drawImage(bmp, trimmedTopLeft.x, trimmedTopLeft.y, logicalSizeScaled.x, logicalSizeScaled.y);
+        this.#canvasCTX.drawImage(bmp, trimmedCenter.x, trimmedCenter.y, logicalSizeScaled.x, logicalSizeScaled.y);
     }
 
     /**
@@ -314,9 +328,18 @@ class GameEngine extends EventTarget {
      * Getters and Setters
      ******************************************************************************/
 
+    getSceneEntityManager() {
+        const scene = this.getCurrentScene();
+        return scene.entityManager;
+    }
+
     getImage(sheetId) {
         // this.#assets.
         return this.#assets.spriteSheets.get(sheetId).image;
+    }
+
+    getSpriteTrimmedRect(spriteId) {
+        return this.#assets.spriteSheets.get(spriteId).trimmedRect || null;
     }
 
     /**
@@ -327,6 +350,11 @@ class GameEngine extends EventTarget {
     get width() {
         return this.#canvasCTX.canvas.width;
     }
+
+    getTest() {
+        console.log('testing get ');
+    }
+
     /**
      * The height of the canvas.
      *
@@ -335,6 +363,10 @@ class GameEngine extends EventTarget {
 
     get height() {
         return this.#canvasCTX.canvas.height;
+    }
+
+    get assets() {
+        return this.#assets;
     }
 
     /** Device pixel ratio in effect for the main ctx */
@@ -398,6 +430,11 @@ class GameEngine extends EventTarget {
      *-----------------------------------------------------------------------------*/
 
     #addEventListeners() {
+        /********************   Window Events          *******************/
+        this.addEventListener(CustomEvents.WINDOW_RESIZED, (e) => {
+            // resizeCanvas(this.#canvasCTX.canvas, this.#canvasCTX);
+        });
+
         /********************   Keyboard/button Events *******************/
         this.addEventListener(CustomEvents.ACTION_START, (e) => {
             if (e.detail.repeat) return;
@@ -417,17 +454,15 @@ class GameEngine extends EventTarget {
 
             let scene = this.#sceneMap.get(this.#currentScene);
             if (!scene.actionMap.has(e.detail.key)) return;
-
             let action = new Action(scene.actionMap.get(e.detail.key), ActionTypes.START);
-            scene.sDoAction(action);
+            scene.actionEnqueue(action);
         });
 
         this.addEventListener(CustomEvents.ACTION_END, (e) => {
             let scene = this.#sceneMap.get(this.#currentScene);
             if (!scene.actionMap.has(e.detail.key)) return;
-
             let action = new Action(scene.actionMap.get(e.detail.key), ActionTypes.END);
-            scene.sDoAction(action);
+            scene.actionEnqueue(action);
         });
 
         /********************   Pointer Events *******************/
@@ -440,7 +475,7 @@ class GameEngine extends EventTarget {
 
             let action = new Action(scene.actionMap.get(ActionKeys.pointerMove), ActionTypes.END);
             action.payload = this.#pointerCoords;
-            scene.sDoAction(action);
+            scene.sDoActionImm(action);
         });
 
         this.addEventListener(CustomEvents.POINTER_DOWN, (e) => {
@@ -449,7 +484,22 @@ class GameEngine extends EventTarget {
 
             let action = new Action(scene.actionMap.get(ActionKeys.pointerDown), ActionTypes.START);
             action.payload = new Vector(e.detail.x, e.detail.y);
-            scene.sDoAction(action);
+            scene.sDoActionImm(action);
+
+            // **** event:sprite select
+            if (this.#spriteSelected) {
+                console.log('placing sprite');
+                console.info(this.#spriteSelected);
+                scene.placeSpriteEntityGrid(
+                    EntityTypes.GROUND,
+                    e.detail.x,
+                    e.detail.y,
+                    this.#spriteSelected.sheetId,
+                    this.#spriteSelected.frame,
+                    false
+                );
+                this.#spriteSelected = null;
+            }
         });
 
         this.addEventListener(CustomEvents.POINTER_UP, (e) => {
@@ -457,23 +507,20 @@ class GameEngine extends EventTarget {
             if (!scene.actionMap.has(ActionKeys.pointerUp)) return;
 
             let action = new Action(scene.actionMap.get(ActionKeys.pointerUp), ActionTypes.START);
-            scene.sDoAction(action);
+            scene.sDoActionImm(action);
         });
-    }
-}
 
-function resizeCanvasForDPR(canvas, ctx) {
-    const dpr = window.devicePixelRatio || 1;
-    const { width: cssW, height: cssH } = canvas.getBoundingClientRect();
-    const w = Math.round(cssW * dpr);
-    const h = Math.round(cssH * dpr);
-    console.log(w, h);
-    console.log(canvas.width, canvas.height);
-    if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS units
-        ctx.imageSmoothingEnabled = false;
+        /******************** Debugging   Sprite Events ******************* */
+        if (this.#DEBUG) {
+            this.addEventListener(CustomEvents.SPRITE.SELECT, (e) => {
+                this.#spriteSelected = {
+                    sheetId: e.detail.sheetId,
+                    frame: e.detail.frame.frameName,
+                    // position: new Vector(e.detail.x, e.detail.y),
+                };
+                console.log('sprite selected', this.#spriteSelected);
+            });
+        }
     }
 }
 

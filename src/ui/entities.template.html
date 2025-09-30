@@ -1,0 +1,78 @@
+<template id="entityItemTemplate">
+    <li class="entity-card" data-entity-id="">
+        <article>
+            <header class="entity-header">
+                <strong>
+                    <span data-entity-tag></span>
+                    <span>#<span data-entity-id></span></span>
+                </strong>
+                <small>
+                    <label>
+                        <input type="checkbox" data-field="active" />
+                        active
+                    </label>
+                </small>
+            </header>
+
+            <!-- CTransform (simplified) -->
+            <section class="component" data-component="CTransform">
+                <h4>Transform</h4>
+                <form data-component-form="CTransform">
+                    <div class="row">
+                        <label>x <input type="number" step="0.01" data-field="position.x" /></label>
+                        <label>y <input type="number" step="0.01" data-field="position.y" /></label>
+                    </div>
+                    <div class="row">
+                        <label>vx <input type="number" step="0.01" data-field="velocity.x" /></label>
+                        <label>vy <input type="number" step="0.01" data-field="velocity.y" /></label>
+                    </div>
+                    <div class="row">
+                        <label>sx <input type="number" step="0.01" data-field="scale.x" /></label>
+                        <label>sy <input type="number" step="0.01" data-field="scale.y" /></label>
+                    </div>
+                    <div class="row">
+                        <label>rot° <input type="number" step="0.1" data-field="rotation" /></label>
+                    </div>
+                    <div class="row">
+                        <label>hSpeed <input type="number" step="0.1" data-field="hSpeed" /></label>
+                        <label>vSpeed <input type="number" step="0.1" data-field="vSpeed" /></label>
+                    </div>
+                    <div class="row">
+                        <label><input type="checkbox" data-field="grounded" /> grounded</label>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" data-action="save-component">Save</button>
+                        <button type="reset">Reset</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- CState (simplified) -->
+            <section class="component" data-component="CState">
+                <h4>State</h4>
+                <form data-component-form="CState">
+                    <div class="row">
+                        <label
+                            >current
+                            <input
+                                type="text"
+                                data-field="current"
+                                placeholder="IDLE / JUMPING / WALKING.LEFT / WALKING.RIGHT"
+                        /></label>
+                    </div>
+                    <div class="row">
+                        <label>previous <input type="text" data-field="previous" /></label>
+                    </div>
+                    <div class="row">
+                        <label><input type="checkbox" data-field="canJump" /> canJump</label>
+                        <label><input type="checkbox" data-field="changeAnimation" /> changeAnimation</label>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" data-action="save-component">Save</button>
+                        <button type="reset">Reset</button>
+                    </div>
+                </form>
+            </section>
+        </article>
+    </li>
+</template>

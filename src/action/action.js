@@ -16,14 +16,6 @@ class Action {
         return this.type;
     }
 
-    get name() {
-        return this.name;
-    }
-
-    get type() {
-        return this.type;
-    }
-
     set payload(data) {
         this.#payload = data;
     }

@@ -6,25 +6,46 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Tlatoonie</title>
         <link rel="stylesheet" href="./css/style.css" />
+        <link rel="stylesheet" href="./src/ui/buttons/entityList/entity.base.css" />
         <link rel="stylesheet" href="./src/ui/tabs/tabs.base.css" />
         <link rel="stylesheet" href="./src/ui/tabs/theme-win95.css" />
         <link rel="stylesheet" href="./src/ui/tabs/theme-mac9.css" />
         <link rel="stylesheet" href="./src/ui/tabs/theme-crt.css" />
         <link rel="stylesheet" href="./src/ui/tabs/theme-synthwave.css" />
+        <link rel="stylesheet" href="./src/ui/tabs/theme-light.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css" />
     </head>
 
     <body>
         <div id="logging">
             <h1>Logging</h1>
+            <ul>
+                <li>
+                    FPS(ms):
+                    <div id="fps"></div>
+                </li>
+                <li>
+                    Fixed Delta(ms):
+                    <div id="fixed"></div>
+                </li>
+                <li>
+                    Elapsed Time(ms):
+                    <div id="elapsed"></div>
+                </li>
+                <li>
+                    Simulated Time(ms):
+                    <div id="simTime"></div>
+                </li>
+                <li>
+                    Number of Ticks(ms):
+                    <div id="ticks"></div>
+                </li>
+            </ul>
         </div>
-        <canvas id="canvas"> Your browser does not support the canvas element. </canvas>
-        <!-- <div class="button-container">
-            <button id="start-btn" class="button">Start Game</button>
-            <button id="end-btn" class="button">End Game</button>
-            <button id="change-test-btn" class="button">change test</button>
-        </div> -->
 
-        <div id="tab-theme-root" data-theme="synthwave">
+        <canvas id="canvas"> Your browser does not support the canvas element. </canvas>
+
+        <div id="tab-theme-root" data-theme="mac9">
             <div class="tab-container" id="tab-container" data-title="Panels"></div>
         </div>
 

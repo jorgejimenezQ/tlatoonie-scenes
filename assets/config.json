@@ -4,7 +4,11 @@
             {
                 "id": "knight",
                 "atlasPath": "/knight/knight_atlas.json",
-                "imagePath": "/knight/knight.png"
+                "imagePath": "/knight/knight.png",
+                "trimmedRect": {
+                    "width": 28,
+                    "height": 36
+                }
             },
             { "id": "tiles", "atlasPath": "/tiles/tiles_atlas.json", "imagePath": "/tiles/tiles.png" }
         ],

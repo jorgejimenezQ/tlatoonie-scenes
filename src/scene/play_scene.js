@@ -1,9 +1,79 @@
 import { Scene } from './scene';
 import { Vector } from 'vecti';
 import { EntityManager, Entity } from '../entityManager/entityManger';
-import { ActionEnums, ActionKeys, ActionTypes, ComponentTypes } from '../utils/enums';
+import {
+    ActionEnums,
+    ActionKeys,
+    ActionTypes,
+    ComponentTypes,
+    CustomEvents,
+    EntityTypes,
+    PlayerStates,
+    ScalePolicies,
+} from '../utils/enums';
 import { createComponent } from '../components/components';
 import { Animation } from '../animation/animation';
+import { getScaledSpriteSize } from '../utils/sprite';
+import playerStateCallbacks from '../playerStates';
+
+/**
+ * TODO: Refactor entity configs out into JSON files
+ *
+ * GOAL
+ * - Move hardcoded entity setup (player, tiles, NPCs, etc.) into data-driven JSON.
+ * - Keep code generic: read JSON → build components → spawn entities.
+ *
+ * FILE LAYOUT (proposed)
+ * - /assets/config.json                      → root index (lists packs/files, version)
+ * - /assets/entities/player.json             → a single entity archetype
+ * - /assets/entities/tile.json               → tile archetype(s)
+ * - /assets/entities/*.json                  → other archetypes
+ * - /assets/animations/*.json                → animation clips (or inside entity)
+ * - /assets/spritesheets/*.json              → atlas metadata (if not already)
+ *
+ * JSON SCHEMA (entity) – v1
+ * {
+ *   "version": 1,
+ *   "entityType": "PLAYER",                // maps to EntityTypes.*
+ *   "tag": "PLAYER",
+ *   "spawn": { "grid": [1,1] },            // or "world": [x,y]
+ *   "components": {
+ *     "CTransform": {
+ *       "position": { "x": 0, "y": 0 },   // CENTER in world space (source of truth)
+ *       "velocity": { "x": 5, "y": 3 },
+ *       "scale":    { "x": 1, "y": 1 },
+ *       "angle": 0
+ *     },
+ *     "CSprite": {
+ *       "sheetId": "knight",               // must exist in assets.spriteSheets
+ *       "frame":   "idle_000"
+ *     },
+ *     "CSpriteDimensions": {
+ *       "logical": { "x": 64, "y": 64 },   // original (incl. padding)
+ *       "trimmed": { "x": 16, "y": 16 }    // opaque area; optional, infer from atlas if missing
+ *     },
+ *     "CBoundingBox": {
+ *       "rectangle": { "x": 15, "y": 34 }, // unscaled logical bbox
+ *       "offset":    { "x": 0,  "y": 0 }   // logical units; scaled at runtime
+ *     },
+ *     "CAnimation": {
+ *       "clip": "idle",                    // default clip name
+ *       "clips": ["idle","walk","jump"],   // optional preloaded pool for this entity
+ *       "fps": 12,                         // default if clip lacks fps
+ *       "loop": true
+ *     },
+ *     "CInput": {},
+ *     "CState": { "current": "IDLE" },
+ *     "CPhysics": {
+ *       "horizontalSpeed": 5,
+ *       "jumpSpeed": 15,
+ *       "maxSpeed": 20,
+ *       "gravity": 1
+ *     }
+ *   }
+ * }
+ *
+ */
 
 //Player *1 1 64 64* 5 15 20 1 Buster
 /**
@@ -14,21 +84,65 @@ import { Animation } from '../animation/animation';
  *
  */
 class Play_Scene extends Scene {
+    /*
+     * TODO (anchors): Use CENTER as the single source of truth in CTransform.
+     *
+     * - Physics & interpolation operate on center (world space).
+     * - Rendering/UI need top-left → derive it from center + scaled logical size (+ scaled offsets).
+     * - Do NOT store both center and top-left; compute one from the other to avoid drift.
+     *
+     * Helpers:
+     * edit the current centeredBoundingRect method
+     *
+     * Tiles placed by top-left? Convert once at spawn:
+     *   transform.position = topLeftToCenter(tileTopLeft, scaledTileSize);
+     *
+     */
+
+    //TODO: refactor configs out into json files (entity)
     #playerConfig = {
         gridPos: new Vector(1, 1),
         boundingBox: new Vector(15, 34),
-        boundingBoxOffset: new Vector(5, 5),
-        horizontalSpeed: 5,
+        boundingBoxOffset: new Vector(0, 0),
+        horizontalSpeed: 200,
+        verticalSpeed: 200,
         jumpSpeed: 15,
         maxSpeed: 20,
         gravity: 1,
         spriteRectangle: new Vector(16, 16),
-        animation: 'walk',
+        animation: PlayerStates.IDLE,
         sprite: 'knight',
         initialPosition: new Vector(0, 0),
-        initialVelocity: new Vector(0, 0),
-        initialScale: new Vector(2, 2),
+        initialVelocity: new Vector(5, 3),
+        size: new Vector(64, 64),
+        initialScale: new Vector(26, 34),
     };
+
+    #entityConfig = {
+        [EntityTypes.PLAYER]: this.#playerConfig,
+        [EntityTypes.TILE]: {
+            gridPos: new Vector(1, 1),
+            boundingBox: null,
+            boundingBoxOffset: new Vector(0, 0),
+            horizontalSpeed: null,
+            jumpSpeed: 15,
+            maxSpeed: 20,
+            gravity: 1,
+            // spriteRectangle: new Vector(16, 16),
+            // animation: 'jump',
+            // sprite: 'knight',
+            // initialPosition: new Vector(0, 0),
+            // initialVelocity: new Vector(5, 3),
+            // size: new Vector(64, 64),
+            // initialScale: new Vector(26, 34),
+        },
+    };
+
+    #actionsQueue = [];
+
+    #playerAnimationMap = new Map();
+
+    #simTime = 0;
 
     #mapConfig = {
         tileSize: new Vector(64, 64),
@@ -45,6 +159,7 @@ class Play_Scene extends Scene {
     #pointerX = null;
     #pointerY = null;
     #camera = new Vector(0, 0);
+    #fallingThreshold = 1; // in seconds
 
     drawTexture = true;
 
@@ -70,67 +185,66 @@ class Play_Scene extends Scene {
         this.registerAction(ActionKeys.pointerDown, ActionEnums.CLICK);
         this.registerAction(ActionKeys.pointerMove, ActionEnums.POINTER_POSITION);
 
-        console.log('the tile map config');
-        console.log(this.#mapConfig);
         this.#mapConfig.numTiles = new Vector(
             this.gameEngine.logicalWidth / this.#mapConfig.tileSize.x,
             this.gameEngine.logicalHeight / this.#mapConfig.tileSize.y
         );
-        // this.#gridTiles = new Array(this.#mapConfig.numTiles);
 
+        // create a ready animation for each
+        console.log('create an animation pool for the player to re-use');
+        for (let anim of gameEngine.getAnimations().keys()) {
+            this.#playerAnimationMap.set(anim, new Animation(anim, gameEngine.getAnimation(anim), gameEngine));
+        }
+
+        console.log(this.#playerAnimationMap);
         this.#loadLevel();
     }
 
     #loadLevel() {
         this.entityManager = new EntityManager();
-
-        this.#player = this.entityManager.addEntity('player');
-
-        // animation
-        // TODO: Use configuration files to create the components
-        let animation = new Animation(
-            this.#playerConfig.animation,
-            this.gameEngine.getAnimations().get(this.#playerConfig.animation),
-            this.gameEngine
-        );
-
-        // animation
-        let cAnimation = createComponent(ComponentTypes.CAnimation, animation, true);
-        this.#player.addComponent(cAnimation, ComponentTypes.CAnimation);
-
-        // transform
-        let pos = this.#playerConfig.initialPosition;
-        let vel = this.#playerConfig.initialVelocity;
-        let scale = this.#playerConfig.initialScale;
-        let trans = createComponent(ComponentTypes.CTransform, pos, vel, scale);
-        trans;
-        let angle = 0;
-        let cTransform = createComponent(ComponentTypes.CTransform, pos, vel, scale, angle);
-        this.#player.addComponent(cTransform, ComponentTypes.CTransform);
-
-        // boundingBox
-        let cBoundingBox = createComponent(
-            ComponentTypes.CBoundingBox,
-            this.#playerConfig.boundingBox,
-            this.#playerConfig.boundingBoxOffset
-        );
-        this.#player.addComponent(cBoundingBox, ComponentTypes.CBoundingBox);
-
-        let cInput = createComponent(ComponentTypes.CInput);
-        this.#player.addComponent(cInput, ComponentTypes.CInput);
+        // TODO: Use configuration files to create the components and entities
 
         // sprite dimensions
         let spriteDimensions = this.gameEngine.getSpriteDimensions(this.#playerConfig.sprite);
+        let trimmedRect = this.gameEngine.getSpriteTrimmedRect(this.#playerConfig.sprite);
 
-        let cSpriteDimensions = createComponent(
-            ComponentTypes.CSpriteDimensions,
-            new Vector(spriteDimensions.w, spriteDimensions.h)
+        // initial transformations
+        let pos = this.#playerConfig.initialPosition;
+        let vel = new Vector(0, 0);
+        let scale = new Vector(
+            this.#playerConfig.size.x / trimmedRect.width,
+            this.#playerConfig.size.y / trimmedRect.height
+        );
+        let angle = 0;
+        let hSpeed = this.#playerConfig.horizontalSpeed;
+        let vSpeed = this.#playerConfig.verticalSpeed;
+
+        // animation
+        let animFrame = this.#playerStateToAnimation(this.#playerConfig.animation);
+        const animation = this.#playerAnimationMap.get(animFrame);
+        console.log('The initial animation', animation);
+
+        this.#player = this.#spawnEntity(
+            {
+                [ComponentTypes.CAnimation]: [animation, false],
+                [ComponentTypes.CSpriteDimensions]: [
+                    new Vector(spriteDimensions.w, spriteDimensions.h),
+                    new Vector(trimmedRect.width, trimmedRect.height),
+                ],
+                [ComponentTypes.CTransform]: [pos, vel, scale, angle, hSpeed, vSpeed],
+                [ComponentTypes.CBoundingBox]: [
+                    new Vector(trimmedRect.width, trimmedRect.height),
+                    this.#playerConfig.boundingBoxOffset,
+                ],
+                [ComponentTypes.CInput]: [],
+                [ComponentTypes.CState]: [PlayerStates.IDLE],
+            },
+            'PLAYER',
+            3,
+            4
         );
 
-        this.#player.addComponent(cSpriteDimensions, ComponentTypes.CSpriteDimensions);
-        // this.entityManager.addEntity('player', this.#player);
-
-        console.log('player', this.#player, this.#playerConfig);
+        console.log('player ', this.#player);
     }
 
     /**
@@ -142,10 +256,63 @@ class Play_Scene extends Scene {
 
     #spawnPlayer() {}
     #spawnBullet(entity) {}
-    #sMovement() {}
-    #sLifespan() {}
-    #sCollision() {}
-    #sAnimation() {}
+
+    /**********************************************************************
+     *  Systems
+     *********************************************************************/
+    /* Move the entity based on its current state */
+    #sMovement(entity, dt) {
+        let ctr = entity.getComponent(ComponentTypes.CTransform);
+        // Reset the current velocity and set based on the entity's current state
+        ctr.position = ctr.position.add(ctr.velocity.multiply(dt));
+    }
+    #sLifespan(entity) {}
+    #sAnimation(entity) {
+        // TODO: handle non repeating animations and state changes
+        const cst = entity.getComponent(ComponentTypes.CState);
+        const ctr = entity.getComponent(ComponentTypes.CTransform);
+        const ca = entity.getComponent(ComponentTypes.CAnimation);
+        let animFrame;
+        animFrame = this.#playerStateToAnimation(cst.current);
+        if (ca.animation.name !== animFrame) {
+            ca.animation = this.#playerAnimationMap.get(animFrame);
+            ca.animation.reset();
+        }
+    }
+
+    fixedUpdate(dt) {
+        if (this.paused) return;
+        this.#simTime += dt;
+
+        for (let entity of this.entityManager.getAllEntities()) {
+            this.#sMovement(entity, dt);
+            if (entity.getComponent(ComponentTypes.CAnimation)) this.#sAnimation(entity);
+            this.sActions();
+
+            // update the position of the bounding box
+            // entity.getComponent(ComponentTypes.CBoundingBox).center = entity.getComponent(
+            //     ComponentTypes.CTransform
+            // ).position;
+        }
+
+        let changed = this.entityManager.update();
+        if (changed)
+            this.gameEngine.dispatchEvent(
+                new CustomEvent(CustomEvents.ENTITIES.UPDATED, {
+                    detail: {
+                        count: this.entityManager.getAllEntities().length,
+                        entities: this.entityManager.getAllEntities(),
+                    },
+                })
+            );
+    }
+
+    onFrameEnd(elapsedTime, numUpdateSteps) {
+        for (let entity of this.entityManager.getAllEntities()) {
+            if (entity.getComponent(ComponentTypes.CAnimation))
+                entity.getComponent(ComponentTypes.CAnimation).animation.update(elapsedTime);
+        }
+    }
 
     async sRender(alpha) {
         if (this.paused) return;
@@ -153,117 +320,260 @@ class Play_Scene extends Scene {
         if (this.#drawGrid) this.#renderGridPattern(this.gameEngine.ctx);
 
         for (let entity of this.entityManager.getAllEntities()) {
-            let { sheetId, frame } = entity.getComponent(ComponentTypes.CAnimation).animation.getCurrentFrame();
             let transform = entity.getComponent(ComponentTypes.CTransform);
+            let bBox = entity.getComponent(ComponentTypes.CBoundingBox);
 
-            if (this.#drawCollisions) {
-                let bBoxRect = this.#centeredBoundingRect(entity);
-                this.gameEngine.drawRect(bBoxRect.topLeft, bBoxRect.size, 'rgba(205, 29, 41, 1)');
-            }
+            // show the bounding box
 
-            if (this.drawTexture) {
+            // show the sprite
+            if (this.drawTexture && entity.getComponent(ComponentTypes.CAnimation)) {
+                let { sheetId, frame } = entity.getComponent(ComponentTypes.CAnimation).animation.getCurrentFrame();
+                if (!transform.scale) {
+                    transform.scale = new Vector(1, 1);
+                }
                 await this.gameEngine.drawSprite(sheetId, frame, transform.position, transform.scale);
+                // await this.gameEngine.drawSprite(sheetId, frame, transform.position, new Vector(-1, 1));
+            } else if (this.drawTexture) {
+                let cSprite = entity.getComponent(ComponentTypes.CSprite);
+                if (!transform.scale) {
+                    transform.scale = new Vector(1, 1);
+                }
+                await this.gameEngine.drawSprite(cSprite.sheetId, cSprite.frame, transform.position, transform.scale);
             }
 
+            // show the center of the bounding box
             if (this.#drawCollisions) {
-                let bBoxRect = this.#centeredBoundingRect(entity);
-                this.gameEngine.drawCircleFilled(bBoxRect.center, 2, 'rgba(89, 255, 252, 1)');
+                this.gameEngine.drawRect(bBox.position, bBox.size, 'rgba(205, 29, 41, 1)');
+                this.gameEngine.drawCircleFilled(bBox.position, 2, 'rgba(89, 255, 252, 1)');
             }
         }
 
         if (this.#drawHoverTile && this.#pointerX && this.#pointerY) {
-            let gridX, gridY;
-            if (this.#pointerX > 0) {
-                gridX = (this.#pointerX / this.gameEngine.width) * this.#mapConfig.numTiles.x;
-            } else {
-                gridX = 0;
-            }
-            // this.gameEngine.drawRect();
+            let tile = this.#getTileUnderMouse();
+
+            this.gameEngine.drawRect(
+                new Vector(tile.x * this.#mapConfig.tileSize.x, tile.y * this.#mapConfig.tileSize.y),
+                this.#mapConfig.tileSize,
+                'rgba(145, 0, 0, 0.5)',
+                'rgba(243, 157, 95, 0.57)'
+            );
         }
     }
+
+    sCollision(entity) {
+        for (let other of this.entityManager.getAllEntities()) {
+            this.hasCollided(entity, other);
+        }
+    }
+
+    sActions() {
+        // The player's current state
+        let cState = this.#player.getComponent(ComponentTypes.CState);
+        let state_ = playerStateCallbacks.get(cState.current);
+
+        let action = this.actionsDequeue();
+        while (action) {
+            state_ = playerStateCallbacks.get(cState.current);
+            state_.handleAction(this.#player, action);
+            action = this.actionsDequeue();
+        }
+    }
+
     /**
-     * Updates the player's input according to the given action.
-     * If the action is a START type, it enables the corresponding input.
-     * If the action is an END type, it disables the corresponding input.
+     * Processes an immediate action.
+     * Immediate actions are processed immediately, and are not queued.
+     * This function is used to process actions that are not related to the player's state, such as mouse movements.
+     *
      * @param {Action} action - The action to process.
      */
-    sDoAction(action) {
-        let input = this.#player.getComponent(ComponentTypes.CInput);
-        let isStart = action.type == ActionTypes.START;
+    sDoActionImm(action) {
         switch (action.name) {
-            case ActionEnums.UP:
-                if (input.canJump) {
-                    input.up = isStart;
-                }
-                break;
-            case ActionEnums.LEFT:
-                input.left = isStart;
-                break;
-            case ActionEnums.RIGHT:
-                input.right = isStart;
-                break;
             case ActionEnums.POINTER_POSITION:
                 this.#pointerX = action.payload.x;
                 this.#pointerY = action.payload.y;
                 break;
             case ActionEnums.CLICK:
-                console.log('pointer down', action.payload);
                 this.#pointerX = action.payload.x;
                 this.#pointerY = action.payload.y;
+                // get grid coords
+                const coords = this.#getTileUnderMouse();
+                console.log(coords, { x: this.#pointerX, y: this.#pointerY });
                 break;
             default:
                 break;
         }
+    }
 
-        // console.log(this.#player.getComponent(ComponentTypes.CInput));
-    }
-    #onEnd() {
-        console.log('end');
-    }
-    #changePlayerStateTo(state) {}
+    sApplyGravity() {}
+
+    // #onEnd() {
+    //     console.log('end');
+    // }
+    // #changePlayerStateTo(state) {}
 
     setPaused(isPaused) {
         console.log('setPaused', isPaused);
         this.paused = isPaused;
     }
 
-    update(dt) {
-        if (this.paused) return;
-        this.#player.getComponent(ComponentTypes.CAnimation).animation.update();
-        this.entityManager.update();
+    /**
+     * Spawns an entity at the given grid coordinates with the given components.
+     * @param {Component[]} components - A map of component type to component arguments.
+     * @param {string} type - The type of entity to spawn.
+     * @param {number} gridX - The x coordinate in the grid.
+     * @param {number} gridY - The y coordinate in the grid.
+     */
+    placeSpriteEntityGrid(type, x = 0, y = 0, sheetId, frame) {
+        let dims = this.gameEngine.getSpriteDimensions(sheetId);
+        dims = new Vector(dims.w, dims.h);
+        let trimmedRect = this.gameEngine.getSpriteTrimmedRect(sheetId);
+        let hasTrimmedRect = trimmedRect != null;
+        if (trimmedRect) trimmedRect = new Vector(trimmedRect.width, trimmedRect.height);
+        else trimmedRect = new Vector(1, 1);
+
+        let scale = new Vector(this.#mapConfig.tileSize.x / dims.x, this.#mapConfig.tileSize.y / dims.y);
+        let pos = new Vector(x, y);
+        let gridPos = this.#worldToGrid(new Vector(x, y));
+        let components = {
+            [ComponentTypes.CSprite]: [sheetId, frame],
+            [ComponentTypes.CSpriteDimensions]: [dims, trimmedRect],
+            [ComponentTypes.CTransform]: [pos, new Vector(0, 0), scale, 0],
+            [ComponentTypes.CBoundingBox]: [hasTrimmedRect ? trimmedRect : dims, new Vector(0, 0)],
+        };
+        this.#spawnEntity(components, type, gridPos.x, gridPos.y);
     }
+
+    /**
+     * Adds an action to the end of the action queue.
+     * @param {Action} action - The action to add to the queue.
+     */
+    actionEnqueue(action) {
+        this.#actionsQueue.push(action);
+    }
+
+    /**
+     * Removes and returns the first action from the action queue.
+     * If the queue is empty, returns null.
+     * @returns {Action|null} The first action from the queue, or null if the queue is empty.
+     */
+    actionsDequeue() {
+        let action = this.#actionsQueue.shift();
+        if (action) return action;
+        return null;
+    }
+
+    /****************************************************************************
+     * GETTERS AND SETTERS
+     ***************************************************************************/
+
     /****************************************************************************
      * HELPER FUNCTIONS
      ***************************************************************************/
+    /**
+     *
+     * @param {number} gridX the x coordinate in the grid
+     * @param {number} gridY the y coordinate in the grid
+     * @returns
+     */
+    #gridToWorld(gridX, gridY) {
+        let worldX = gridX * this.#mapConfig.tileSize.x;
+        let worldY = gridY * this.#mapConfig.tileSize.y;
+        return new Vector(worldX, worldY);
+    }
 
-    #centeredBoundingRect(entity) {
+    #getTileUnderMouse() {
+        let gridX, gridY;
+        if (this.#pointerX > 0) {
+            gridX = (this.#pointerX / this.gameEngine.logicalWidth) * this.#mapConfig.numTiles.x;
+        } else {
+            gridX = 0;
+        }
+
+        if (this.#pointerY > 0) {
+            gridY = (this.#pointerY / this.gameEngine.logicalHeight) * this.#mapConfig.numTiles.y;
+        } else {
+            gridY = 0;
+        }
+
+        gridX = Math.floor(gridX);
+        gridY = Math.floor(gridY);
+        return this.#worldToGrid(new Vector(this.#pointerX, this.#pointerY));
+    }
+
+    #worldToGrid(worldPos) {
+        let gridX, gridY;
+        if (worldPos.x > 0) {
+            gridX = (worldPos.x / this.gameEngine.logicalWidth) * this.#mapConfig.numTiles.x;
+        } else {
+            gridX = 0;
+        }
+
+        if (worldPos.y > 0) {
+            gridY = (worldPos.y / this.gameEngine.logicalHeight) * this.#mapConfig.numTiles.y;
+        } else {
+            gridY = 0;
+        }
+
+        gridX = Math.floor(gridX);
+        gridY = Math.floor(gridY);
+        return new Vector(gridX, gridY);
+    }
+
+    #scaleBoundingRect(entity) {
         let transform = entity.getComponent(ComponentTypes.CTransform);
-        let spriteDims = entity.getComponent(ComponentTypes.CSpriteDimensions).dimensions;
-
-        // Get the bounding box
+        // / Get the bounding box
         let cBoundingBox = entity.getComponent(ComponentTypes.CBoundingBox);
         let bBoxRect = cBoundingBox.rectangle;
 
         // Scale the bounding box
-        bBoxRect = new Vector(bBoxRect.x * transform.scale.x, bBoxRect.y * transform.scale.y);
-        let halfSize = bBoxRect.divide(2);
+        let scaledRect = getScaledSpriteSize(bBoxRect, transform.scale, ScalePolicies.UNIFORM_Y, null);
+        let halfSize = scaledRect.divide(2);
 
-        // Find the center of the sprite and draw the collision box there
+        // Find the center and top left of the sprite
         let center = new Vector(
-            transform.position.x - halfSize.x + (spriteDims.x * transform.scale.x) / 2,
-            transform.position.y - halfSize.y + (spriteDims.y * transform.scale.y) / 2
+            transform.position.x - halfSize.x + scaledRect.x / 2,
+            transform.position.y - halfSize.y + scaledRect.y / 2
         );
 
-        center = center.add(cBoundingBox.offset);
-        let topLeft = center;
-        center = center.add(halfSize);
-        return { size: bBoxRect, topLeft, center };
+        // The collision box is offset from the sprite
+        // topLeft = topLeft.add(cBoundingBox.offset);
+
+        // center = topLeft.add(halfSize);
+        return { scaledRect, position: center };
+    }
+
+    #centerToTopLeft(entity) {
+        let cBoundingBox = entity.getComponent(ComponentTypes.CBoundingBox);
+        let transform = entity.getComponent(ComponentTypes.CTransform);
+    }
+
+    #centeredBoundingRect(entity) {
+        let transform = entity.getComponent(ComponentTypes.CTransform);
+        // / Get the bounding box
+        let cBoundingBox = entity.getComponent(ComponentTypes.CBoundingBox);
+        let bBoxRect = cBoundingBox.rectangle;
+
+        // Scale the bounding box
+        let scaledBox = getScaledSpriteSize(bBoxRect, transform.scale, ScalePolicies.UNIFORM_Y, null);
+        let halfSize = scaledBox.divide(2);
+
+        // Find the center and top left of the sprite
+        let center;
+        let topLeft = new Vector(
+            transform.position.x - halfSize.x + scaledBox.x / 2,
+            transform.position.y - halfSize.y + scaledBox.y / 2
+        );
+
+        // The collision box is offset from the sprite
+        topLeft = topLeft.add(cBoundingBox.offset);
+
+        center = topLeft.add(halfSize);
+        return { size: scaledBox, topLeft, center };
     }
 
     #renderGridPattern(ctx) {
         this.#ensureGridPattern();
         if (!this.#gridPattern) return;
-        // console.log('rendering grid pattern');
         const w = Math.max(0, this.gameEngine.logicalWidth | 0);
         const h = Math.max(0, this.gameEngine.logicalHeight | 0);
         const tsX = this.#mapConfig.tileSize.x | 0;
@@ -415,24 +725,44 @@ class Play_Scene extends Scene {
         this.#gridPatternTile = { x: tsX, y: tsY };
         this.#gridPatternDPR = dpr;
     }
+
+    #spawnEntity(components = {}, type, gridX = 0, gridY = 0) {
+        let entity = this.entityManager.addEntity(type);
+
+        for (let [componentType, args] of Object.entries(components)) {
+            entity.addComponent(createComponent(componentType, ...args), componentType);
+        }
+
+        let worldCoords = this.#gridToWorld(gridX, gridY);
+        entity.getComponent(ComponentTypes.CTransform).position = worldCoords;
+
+        let scaledBBox = this.#scaleBoundingRect(entity);
+
+        let bBox = entity.getComponent(ComponentTypes.CBoundingBox);
+        bBox.position = worldCoords;
+        bBox.size = scaledBBox.scaledRect;
+        console.log('spawn entity');
+        console.log(components);
+        // console.log(entity);
+        return entity;
+    }
+
+    #playerStateToAnimation(stateEnum) {
+        switch (stateEnum) {
+            case PlayerStates.WALKING.RIGHT:
+                return 'walk';
+            case PlayerStates.WALKING.LEFT:
+                return 'walk';
+            case PlayerStates.JUMPING:
+                return 'jump';
+            case PlayerStates.ATTACKING.ONE:
+                return 'attack_1';
+            case PlayerStates.ATTACKING.TWO:
+                return 'attack_2';
+            case PlayerStates.IDLE:
+                return 'idle';
+        }
+    }
 }
 
 export { Play_Scene };
-
-// drawSprite
-// Object { x: 192, y: 168 }
-// Object ​
-// {
-//   "size": {
-//     "x": 30,
-//     "y": 68
-//   },
-//   "topLeft": {
-//     "x": 86,
-//     "y": 55
-//   },
-//   "center": {
-//     "x": 101,
-//     "y": 89
-//   }
-// }

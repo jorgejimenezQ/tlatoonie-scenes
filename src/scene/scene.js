@@ -48,16 +48,12 @@ class Scene extends EventTarget {
         this.width = gameEngine.width;
     }
 
-    update(dt) {
-        throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
-    }
-
     /**
      * Handle an action as specified by the action map.
      *
      * @param {Action} action - the action to handle
      */
-    sDoAction(action) {
+    sQueue(action) {
         throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
     }
 

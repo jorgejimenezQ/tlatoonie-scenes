@@ -1,5 +1,5 @@
 import { Vector } from 'vecti';
-import { Interpolations, ComponentTypes } from '../utils/enums';
+import { Interpolations, ComponentTypes, PlayerStates } from '../utils/enums';
 
 class Component {
     exists = false;
@@ -19,23 +19,27 @@ class Interpolation extends Component {
 
 class SpriteDimensions extends Component {
     dimensions = new Vector(0.0, 0.0);
-
+    trimmedRect = new Vector(0.0, 0.0);
     /**
      * Constructor for SpriteDimensions.
      * @param {Vector} rectangle - The sprite's initial size.
      */
-    constructor(dimensions) {
+    constructor(dimensions, trimmedRectangle) {
         super();
         this.dimensions = dimensions;
+        this.trimmedRect = trimmedRectangle;
     }
 }
 
 class Transform extends Component {
     position = new Vector(0.0, 0.0);
-    prevPos = new Vector(0.0, 0.0);
     velocity = new Vector(0.0, 0.0);
+    acceleration = new Vector(0.0, 0.0);
+    prevPos = new Vector(0.0, 0.0);
     scale = new Vector(1.0, 1.0);
     angle = 0.0;
+    hSpeed = 0;
+    vSpeed = 0;
 
     /**
      * Constructor for Transform.
@@ -44,13 +48,15 @@ class Transform extends Component {
      * @param {Vector} scale - The initial scale of the component.
      * @param {number} angle - The initial angle of the component.
      */
-    constructor(position, velocity, scale, angle) {
+    constructor(position, velocity, scale, angle, hSpeed, vSpeed) {
         super();
 
         this.position = position;
         this.velocity = velocity;
         this.scale = scale;
         this.angle = angle;
+        this.hSpeed = hSpeed;
+        this.vSpeed = vSpeed;
     }
 }
 
@@ -71,21 +77,52 @@ class Input extends Component {
     down = false;
     left = false;
     right = false;
-    shoot = false;
-    canShoot = false;
-    canJump = false;
+    attack = false;
+    isStart = false;
+    isEnd = false;
 }
 
 class BoundingBox extends Component {
+    /**
+     * Constructor for BoundingBox.
+     * @param {Vector} rectangle - The bounding box's initial size.
+     */
     rectangle = new Vector(0, 0);
+
+    /**
+     * Constructor for BoundingBox.
+     * @param {Vector} rectangle - The bounding box's initial size.
+     */
     halfSize = new Vector(0, 0);
+
+    /**
+     * Constructor for BoundingBox.
+     * @param {Vector} rectangle - The bounding box's initial size.
+     */
     offset = new Vector(0, 0);
 
-    constructor(rectangle, offset) {
+    /**
+     * Constructor for BoundingBox.
+     * @param {Vector} rectangle - The bounding box's initial size.
+     */
+    topLeft = null;
+    position = null;
+    size_ = null;
+
+    constructor(rectangle, offset, topLeft, center, size) {
         super();
         this.rectangle = rectangle;
-        this.halfSize = this.rectangle.divide(2);
         this.offset = offset;
+        this.halfSize = this.rectangle.divide(2);
+    }
+
+    get size() {
+        return this.size_ || this.rectangle;
+    }
+
+    set size(size) {
+        this.rectangle = size;
+        this.halfSize = size.divide(2);
     }
 }
 
@@ -102,7 +139,7 @@ class Animation extends Component {
 
 class Gravity extends Component {
     gravity = 0;
-
+    fallingThreshold;
     constructor(gravity) {
         super();
 
@@ -111,22 +148,45 @@ class Gravity extends Component {
 }
 
 class State extends Component {
-    current = 'null';
-    previous = 'null';
+    /**
+     * The current state of the player
+     *
+     * @type {PlayerStates}
+     *
+     */
+    #current_ = 'null';
+    previous_ = 'null';
     changeAnimation = false;
+    canJump = true;
 
     constructor(state) {
         super();
-        this.current = state;
-        this.previous = state;
+        this.#current_ = state;
+        this.previous_ = state;
+    }
+
+    /**
+     * Set the current state of the player.
+     * This will also set the previous state to the current state.
+     * @param {PlayerStates} state - The new state of the player.
+     */
+    set current(state) {
+        this.previous_ = this.#current_;
+        this.#current_ = state;
+    }
+
+    get current() {
+        return this.#current_;
     }
 }
 
 class Sprite extends Component {
-    atlasKey = '';
-    constructor(atlasKey) {
+    sheetId;
+    frame;
+    constructor(sheetId, frame) {
         super();
-        this.atlasKey = atlasKey;
+        this.sheetId = sheetId;
+        this.frame = frame;
     }
 }
 
@@ -156,7 +216,7 @@ const createComponent = (componentType, ...args) => {
         case ComponentTypes.CGravity:
             return new Gravity(...args);
         case ComponentTypes.CInput:
-            return new Input(...args);
+            return new Input();
         case ComponentTypes.CInterpolation:
             return new Interpolation(...args);
         case ComponentTypes.CLifespan:
@@ -167,18 +227,9 @@ const createComponent = (componentType, ...args) => {
             return new Transform(...args);
         case ComponentTypes.CSpriteDimensions:
             return new SpriteDimensions(...args);
+        case ComponentTypes.CSprite:
+            return new Sprite(...args);
     }
 };
 
-export {
-    Transform,
-    Lifespan,
-    Input,
-    BoundingBox,
-    Animation,
-    Gravity,
-    State,
-    Interpolation,
-    createComponent,
-    SpriteDimensions,
-};
+export { createComponent };

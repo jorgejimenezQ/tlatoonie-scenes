@@ -63,18 +63,25 @@ src/
     scene.js
   ui/
     buttons/
+      entityList/
+        entities.template.html
+        entity.base.css
       button.js
     dock/
       dock.css
       dock.js
     tabs/
+      createTabs.js
+      repomix-output.xml
       tabs-retro.css
       tabs.base.css
       tabs.js
       theme-crt.css
+      theme-light.css
       theme-mac9.css
       theme-synthwave.css
       theme-win95.css
+    entities.template.html
   utils/
     enums.js
     events.js
@@ -86,12 +93,1794 @@ src/
   counter.js
   editor.js
   main.js
+  playerStates.js
 .gitignore
 index.html
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="src/ui/buttons/entityList/entities.template.html">
+<template id="entityItemTemplate">
+    <li class="entity-card" data-entity-id="">
+        <article>
+            <header class="entity-header">
+                <strong>
+                    <span data-entity-tag></span>
+                    <span>#<span data-entity-id></span></span>
+                </strong>
+                <small>
+                    <label>
+                        <input type="checkbox" data-field="active" />
+                        active
+                    </label>
+                </small>
+            </header>
+        </article>
+    </li>
+</template>
+</file>
+
+<file path="src/ui/buttons/entityList/entity.base.css">
+/* ===== Entity Editor (template styles) ===== */
+
+/* Light/Dark palette */
+:root {
+    --bg: #ffffff;
+    --panel: #f6f7fb;
+    --card: #ffffff;
+    --text: #16191e;
+    --input-text: #1c1f24;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #3b82f6;
+    --accent-contrast: #ffffff;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.06);
+    --input-bg: #eff2f6;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --green: #16a34a;
+    --yellow: #f59e0b;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #0f1115;
+        --panel: #151922;
+        --card: #0f141b;
+        --text: #e5e7eb;
+        --input-text: #1c1f24;
+        --muted: #9aa3b2;
+        --border: #1f2530;
+        --accent: #60a5fa;
+        --accent-contrast: #0b1020;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 18px rgba(0, 0, 0, 0.35);
+    }
+}
+
+/* Card (the <li> root in the template) */
+.entity-card {
+    list-style: none;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+    margin: 10px 0;
+}
+
+/* Header */
+.entity-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.entity-header strong {
+    font-size: 14px;
+    font-weight: 700;
+    display: inline-flex;
+    gap: 8px;
+}
+
+.entity-header small {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.entity-header input[type='checkbox'] {
+    vertical-align: middle;
+    accent-color: var(--accent);
+}
+
+/* Component sections */
+.component {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    background: var(--panel);
+    margin: 10px 0 0;
+}
+
+.component h4 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+}
+
+/* Forms */
+.component-form {
+    display: grid;
+    gap: 10px;
+}
+
+/* Row = responsive field group */
+.row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(100px, 1fr));
+    gap: 10px;
+}
+
+@media (max-width: 520px) {
+    .row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Labels & inputs */
+.input-container {
+    /* 
+    the label and input wrapper should be side-by-side
+    */
+    display: grid;
+    gap: 6px;
+    grid-template-columns: auto 1fr;
+}
+/*  colors  */
+
+.text-red {
+    color: var(--red);
+}
+
+.text-green {
+    color: rgb(99, 255, 99);
+}
+
+.text-blue {
+    color: rgb(99, 99, 255);
+}
+
+.icon-large {
+    font-size: large;
+}
+
+.text-yellow {
+    color: rgb(255, 255, 99);
+    font-size: large;
+}
+
+label {
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* input.hidden {
+    display: none;
+} */
+.value-hidden {
+    display: none;
+}
+input[type='number'],
+input[type='text'] {
+    max-width: 60px;
+    max-height: 32px;
+    box-sizing: border-box;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: var(--input-bg);
+    color: var(--input-text);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type='number']:focus,
+input[type='text']:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 25%, transparent);
+}
+
+/* Checkboxes in rows */
+.row .checkbox,
+label.checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+}
+
+input[type='checkbox'] {
+    accent-color: var(--accent);
+}
+
+/* Actions */
+.actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 6px;
+}
+
+.actions button {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.05s ease;
+}
+
+.actions button[data-action='delete-component'] {
+    border: none;
+}
+
+.actions button[data-action='refresh-component'] {
+    background-color: var(--green);
+    color: var(--accent-contrast);
+}
+
+.actions button:hover {
+    border-color: var(--accent);
+}
+
+.actions button[data-action='save-component'] {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border-color: var(--accent);
+}
+
+.actions button:active {
+    transform: translateY(1px);
+}
+
+/* Utility: tighten vertical rhythm between components */
+.component + .component {
+    margin-top: 12px;
+}
+</file>
+
+<file path="src/ui/tabs/createTabs.js">
+import { Tabs } from './tabs';
+import { ComponentTypes, CustomEvents, PlayerStates } from '../../utils/enums';
+import { GameEngine } from '../../gameEngine/gameEngine';
+import { EntityManager } from '../../entityManager/entityManger';
+
+/**
+ * Creates the default tabs for the editor.
+ * @param {Tab} tab - an object with the following properties:
+ *   id: string, title: string, icon?: string, tooltip?: string,
+ *   closable?: boolean, badge?: string|number,
+ *   mount?: (root: HTMLElement)=>void, unmount?: (root: HTMLElement)=>void,
+ *   onShow?: (root: HTMLElement)=>void, onHide?: (root: HTMLElement)=>void,
+ *   active?: boolean
+ * @param {GameEngine} gameEngine - The game engine
+ * @param {Object} payload - an object containing the EntityManager instance
+ * @param {EntityManager} payload.entityManager - The entity manager instance
+ * @returns {Tabs} - the created tabs instance
+ */
+function createTabs(tab, gameEngine, payload) {
+    tab.addTab({
+        id: 'entities',
+        title: 'Entities',
+        icon: '️🧸',
+        tooltip: 'Browse & Edit Entities',
+        active: true,
+        // closable: true,
+        async mount(root) {
+            // Entity manager
+            // let entityManager = payload.entityManager;
+            root.innerHTML = `
+            <!-- List -->
+            <ul class="entity-list" id="entityList" aria-live="polite">
+                <!-- Filled dynamically -->
+            </ul>`;
+
+            const onUpdate = ({ detail }) => {
+                detail.entities.forEach((entity) => {
+                    console.log(entity);
+                    const tr = entity.getComponent(ComponentTypes.CTransform);
+                    const st = entity.getComponent(ComponentTypes.CState);
+
+                    let stOptions = '';
+                    for (let option of Object.values(PlayerStates)) {
+                        stOptions += `<option value="${option}">${option}</option>`;
+                    }
+
+                    let elEntity = `<li class="entity-card" data-entity-id="">
+                    <article>
+                        <header class='entity-header'>
+                            <strong>
+                                <span data-entity-tag>${entity.tag}</span>
+                                <span>(entity id#<span data-entity-id> ${entity.id})</span></span>
+                            </strong>
+                            <small>
+                                <label>
+                                    <input type="checkbox" data-field="active" checked="${entity.isActive()}" />
+                                </label>
+                            </small>
+                        </header>
+
+                        <!-- CTransform (simplified) -->
+                        <section class="component" data-component="CTransform">
+                            <h4>Transform</h4>
+                            <form data-component-form="CTransform">
+                                <div class="row">
+                                        <label>x <input class="hidden" type="number" step="0.01" data-field="position.x" value="${
+                                            tr.position.x
+                                        }" /></label>
+                                        <label>y <input class="hidden" type="number" step="0.01" data-field="position.y" value="${
+                                            tr.position.y
+                                        }" /></label>
+                                        <label>vx <input class="hidden" type="number" step="0.01" data-field="velocity.x" value="${
+                                            tr.velocity.x
+                                        }" /></label>
+                                        <label>vy <input class="hidden" type="number" step="0.01" data-field="velocity.y" value="${
+                                            tr.velocity.y
+                                        }" /></label>
+                                </div>
+                                <div class="row">
+                                    <label>sx <input class="hidden" type="number" step="0.01" data-field="scale.x" value="${
+                                        tr.scale.x
+                                    }" /></label>
+                                    <label>sy <input class="hidden" type="number" step="0.01" data-field="scale.y" value="${
+                                        tr.scale.y
+                                    }" /></label>
+                                    <label>rot° <input class="hidden" type="number" step="0.1" data-field="rotation" value="${
+                                        tr.angle
+                                    }"  /></label>
+                                    <label>grounded<input class="hidden" type="checkbox" data-field="grounded" checked="${
+                                        tr.grounded
+                                    }" /> </label>
+                                </div>
+                            </div>
+                            </form>
+                        </section>
+
+                        <!-- CState (simplified) -->
+                        <section class="component" data-component="CState">
+                            <h4>State</h4>
+                            <form data-component-form="CState">
+                                <div class="row">
+                                    <label>current
+                                    <select data-field="current">
+                                    ${stOptions}
+                                    </select>
+                                    </label>
+                                </div>
+                                <div class="row">
+                                    <label>previous <input type="text" data-field="previous" value="${
+                                        st.previous
+                                    } /> </label>
+                                </div>
+                                <div class="row">
+                                    <label><input type="checkbox" data-field="canJump" checked="${
+                                        st.canJump
+                                    }" /> canJump</label>
+                                </div>
+                            </form>
+                        </section>
+                        <section>
+                                <div class="actions">
+                                    <button type="submit" data-action="save-component">Save</button>
+                                    <button type="submit" data-action="refresh-component">Refresh</button>
+                                    <button type="submit" data-action="delete-component"><i class="iconoir-xmark-circle-solid text-red icon-large"></i></button>
+                        </section>
+                    </article>
+                    </li>`;
+
+                    $('#entityList').append(elEntity);
+                });
+            };
+
+            gameEngine.addEventListener(CustomEvents.ENTITIES.UPDATED, onUpdate);
+        },
+    });
+    // Sprites panel
+    tab.addTab({
+        id: 'sprites',
+        title: 'Sprites',
+        icon: '🖼️',
+        tooltip: 'Browse sprites',
+        active: false,
+        // closable: true,
+
+        async mount(root) {
+            root.innerHTML = `
+        <div class="panel-row">
+            <div><label>Filter</label><input id="spriteFilter" placeholder="name"></div>
+            <div id="spriteGrid" style="display:grid;grid-template-columns:repeat(auto-fill,72px);margin-top:10px;"></div>
+        </div>`;
+
+            async function loadSprites() {
+                try {
+                    let spriteBlob = [];
+                    const sheets = gameEngine.assets.spriteSheets;
+                    for (let sheetId of sheets.keys()) {
+                        const sheet = sheets.get(sheetId);
+                        for (let i = 0; i < sheet.frames.length; i++) {
+                            const frame = sheet.frames[i].frame;
+                            const osCanvas = new OffscreenCanvas(frame.w, frame.h);
+                            const ctx2d = osCanvas.getContext('2d');
+                            ctx2d.imageSmoothingEnabled = false;
+                            const bmp = await gameEngine.spriteCache.get(
+                                sheet.image,
+                                frame.x,
+                                frame.y,
+                                frame.w,
+                                frame.h,
+                                'none'
+                            );
+
+                            ctx2d.drawImage(bmp, 0, 0);
+                            const blob = await osCanvas.convertToBlob({ type: 'image/png' });
+
+                            spriteBlob.push({
+                                url: URL.createObjectURL(blob),
+                                sheetId: sheetId,
+                                sheet,
+                                frame: sheet.frames[i],
+                            });
+                        }
+                    }
+                    return spriteBlob;
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            const elSpriteGrid = $('#spriteGrid');
+            const blobs = await loadSprites();
+            console.log(blobs);
+            for (let blob of blobs) {
+                const box = document.createElement('div');
+                box.style.width = '100%';
+                box.style.aspectRatio = '1 / 1';
+                box.style.display = 'grid';
+                box.style.placeItems = 'center';
+                box.style.background = 'var(--ui-bg-muted, rgba(0,0,0,.04))';
+                box.style.border = '1px solid var(--ui-border, rgba(0,0,0,.12))';
+                box.style.borderRadius = '6px';
+                box.style.cursor = 'pointer';
+
+                const img = new Image();
+                img.src = blob.url;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.imageRendering = 'pixelated';
+                img.style.objectFit = 'fill';
+                img.style.objectPosition = 'center';
+                img.decoding = 'async';
+                img.loading = 'lazy';
+                box.appendChild(img);
+                elSpriteGrid.append(box);
+
+                // console.log('event', { sheetId: blob.key, sheet: blob.sheet });
+                box.addEventListener('click', (e) => {
+                    gameEngine.width;
+                    // console.log('event', { sheetId: blob.key, sheet: blob.sheet, frame: blob.frame });
+                    gameEngine.dispatchEvent(
+                        new CustomEvent(CustomEvents.SPRITE.SELECT, {
+                            detail: {
+                                sheetId: blob.sheetId,
+                                sheet: blob.sheet,
+                                frame: blob.frame,
+                            },
+                        })
+                    );
+                });
+            }
+        },
+        onShow(root) {
+            /* refresh if needed */
+        },
+    });
+
+    // Animations panel
+    tab.addTab({
+        id: 'animations',
+        title: 'Animations',
+        icon: '🎞️',
+        tooltip: 'Browse animations',
+        mount(root) {
+            root.innerHTML = `
+        <div>
+            <button id="btnPlay">Play</button>
+            <button id="btnPause">Pause</button>
+            <div id="animPreview" style="height:160px;border:1px solid var(--ui-border);margin-top:8px;border-radius:8px;"></div>
+        </div>`;
+            // Hook your engine’s preview canvas here…
+        },
+    });
+
+    tab.addTab({
+        id: 'actions',
+        title: 'Actions',
+        icon: '⚙️',
+        tooltip: 'Browse actions',
+        mount(root) {
+            root.innerHTML = `
+        <div>
+            <button id="btnPlay">Play</button>
+            <button id="btnPause">Pause</button>
+            <div id="animPreview" style="height:160px;border:1px solid var(--ui-border);margin-top:8px;border-radius:8px;"></div>
+        </div>`;
+            // Hook your engine’s preview canvas here...
+        },
+    });
+
+    // Tiles panel
+    tab.addTab({
+        id: 'tiles',
+        title: 'Tiles',
+        icon: '🧱',
+        badge: 0,
+        tooltip: 'Tile editor',
+        mount(root) {
+            root.innerHTML = `<div id="tileset" style="display:flex; gap:10px;">
+        <canvas id="tilesetCanvas" width="256" height="256" style="border:1px solid var(--ui-border)"></canvas>
+        <div>
+            <label>Brush Size</label>
+            <select id="brush"><option>1×1</option><option>2×2</option><option>3×3</option></select>
+            <div style="margin-top:8px"><button id="place">Place</button> <button id="erase">Erase</button></div>
+        </div>
+        </div>`;
+        },
+    });
+
+    // Listen to tab lifecycle if you need cross-module behavior
+    tab.addEventListener('tab:select', (e) => {
+        // e.detail.id -> 'sprites' | 'animations' | 'tiles'
+    });
+}
+
+export { createTabs };
+</file>
+
+<file path="src/ui/tabs/repomix-output.xml">
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: .vscode/*, ./assets/*, **/*.json, **/*.svg, **/*.png
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+createTabs.js
+tabs-retro.css
+tabs.base.css
+tabs.js
+theme-crt.css
+theme-light.css
+theme-mac9.css
+theme-synthwave.css
+theme-win95.css
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="createTabs.js">
+import { Tabs } from './tabs';
+import { CustomEvents } from '../../utils/enums';
+
+/**
+ * Creates the default tabs for the editor.
+ * @param {Tab} tab - an object with the following properties:
+ *   id: string, title: string, icon?: string, tooltip?: string,
+ *   closable?: boolean, badge?: string|number,
+ *   mount?: (root: HTMLElement)=>void, unmount?: (root: HTMLElement)=>void,
+ *   onShow?: (root: HTMLElement)=>void, onHide?: (root: HTMLElement)=>void,
+ *   active?: boolean
+ * @returns {Tabs} - the created tabs instance
+ */
+function createTabs(tab, gameEngine) {
+    // Sprites panel
+    tab.addTab({
+        id: 'sprites',
+        title: 'Sprites',
+        icon: '🖼️',
+        tooltip: 'Browse sprites',
+        active: true,
+        // closable: true,
+
+        async mount(root) {
+            root.innerHTML = `
+        <div class="panel-row">
+            <div><label>Filter</label><input id="spriteFilter" placeholder="name"></div>
+            <div id="spriteGrid" style="display:grid;grid-template-columns:repeat(auto-fill,72px);margin-top:10px;"></div>
+        </div>`;
+
+            async function loadSprites() {
+                try {
+                    let spriteBlob = [];
+                    const sheets = gameEngine.assets.spriteSheets;
+                    for (let sheetId of sheets.keys()) {
+                        const sheet = sheets.get(sheetId);
+                        for (let i = 0; i < sheet.frames.length; i++) {
+                            const frame = sheet.frames[i].frame;
+                            const osCanvas = new OffscreenCanvas(frame.w, frame.h);
+                            const ctx2d = osCanvas.getContext('2d');
+                            ctx2d.imageSmoothingEnabled = false;
+                            const bmp = await gameEngine.spriteCache.get(
+                                sheet.image,
+                                frame.x,
+                                frame.y,
+                                frame.w,
+                                frame.h,
+                                'none'
+                            );
+
+                            ctx2d.drawImage(bmp, 0, 0);
+                            const blob = await osCanvas.convertToBlob({ type: 'image/png' });
+
+                            spriteBlob.push({
+                                url: URL.createObjectURL(blob),
+                                sheetId: sheetId,
+                                sheet,
+                                frame: sheet.frames[i],
+                            });
+                        }
+                    }
+                    return spriteBlob;
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            const elSpriteGrid = $('#spriteGrid');
+            const blobs = await loadSprites();
+            console.log(blobs);
+            for (let blob of blobs) {
+                const box = document.createElement('div');
+                box.style.width = '100%';
+                box.style.aspectRatio = '1 / 1';
+                box.style.display = 'grid';
+                box.style.placeItems = 'center';
+                box.style.background = 'var(--ui-bg-muted, rgba(0,0,0,.04))';
+                box.style.border = '1px solid var(--ui-border, rgba(0,0,0,.12))';
+                box.style.borderRadius = '6px';
+                box.style.cursor = 'pointer';
+
+                const img = new Image();
+                img.src = blob.url;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.imageRendering = 'pixelated';
+                img.style.objectFit = 'fill';
+                img.style.objectPosition = 'center';
+                img.decoding = 'async';
+                img.loading = 'lazy';
+                box.appendChild(img);
+                elSpriteGrid.append(box);
+
+                // console.log('event', { sheetId: blob.key, sheet: blob.sheet });
+                box.addEventListener('click', (e) => {
+                    gameEngine.width;
+                    // console.log('event', { sheetId: blob.key, sheet: blob.sheet, frame: blob.frame });
+                    gameEngine.dispatchEvent(
+                        new CustomEvent(CustomEvents.SPRITE.SELECT, {
+                            detail: {
+                                sheetId: blob.sheetId,
+                                sheet: blob.sheet,
+                                frame: blob.frame,
+                            },
+                        })
+                    );
+                });
+            }
+        },
+        onShow(root) {
+            /* refresh if needed */
+        },
+    });
+
+    // Animations panel
+    tab.addTab({
+        id: 'animations',
+        title: 'Animations',
+        icon: '🎞️',
+        tooltip: 'Browse animations',
+        mount(root) {
+            root.innerHTML = `
+        <div>
+            <button id="btnPlay">Play</button>
+            <button id="btnPause">Pause</button>
+            <div id="animPreview" style="height:160px;border:1px solid var(--ui-border);margin-top:8px;border-radius:8px;"></div>
+        </div>`;
+            // Hook your engine’s preview canvas here…
+        },
+    });
+
+    tab.addTab({
+        id: 'actions',
+        title: 'Actions',
+        icon: '⚙️',
+        tooltip: 'Browse actions',
+        mount(root) {
+            root.innerHTML = `
+        <div>
+            <button id="btnPlay">Play</button>
+            <button id="btnPause">Pause</button>
+            <div id="animPreview" style="height:160px;border:1px solid var(--ui-border);margin-top:8px;border-radius:8px;"></div>
+        </div>`;
+            // Hook your engine’s preview canvas here...
+        },
+    });
+
+    // Tiles panel
+    tab.addTab({
+        id: 'tiles',
+        title: 'Tiles',
+        icon: '🧱',
+        badge: 0,
+        tooltip: 'Tile editor',
+        mount(root) {
+            root.innerHTML = `<div id="tileset" style="display:flex; gap:10px;">
+        <canvas id="tilesetCanvas" width="256" height="256" style="border:1px solid var(--ui-border)"></canvas>
+        <div>
+            <label>Brush Size</label>
+            <select id="brush"><option>1×1</option><option>2×2</option><option>3×3</option></select>
+            <div style="margin-top:8px"><button id="place">Place</button> <button id="erase">Erase</button></div>
+        </div>
+        </div>`;
+        },
+    });
+
+    // Listen to tab lifecycle if you need cross-module behavior
+    tab.addEventListener('tab:select', (e) => {
+        // e.detail.id -> 'sprites' | 'animations' | 'tiles'
+    });
+}
+
+export { createTabs };
+</file>
+
+<file path="tabs-retro.css">
+/* ==== RETRO (Win95/98) TAB THEME ======================================= */
+/* Palette + metrics */
+.tab-container {
+    --retro-bg: #c0c0c0; /* classic dialog gray */
+    --retro-face: #dcdcdc; /* raised face */
+    --retro-dark: #808080; /* dark edge */
+    --retro-darker: #404040; /* shadow edge */
+    --retro-light: #ffffff; /* light edge */
+    --retro-text: #000000;
+    --retro-accent: #000080; /* Win95 blue */
+    --retro-hover: #e8e8e8;
+    --retro-active: #b8b8b8;
+    --retro-font: 'Tahoma', 'MS Sans Serif', system-ui, sans-serif;
+
+    color: var(--retro-text);
+    background: var(--retro-bg);
+    border: 2px solid var(--retro-dark);
+    /* 3D raised frame */
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light),
+        inset -2px -2px 0 var(--retro-darker), inset 2px 2px 0 var(--retro-face);
+    border-radius: 0;
+    overflow: hidden;
+    font-family: var(--retro-font);
+}
+
+/* subtle dithered plastic feel */
+.tab-container::before {
+    content: '';
+    display: block;
+    height: 18px;
+    background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.18) 0 2px, rgba(255, 255, 255, 0) 2px 4px);
+    border-bottom: 1px solid var(--retro-dark);
+}
+
+/* ===== Tabs header row (toolbar strip) */
+.tab-container .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: var(--retro-bg);
+    border-bottom: 2px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+.tab-container .tabs::-webkit-scrollbar {
+    height: 12px;
+}
+.tab-container .tabs::-webkit-scrollbar-thumb {
+    background: var(--retro-dark);
+    border: 2px solid var(--retro-bg);
+}
+
+/* ===== Tab buttons (raised, beveled) */
+.tab-links {
+    position: relative;
+    appearance: none;
+    border: 2px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light),
+        inset -2px -2px 0 var(--retro-darker), inset 2px 2px 0 var(--retro-face);
+    background: var(--retro-face);
+    color: var(--retro-text);
+    padding: 4px 10px 3px;
+    border-radius: 0;
+    font: 12px/1 var(--retro-font);
+    cursor: default;
+    white-space: nowrap;
+}
+.tab-links:hover {
+    background: var(--retro-hover);
+}
+
+.tab-links:focus-visible {
+    outline: 1px dotted var(--retro-text);
+    outline-offset: -4px;
+}
+
+/* Active tab: pressed look + top border merges with content */
+.tab-links.active {
+    background: var(--retro-active);
+    /* invert bevel for pressed */
+    box-shadow: inset -1px -1px 0 var(--retro-light), inset 1px 1px 0 var(--retro-dark),
+        inset -2px -2px 0 var(--retro-face), inset 2px 2px 0 var(--retro-darker);
+    border-bottom-color: var(--retro-active);
+}
+.tab-links.active::after {
+    /* tiny accent line like selected title bar */
+    content: '';
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    top: 1px;
+    height: 2px;
+    background: var(--retro-accent);
+}
+
+/* Optional close button if you have one */
+.tab-close {
+    margin-left: 8px;
+    width: 14px;
+    height: 14px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
+    background: var(--retro-face);
+    color: var(--retro-text);
+    font: 12px/1 var(--retro-font);
+    padding: 0;
+}
+.tab-close:hover {
+    background: var(--retro-hover);
+}
+
+/* ===== Panels (sunken 3D client area) */
+.tab-content {
+    display: none;
+    background: var(--retro-face);
+    padding: 10px;
+    min-height: 220px;
+
+    /* sunken panel look */
+    border-top: 2px solid var(--retro-light);
+    box-shadow: inset 1px 1px 0 var(--retro-light), inset -1px -1px 0 var(--retro-dark),
+        inset 2px 2px 0 var(--retro-face), inset -2px -2px 0 var(--retro-darker);
+}
+.tab-content.active {
+    display: block;
+}
+
+/* Retro form bits inside panels */
+.tab-content button,
+.tab-content input,
+.tab-content select {
+    font: 12px/1 var(--retro-font);
+    color: var(--retro-text);
+    background: var(--retro-face);
+    border: 2px solid var(--retro-dark);
+    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
+    border-radius: 0;
+    padding: 3px 6px;
+}
+.tab-content button:hover {
+    background: var(--retro-hover);
+}
+.tab-content button:active {
+    box-shadow: inset -1px -1px 0 var(--retro-light), inset 1px 1px 0 var(--retro-dark);
+    background: var(--retro-active);
+}
+
+/* If you show icons/emoji in tab labels, keep them crisp */
+.tab-links .tab-icon {
+    image-rendering: pixelated;
+}
+</file>
+
+<file path="tabs.base.css">
+/* tabs.base.css */
+.tab-container {
+    font-family: system-ui, Segoe UI, Roboto, sans-serif;
+    color: var(--ui-text);
+    background: var(--ui-surface);
+    border: var(--ui-border-width, 1px) solid var(--ui-border);
+    border-radius: var(--ui-radius, 8px);
+    box-shadow: var(--ui-shadow, none);
+    overflow: hidden;
+    cursor: grab;
+    min-width: 400px;
+    min-height: 500px;
+}
+
+.tab-container.ui-draggable-dragging {
+    cursor: grabbing;
+}
+
+/* header strip / title */
+.tab-container::before {
+    content: attr(data-title);
+    display: block;
+    padding: var(--hdr-pad, 8px 12px);
+    background: var(--hdr-bg, transparent);
+    color: var(--hdr-fg, var(--ui-text));
+    border-bottom: var(--hdr-border, 1px solid var(--ui-border));
+    font: var(--hdr-font, 600 12px/1 system-ui, sans-serif);
+    letter-spacing: var(--hdr-tracking, 0.04em);
+    text-transform: var(--hdr-transform, uppercase);
+}
+
+/* tabs row */
+.tabs {
+    display: flex;
+    gap: var(--tab-gap, 4px);
+    padding: var(--tab-pad, 6px);
+    background: var(--tabs-bg, var(--ui-surface-2, var(--ui-surface)));
+    border-bottom: var(--tabs-border, 1px solid var(--ui-border));
+    overflow-x: auto;
+}
+
+/* tab button */
+.tab-links {
+    appearance: none;
+    cursor: pointer;
+    white-space: nowrap;
+    background: var(--tab-bg, transparent);
+    color: var(--tab-fg, var(--ui-muted));
+    border: var(--tab-border, 1px solid transparent);
+    border-radius: var(--tab-radius, 6px 6px 0 0);
+    padding: var(--tab-btn-pad, 8px 12px);
+    font: var(--tab-font, 500 13px/1 system-ui, sans-serif);
+    box-shadow: var(--tab-shadow, none);
+}
+.tab-links:hover {
+    background: var(--tab-hover-bg, rgba(255, 255, 255, 0.05));
+    color: var(--ui-text);
+}
+.tab-links:focus-visible {
+    outline: var(--focus-outline, 2px solid var(--ui-accent));
+    outline-offset: var(--focus-offset, 2px);
+}
+
+.tab-links.active {
+    background: var(--tab-active-bg, var(--ui-surface));
+    color: var(--ui-text);
+    border: var(--tab-active-border, 1px solid var(--ui-border));
+    box-shadow: var(--tab-active-shadow, none);
+    position: relative;
+}
+.tab-links.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: var(--tab-accent-h, 0);
+    background: var(--ui-accent);
+    border-radius: var(--tab-accent-radius, 0);
+}
+
+/* panels */
+.tab-content {
+    display: none;
+    background: var(--panel-bg, var(--ui-bg, var(--ui-surface)));
+    padding: var(--panel-pad, 16px);
+    max-height: 400px;
+    overflow: auto;
+}
+.tab-content.active {
+    display: block;
+}
+
+/* small bits */
+.tab-title {
+    pointer-events: none;
+}
+.tab-icon {
+    margin-right: 6px;
+}
+</file>
+
+<file path="tabs.js">
+export class Tabs extends EventTarget {
+    /**
+     * @param {HTMLElement} container  Wrapper element where the tabs UI will render.
+     * @param {{title?:string, storageKey?:string}} [opts]
+     */
+    constructor(container, opts = {}) {
+        super();
+        this.container = container;
+        this.title = opts.title ?? 'Panels';
+        this.storageKey = opts.storageKey ?? 'ui.tabs.v2';
+        this.tabs = new Map(); // id -> meta
+        this.order = []; // tab id order
+        this.activeId = null;
+
+        this.#buildShell();
+        this.#restore();
+        this.#wireKeyboardNav();
+    }
+
+    // ---------- Public API ----------
+
+    /**
+     * Add a tab.
+     * @param {{
+     *   id:string, title:string, icon?:string, tooltip?:string,
+     *   closable?:boolean, badge?:string|number,
+     *   mount?:(root:HTMLElement)=>void, unmount?:(root:HTMLElement)=>void,
+     *   onShow?:(root:HTMLElement)=>void, onHide?:(root:HTMLElement)=>void,
+     *   active?:boolean
+     * }} conf
+     */
+    addTab(conf) {
+        if (!conf?.id || !conf?.title) throw new Error('addTab requires {id, title}');
+        if (this.tabs.has(conf.id)) throw new Error(`Tab '${conf.id}' already exists`);
+
+        // Elements
+        const btn = document.createElement('button');
+        btn.className = 'tab-links';
+        btn.type = 'button';
+        btn.role = 'tab';
+        btn.id = `tab-${conf.id}`;
+        btn.dataset.tabId = conf.id;
+        btn.setAttribute('aria-selected', 'false');
+        btn.setAttribute('tabindex', '-1');
+        if (conf.tooltip) btn.title = conf.tooltip;
+
+        const label = document.createElement('span');
+        label.className = 'tab-title';
+        label.textContent = conf.title;
+
+        if (conf.icon) {
+            const ic = document.createElement('span');
+            ic.className = 'tab-icon';
+            ic.textContent = conf.icon;
+            btn.append(ic);
+        }
+        btn.append(label);
+
+        const badge = document.createElement('span');
+        badge.className = 'tab-badge';
+        if (conf.badge != null) {
+            badge.textContent = String(conf.badge);
+            btn.append(badge);
+        }
+
+        let closeBtn = null;
+        if (conf.closable) {
+            closeBtn = document.createElement('button');
+            closeBtn.className = 'tab-close';
+            closeBtn.type = 'button';
+            closeBtn.setAttribute('aria-label', `Close ${conf.title}`);
+            closeBtn.textContent = '×';
+            btn.append(closeBtn);
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removeTab(conf.id);
+            });
+        }
+
+        const panel = document.createElement('div');
+        panel.className = 'tab-content';
+        panel.id = conf.id;
+        panel.role = 'tabpanel';
+        panel.setAttribute('aria-labelledby', btn.id);
+        panel.hidden = true;
+
+        this.tablist.append(btn);
+        this.contentRegion.append(panel);
+
+        const meta = {
+            ...conf,
+            button: btn,
+            badgeEl: badge,
+            panel,
+            mounted: false,
+        };
+        this.tabs.set(conf.id, meta);
+        this.order.push(conf.id);
+
+        btn.addEventListener('click', () => this.select(conf.id));
+
+        this.#persist();
+
+        this.dispatchEvent(new CustomEvent('tab:add', { detail: { id: conf.id } }));
+
+        const shouldAutoSelect =
+            conf.active || (this.activeId == null && (!this._restoredActiveId || this._restoredActiveId === conf.id));
+
+        if (shouldAutoSelect) this.select(conf.id);
+
+        if (!this.order.includes(conf.id)) this.order.push(conf.id);
+    }
+
+    /** Remove a tab by id. */
+    removeTab(id) {
+        const meta = this.tabs.get(id);
+        if (!meta) return;
+        if (meta.unmount && meta.mounted) meta.unmount(meta.panel);
+        meta.button.remove();
+        meta.panel.remove();
+        this.tabs.delete(id);
+        this.order = this.order.filter((x) => x !== id);
+
+        if (this.activeId === id) {
+            const next = this.order[this.order.length - 1] || null; // select previous tab if any
+            this.activeId = null;
+            if (next) this.select(next);
+        }
+        this.#persist();
+        this.dispatchEvent(new CustomEvent('tab:remove', { detail: { id } }));
+    }
+
+    /** Select a tab by id. */
+    select(id) {
+        if (!this.tabs.has(id)) return;
+
+        const prev = this.activeId ? this.tabs.get(this.activeId) : null;
+        const next = this.tabs.get(id);
+
+        // Deactivate previous
+        if (prev) {
+            prev.button.classList.remove('active');
+            prev.button.setAttribute('aria-selected', 'false');
+            prev.button.setAttribute('tabindex', '-1');
+            prev.panel.hidden = true;
+            prev.panel.classList.remove('active');
+            prev.onHide?.(prev.panel);
+        }
+
+        // Activate next
+        this.activeId = id;
+        next.button.classList.add('active');
+        next.button.setAttribute('aria-selected', 'true');
+        next.button.setAttribute('tabindex', '0');
+        next.panel.hidden = false;
+        next.panel.classList.add('active');
+        next.button.focus({ preventScroll: true });
+
+        // Lazy mount
+        if (!next.mounted && next.mount) {
+            next.mount(next.panel);
+            next.mounted = true;
+        }
+        next.onShow?.(next.panel);
+
+        this.#persist();
+        this.dispatchEvent(new CustomEvent('tab:select', { detail: { id } }));
+    }
+
+    /** Update tab metadata: title, icon, badge, tooltip. */
+    update(id, patch = {}) {
+        const t = this.tabs.get(id);
+        if (!t) return;
+        if (patch.title) t.panel.setAttribute('aria-label', patch.title);
+        if (patch.title) t.button.querySelector('.tab-title').textContent = patch.title;
+        if (patch.icon != null) {
+            let ic = t.button.querySelector('.tab-icon');
+            if (patch.icon === '' || patch.icon === false) {
+                ic?.remove();
+            } else {
+                if (!ic) {
+                    ic = document.createElement('span');
+                    ic.className = 'tab-icon';
+                    t.button.prepend(ic);
+                }
+                ic.textContent = patch.icon;
+            }
+        }
+        if ('badge' in patch) {
+            if (patch.badge == null || patch.badge === '') {
+                t.badgeEl.textContent = '';
+                t.badgeEl.style.display = 'none';
+            } else {
+                t.badgeEl.textContent = String(patch.badge);
+                t.badgeEl.style.display = '';
+            }
+        }
+        if (patch.tooltip != null) t.button.title = patch.tooltip;
+    }
+
+    /** Returns the active tab id or null. */
+    get active() {
+        return this.activeId;
+    }
+
+    /** Reorder tabs by array of ids. */
+    reorder(ids) {
+        if (!Array.isArray(ids)) return;
+        // keep only known ids in given order + append any missing
+        const set = new Set(ids.filter((id) => this.tabs.has(id)));
+        this.order = [...set, ...this.order.filter((id) => !set.has(id))];
+        // apply DOM order
+        this.order.forEach((id) => this.tablist.append(this.tabs.get(id).button));
+        this.#persist();
+        this.dispatchEvent(new CustomEvent('tab:reorder', { detail: { order: this.order.slice() } }));
+    }
+
+    // ---------- Private ----------
+
+    #buildShell() {
+        this.container.classList.add('tab-container');
+        // Optional title bar
+        const titleBar = document.createElement('div');
+        titleBar.className = 'tab-titlebar';
+        titleBar.textContent = this.title;
+
+        const tablist = document.createElement('div');
+        tablist.className = 'tabs';
+        tablist.role = 'tablist';
+        tablist.setAttribute('aria-label', this.title);
+
+        const content = document.createElement('div');
+        content.className = 'tab-contents';
+
+        this.container.replaceChildren(titleBar, tablist, content);
+        this.tablist = tablist;
+        this.contentRegion = content;
+    }
+
+    #wireKeyboardNav() {
+        this.tablist.addEventListener('keydown', (e) => {
+            const ids = this.order;
+            if (!ids.length) return;
+            const idx = ids.indexOf(this.activeId);
+            if (e.key === 'ArrowRight') {
+                this.select(ids[(idx + 1) % ids.length]);
+                e.preventDefault();
+            } else if (e.key === 'ArrowLeft') {
+                this.select(ids[(idx - 1 + ids.length) % ids.length]);
+                e.preventDefault();
+            } else if (e.key === 'Home') {
+                this.select(ids[0]);
+                e.preventDefault();
+            } else if (e.key === 'End') {
+                this.select(ids[ids.length - 1]);
+                e.preventDefault();
+            } else if (e.ctrlKey && e.key === 'Tab') {
+                this.select(ids[(idx + (e.shiftKey ? -1 : 1) + ids.length) % ids.length]);
+                e.preventDefault();
+            }
+        });
+    }
+
+    #persist() {
+        try {
+            const data = { order: this.order, activeId: this.activeId };
+            localStorage.setItem(this.storageKey, JSON.stringify(data));
+        } catch {}
+    }
+
+    #restore() {
+        try {
+            const raw = localStorage.getItem(this.storageKey);
+            if (!raw) return;
+            const { order, activeId } = JSON.parse(raw);
+            if (Array.isArray(order)) {
+                // keep unique strings only
+                this.order = [...new Set(order.filter((id) => typeof id === 'string'))];
+            }
+            // don't set active yet; just remember it
+            this._restoredActiveId = typeof activeId === 'string' ? activeId : null;
+            this.activeId = null;
+        } catch {}
+    }
+}
+</file>
+
+<file path="theme-crt.css">
+[data-theme='crt'] {
+    --ui-text: #a6ff7a;
+    --ui-accent: #a6ff7a;
+    --ui-surface: #061006;
+    --ui-surface-2: #0b1a0b;
+    --ui-bg: #020602;
+    --ui-border: #0f2a0f;
+    --ui-border-width: 1px;
+    --ui-radius: 4px;
+
+    --ui-shadow: 0 0 20px rgba(166, 255, 122, 0.08);
+
+    --hdr-bg: #061006;
+    --hdr-border: 1px solid #0f2a0f;
+    --hdr-font: 600 11px/1 ui-monospace, monospace;
+    --hdr-transform: none;
+
+    --tabs-bg: #061006;
+    --tab-gap: 2px;
+    --tab-border: 1px solid #0f2a0f;
+    --tab-bg: #0b1a0b;
+    --tab-hover-bg: #0e230e;
+
+    --tab-active-bg: #0e230e;
+    --tab-active-border: 1px solid #1e4d1e;
+    --tab-active-shadow: inset 0 0 0 1px #153a15;
+    --tab-accent-h: 0;
+
+    --panel-bg: repeating-linear-gradient(180deg, rgba(166, 255, 122, 0.06) 0 2px, rgba(0, 0, 0, 0) 2px 4px), #061006;
+
+    --focus-outline: 1px dashed #a6ff7a;
+    --focus-offset: 2px;
+}
+</file>
+
+<file path="theme-light.css">
+[data-theme='lighting'] {
+    --ui-text: #f5f5ff;
+    --ui-accent: #ff2bd6;
+    --ui-surface: #060f368d;
+    --ui-surface-2: #060f368d;
+    --ui-bg: #090b1600;
+    --ui-border: #0d101e;
+    --ui-border-width: 1px;
+    --ui-radius: 12px;
+
+    --ui-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 43, 214, 0.06);
+
+    /* Header */
+    --hdr-bg: linear-gradient(90deg, #1a0b2b, #0b1a2b);
+    --hdr-border: 1px solid #2a2f46;
+    --hdr-font: 700 11px/1 'Orbitron', system-ui, sans-serif;
+    --hdr-transform: uppercase;
+    --hdr-tracking: 0.08em;
+
+    --tabs-bg: #11162a7d;
+    --tab-gap: 6px;
+    --tab-border: 1px solid #293050;
+    --tab-bg: #141b33;
+    --tab-hover-bg: #19224a;
+
+    --tab-active-bg: #0f142853;
+    --tab-active-border: 1px solid #3a4270;
+    --tab-active-shadow: 0 0 0 1px rgba(255, 43, 214, 0.18), 0 8px 20px rgba(0, 0, 0, 0.35);
+    --tab-accent-h: 2px;
+    --tab-accent-radius: 2px;
+
+    --panel-bg: radial-gradient(1200px 400px at 10% -10%, rgba(255, 43, 214, 0.08), transparent),
+        radial-gradient(1200px 400px at 90% -10%, rgba(0, 255, 255, 0.08), transparent), #0b0e1a40;
+
+    --focus-outline: 2px solid #ff2bd6;
+    --focus-offset: 1px;
+}
+</file>
+
+<file path="theme-mac9.css">
+[data-theme='mac9'] {
+    --ui-text: #000;
+    --ui-accent: #0a84ff;
+    --ui-surface: #efefef;
+    --ui-surface-2: #e6e6e6;
+    --ui-bg: #f4f4f4;
+    --ui-border: #b9b9b9;
+    --ui-border-width: 1px;
+    --ui-radius: 10px;
+
+    --ui-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+
+    --hdr-bg: linear-gradient(#fdfdfd, #e9e9e9);
+    --hdr-border: 1px solid #cfcfcf;
+    --hdr-font: 600 12px/1 'Chicago', system-ui, sans-serif;
+    --hdr-transform: none;
+    --hdr-tracking: 0;
+
+    --tabs-bg: #efefef;
+    --tab-gap: 6px;
+    --tab-radius: 10px 10px 0 0;
+    --tab-border: 1px solid #cfcfcf;
+    --tab-bg: #f8f8f8;
+    --tab-hover-bg: #ffffff;
+
+    --tab-active-bg: #ffffff;
+    --tab-active-border: 1px solid #bdbdbd;
+    --tab-active-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+    --tab-accent-h: 0; /* no accent bar */
+
+    --panel-bg: #ffffff;
+    --panel-pad: 18px;
+    --focus-outline: 2px solid color-mix(in oklab, #0a84ff 60%, transparent);
+}
+</file>
+
+<file path="theme-synthwave.css">
+[data-theme='synthwave'] {
+    --ui-text: #f5f5ff;
+    --ui-accent: #ff2bd6;
+    --ui-surface: #0b0e1a;
+    --ui-surface-2: #11162a;
+    --ui-bg: #090b16;
+    --ui-border: #2a2f46;
+    --ui-border-width: 1px;
+    --ui-radius: 12px;
+
+    --ui-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 43, 214, 0.06);
+
+    --hdr-bg: linear-gradient(90deg, #1a0b2b, #0b1a2b);
+    --hdr-border: 1px solid #2a2f46;
+    --hdr-font: 700 11px/1 'Orbitron', system-ui, sans-serif;
+    --hdr-transform: uppercase;
+    --hdr-tracking: 0.08em;
+
+    --tabs-bg: #11162a;
+    --tab-gap: 6px;
+    --tab-border: 1px solid #293050;
+    --tab-bg: #141b33;
+    --tab-hover-bg: #19224a;
+
+    --tab-active-bg: #0f1428;
+    --tab-active-border: 1px solid #3a4270;
+    --tab-active-shadow: 0 0 0 1px rgba(255, 43, 214, 0.18), 0 8px 20px rgba(0, 0, 0, 0.35);
+    --tab-accent-h: 2px;
+    --tab-accent-radius: 2px;
+
+    --panel-bg: radial-gradient(1200px 400px at 10% -10%, rgba(255, 43, 214, 0.08), transparent),
+        radial-gradient(1200px 400px at 90% -10%, rgba(0, 255, 255, 0.08), transparent), #0b0e1a;
+
+    --focus-outline: 2px solid #ff2bd6;
+    --focus-offset: 1px;
+}
+</file>
+
+<file path="theme-win95.css">
+/* Apply theme by wrapping container in [data-theme="win95"] */
+[data-theme='win95'] {
+    --ui-text: #000;
+    --ui-accent: #000080;
+    --ui-surface: #dcdcdc;
+    --ui-surface-2: #c0c0c0;
+    --ui-bg: #dcdcdc;
+    --ui-border: #808080;
+    --ui-border-width: 2px;
+    --ui-radius: 0;
+
+    --ui-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #fff, inset -2px -2px 0 #404040, inset 2px 2px 0 #dcdcdc;
+
+    --hdr-bg: linear-gradient(#e6e6e6, #d3d3d3);
+    --hdr-border: 1px solid #808080;
+    --hdr-font: 700 12px/1 'Tahoma', 'MS Sans Serif', system-ui, sans-serif;
+
+    --tabs-bg: #c0c0c0;
+    --tab-gap: 2px;
+    --tab-btn-pad: 4px 10px 3px;
+    --tab-radius: 0;
+    --tab-border: 2px solid #808080;
+    --tab-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #fff, inset -2px -2px 0 #404040, inset 2px 2px 0 #dcdcdc;
+    --tab-hover-bg: #e8e8e8;
+
+    --tab-active-bg: #b8b8b8;
+    --tab-active-border: 2px solid #808080;
+    --tab-active-shadow: inset -1px -1px 0 #fff, inset 1px 1px 0 #808080, inset -2px -2px 0 #dcdcdc,
+        inset 2px 2px 0 #404040;
+
+    --tab-accent-h: 2px;
+    --tab-accent-radius: 0;
+
+    --panel-pad: 10px;
+    --panel-bg: #dcdcdc;
+}
+</file>
+
+</files>
+</file>
+
+<file path="src/ui/tabs/theme-light.css">
+[data-theme='lighting'] {
+    --ui-text: #f5f5ff;
+    --ui-accent: #ff2bd6;
+    --ui-surface: #060f368d;
+    --ui-surface-2: #060f368d;
+    --ui-bg: #090b1600;
+    --ui-border: #0d101e;
+    --ui-border-width: 1px;
+    --ui-radius: 12px;
+
+    --ui-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 43, 214, 0.06);
+
+    /* Header */
+    --hdr-bg: linear-gradient(90deg, #1a0b2b, #0b1a2b);
+    --hdr-border: 1px solid #2a2f46;
+    --hdr-font: 700 11px/1 'Orbitron', system-ui, sans-serif;
+    --hdr-transform: uppercase;
+    --hdr-tracking: 0.08em;
+
+    --tabs-bg: #11162a7d;
+    --tab-gap: 6px;
+    --tab-border: 1px solid #293050;
+    --tab-bg: #141b33;
+    --tab-hover-bg: #19224a;
+
+    --tab-active-bg: #0f142853;
+    --tab-active-border: 1px solid #3a4270;
+    --tab-active-shadow: 0 0 0 1px rgba(255, 43, 214, 0.18), 0 8px 20px rgba(0, 0, 0, 0.35);
+    --tab-accent-h: 2px;
+    --tab-accent-radius: 2px;
+
+    --panel-bg: radial-gradient(1200px 400px at 10% -10%, rgba(255, 43, 214, 0.08), transparent),
+        radial-gradient(1200px 400px at 90% -10%, rgba(0, 255, 255, 0.08), transparent), #0b0e1a40;
+
+    --focus-outline: 2px solid #ff2bd6;
+    --focus-offset: 1px;
+}
+</file>
+
+<file path="src/ui/entities.template.html">
+<template id="entityItemTemplate">
+    <li class="entity-card" data-entity-id="">
+        <article>
+            <header class="entity-header">
+                <strong>
+                    <span data-entity-tag></span>
+                    <span>#<span data-entity-id></span></span>
+                </strong>
+                <small>
+                    <label>
+                        <input type="checkbox" data-field="active" />
+                        active
+                    </label>
+                </small>
+            </header>
+
+            <!-- CTransform (simplified) -->
+            <section class="component" data-component="CTransform">
+                <h4>Transform</h4>
+                <form data-component-form="CTransform">
+                    <div class="row">
+                        <label>x <input type="number" step="0.01" data-field="position.x" /></label>
+                        <label>y <input type="number" step="0.01" data-field="position.y" /></label>
+                    </div>
+                    <div class="row">
+                        <label>vx <input type="number" step="0.01" data-field="velocity.x" /></label>
+                        <label>vy <input type="number" step="0.01" data-field="velocity.y" /></label>
+                    </div>
+                    <div class="row">
+                        <label>sx <input type="number" step="0.01" data-field="scale.x" /></label>
+                        <label>sy <input type="number" step="0.01" data-field="scale.y" /></label>
+                    </div>
+                    <div class="row">
+                        <label>rot° <input type="number" step="0.1" data-field="rotation" /></label>
+                    </div>
+                    <div class="row">
+                        <label>hSpeed <input type="number" step="0.1" data-field="hSpeed" /></label>
+                        <label>vSpeed <input type="number" step="0.1" data-field="vSpeed" /></label>
+                    </div>
+                    <div class="row">
+                        <label><input type="checkbox" data-field="grounded" /> grounded</label>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" data-action="save-component">Save</button>
+                        <button type="reset">Reset</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- CState (simplified) -->
+            <section class="component" data-component="CState">
+                <h4>State</h4>
+                <form data-component-form="CState">
+                    <div class="row">
+                        <label
+                            >current
+                            <input
+                                type="text"
+                                data-field="current"
+                                placeholder="IDLE / JUMPING / WALKING.LEFT / WALKING.RIGHT"
+                        /></label>
+                    </div>
+                    <div class="row">
+                        <label>previous <input type="text" data-field="previous" /></label>
+                    </div>
+                    <div class="row">
+                        <label><input type="checkbox" data-field="canJump" /> canJump</label>
+                        <label><input type="checkbox" data-field="changeAnimation" /> changeAnimation</label>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" data-action="save-component">Save</button>
+                        <button type="reset">Reset</button>
+                    </div>
+                </form>
+            </section>
+        </article>
+    </li>
+</template>
+</file>
+
+<file path="src/playerStates.js">
+import { ComponentTypes, PlayerStates, ActionTypes, ActionEnums } from './utils/enums';
+import { Entity } from './entityManager/entityManger';
+
+const playerStateCallbacks = new Map();
+const stateSet = new Set();
+
+const jumping = {
+    update: (entity) => {},
+    handleAction: (entity, action) => {
+        let cState = entity.getComponent(ComponentTypes.CState);
+        let isStart = action.type == ActionTypes.START;
+        let ctr = entity.getComponent(ComponentTypes.CTransform);
+
+        switch (action.name) {
+            case ActionEnums.UP:
+                if (isStart) return;
+                console.log('up; ', ctr.vSpeed);
+                ctr.velocity.y = 0;
+                cState.current = PlayerStates.IDLE;
+                break;
+            default:
+                break;
+        }
+    },
+    entry: () => {},
+    exit: () => {},
+};
+
+const idle = {
+    // entry: (e) => {
+    //     const t = e.getComponent(ComponentTypes.CTransform);
+    //     t.velocity.x = 0;
+    // },
+    // exit: (e) => {
+    //     const t = e.getComponent(ComponentTypes.CTransform);
+    //     t.velocity.x = 0;
+    // },
+    handleAction: (e, action) => {
+        if (action.name === ActionEnums.RIGHT && action.type === ActionTypes.START) {
+            setPlayerState(e, PlayerStates.WALKING.RIGHT);
+        }
+        if (action.name === ActionEnums.LEFT && action.type === ActionTypes.START) {
+            setPlayerState(e, PlayerStates.WALKING.LEFT);
+        }
+        if (action.name === ActionEnums.UP && action.type === ActionTypes.START) {
+            const t = e.getComponent(ComponentTypes.CTransform);
+            t.velocity.y = -t.vSpeed;
+            setPlayerState(e, PlayerStates.JUMPING);
+        }
+    },
+    update: (entity) => {},
+};
+
+const walkingRight = {
+    entry: (e) => {
+        const t = e.getComponent(ComponentTypes.CTransform);
+        t.scale.x = Math.abs(t.scale.x);
+        t.velocity.x = t.hSpeed;
+    },
+    exit: (e) => {
+        const t = e.getComponent(ComponentTypes.CTransform);
+        t.velocity.x = 0;
+    },
+    handleAction: (e, action) => {
+        if (action.name === ActionEnums.RIGHT && action.type === ActionTypes.END) {
+            setPlayerState(e, PlayerStates.IDLE);
+        }
+        if (action.name === ActionEnums.LEFT && action.type === ActionTypes.START) {
+            setPlayerState(e, PlayerStates.WALKING.LEFT);
+        }
+        if (action.name === ActionEnums.UP && action.type === ActionTypes.START) {
+            const t = e.getComponent(ComponentTypes.CTransform);
+            t.velocity.y = -t.vSpeed;
+            setPlayerState(e, PlayerStates.JUMPING);
+        }
+    },
+    update: () => {},
+};
+
+const walkingLeft = {
+    entry: (e) => {
+        const t = e.getComponent(ComponentTypes.CTransform);
+        t.scale.x = -1 * Math.abs(t.scale.x);
+        t.velocity.x = -1 * t.hSpeed;
+    },
+    exit: (e) => {
+        const t = e.getComponent(ComponentTypes.CTransform);
+        t.velocity.x = 0;
+    },
+    handleAction: (e, action) => {
+        if (action.name === ActionEnums.LEFT && action.type === ActionTypes.END) {
+            setPlayerState(e, PlayerStates.IDLE);
+        }
+        if (action.name === ActionEnums.RIGHT && action.type === ActionTypes.START) {
+            setPlayerState(e, PlayerStates.WALKING.RIGHT);
+        }
+        if (action.name === ActionEnums.UP && action.type === ActionTypes.START) {
+            const t = e.getComponent(ComponentTypes.CTransform);
+            t.velocity.y = -t.vSpeed;
+            setPlayerState(e, PlayerStates.JUMPING);
+        }
+    },
+    update: () => {},
+};
+
+playerStateCallbacks.set(PlayerStates.JUMPING, jumping);
+playerStateCallbacks.set(PlayerStates.WALKING.RIGHT, walkingRight);
+playerStateCallbacks.set(PlayerStates.WALKING.LEFT, walkingLeft);
+playerStateCallbacks.set(PlayerStates.IDLE, idle);
+
+function setPlayerState(entity, next) {
+    const cState = entity.getComponent(ComponentTypes.CState);
+    if (!cState || cState.current === next) return;
+
+    const from = playerStateCallbacks.get(cState.current);
+    const to = playerStateCallbacks.get(next);
+
+    // exit old
+    from?.exit?.(entity);
+
+    // switch
+    cState.current = next;
+
+    // enter new
+    to?.entry?.(entity);
+}
+
+export default playerStateCallbacks;
+</file>
 
 <file path="css/style.css">
 *,
@@ -158,22 +1947,10 @@ button {
 }
 
 #canvas {
-    width: 100%;
-    height: 50vh;
+    width: 800px;
+    height: 500px;
+
     margin: 20px;
-
-    /* media query */
-    @media only screen and (max-width: 600px) {
-        width: 100%;
-        height: 100%;
-    }
-
-    /* nested media query */
-    @media only screen and (min-width: 900px) {
-        /* Limit the width of the canvas to a maximum of 900px */
-        width: 900px;
-        height: 600px;
-    }
 
     /* border: solid 1px black; */
     background-color: white;
@@ -199,14 +1976,6 @@ class Action {
         return this.type;
     }
 
-    get name() {
-        return this.name;
-    }
-
-    get type() {
-        return this.type;
-    }
-
     set payload(data) {
         this.#payload = data;
     }
@@ -224,10 +1993,43 @@ import { Vector } from 'vecti';
 import { GameEngine } from '../gameEngine/gameEngine';
 
 class Animation {
-    #sprite;
+    /**
+     * TODO: Refactor animation timing to use real elapsed time (dtVar) instead of tick counts. Will be found in the onEnd callback of the game loop.
+     *
+     * Why:
+     * - Right now animations advance based on "number of update ticks".
+     * - This makes them frame-rate dependent: if the game loop slows (e.g., 120 Hz → 60 Hz),
+     *   animations also slow down, because fewer ticks happen per second.
+     *
+     * Goal:
+     * - Use the variable delta time provided by the game loop (`deltaTime` between frames, in seconds).
+     * - Accumulate dtVar inside Animation until it reaches the duration of one animation frame
+     *   (e.g. 1 / animFPS), then advance the sprite frame.
+     * - This makes animation playback tied to wall-clock time, not tick rate → animations
+     *   run at a consistent speed across machines and during FPS dips.
+     *
+     * Plan:
+     * 1. Pass both fixed dt (dtFixed) and variable dt (dtVar) into gameEngine.update().
+     * 2. Forward dtVar down to Scene.update() and Animation.update().
+     * 3. Inside Animation, add an accumulator field (e.g. this._accum).
+     * 4. On each update, do:
+     *      this._accum += dtVar;
+     *      while (this._accum >= 1 / this.#animFPS) {
+     *          this._accum -= 1 / this.#animFPS;
+     *          this.#frameIndex = (this.#frameIndex + 1) % this.#numFrames;
+     *      }
+     * 5. Keep physics/game logic tied to dtFixed for determinism, but let animations
+     *    and tweening use dtVar for smooth, real-time motion.
+     *
+     * Result:
+     * - Animations remain steady at the intended FPS (e.g., 12 fps) regardless of game loop speed.
+     * - Frame drops won’t cause sprite animations to slow down; they’ll catch up naturally.
+     */
+
+    // TODO: use repeat bool to end or repeat animation
     #numberOfFrames = 1;
     #currentFrame = 0;
-    #speed = 8; // frames between frames
+    #duration = 8; // frames between frames
     #frameSize = new Vector(1, 1);
     #animFPS = 10;
 
@@ -239,64 +2041,45 @@ class Animation {
      */
     #gameEngine;
     #frameIndex = 0;
-
+    #simTime = 0;
+    #frameTime = 0;
     /**
      * Constructs a new Animation with the given name and animation config
      * @param {string} name - the name of the animation
      * @param {Object} animationConfig - an object containing the configuration for the animation
      */
     constructor(name, animationConfig, gameEngine) {
-        // console.log('from Animation', animationConfig);
         this.#gameEngine = gameEngine;
         this.#name = name;
         this.#animationConfig = animationConfig;
         this.#animFPS = animationConfig.frameRate;
         this.#numberOfFrames = animationConfig.frames.length;
-        this.#speed = animationConfig.speed;
+        this.#duration = animationConfig.speed;
+        this.#frameTime = 1 / this.#animFPS;
     }
 
     // 60ps / 10ps = 6ps
 
-    update(dt) {
-        // TODO: switch the animations
-        this.#currentFrame++;
-
-        this.#frameIndex = (this.#currentFrame / this.#speed) % this.#numberOfFrames;
-
-        this.#frameIndex = Math.floor(this.#frameIndex);
-
-        // console.log(this.#currentFrame, this.#numberOfFrames, this.#currentFrame, this.#speed);
-
-        // console.log(frameIndex, this.#animationConfig.frames[frameIndex].frame);
-
-        // this.#gameEngine.drawLine(
-        //     new Vector(0, 0),
-        //     new Vector(this.#gameEngine.getWidth(), this.#gameEngine.getHeight())
-        // );
+    /**
+     * Updates the animation by incrementing the frame index by one and
+     * adjusting it according to the speed and number of frames.
+     * @param {number} elapsedTime - the time delta in milliseconds
+     */
+    update(elapsedTime) {
+        if (this.#numberOfFrames === 1) return;
+        // TODO: Use the elapsed time variable in the gameLoop.onEnd function to acc
+        this.#simTime += elapsedTime / 1000;
+        while (this.#simTime >= this.#frameTime) {
+            this.#simTime -= this.#frameTime;
+            this.#frameIndex = (this.#frameIndex + 1) % this.#numberOfFrames;
+        }
     }
 
     /**
-     * Render the current frame of the animation at the given position and scale.
+     * Gets the current frame of the animation.
      *
-     * @param {Vector} position - the position at which to render the animation
-     * @param {Vector} scale - the scale at which to render the animation
+     * @return {{frame: string, sheetId: string}} - an object containing the frame id and sheet id
      */
-    renderAnimation(position, scale) {
-        // console.log(this.#animationConfig);
-        let frameData = this.#gameEngine.getSpriteData(
-            this.#animationConfig.sheetId,
-            this.#animationConfig.frames[this.#frameIndex].frame
-        );
-
-        console.log(this.#animationConfig);
-        let framePos = new Vector(frameData.x, frameData.y);
-
-        // let sprite = this.#gameEngine
-        //     .getAssets()
-        //     .spriteSheets.get(this.#animationConfig.sheetId)
-        //     .frameMap.get(this.#animationConfig.frames[this.#frameIndex].frame);
-    }
-
     getCurrentFrame() {
         return {
             frame: this.#animationConfig.frames[this.#frameIndex].frame,
@@ -308,12 +2091,21 @@ class Animation {
         // TODO: detect when the animation has ended (last frame was played)
     }
 
-    getName() {
+    /**
+     * Returns the name of the animation.
+     *
+     * @return {string} The name of the animation.
+     */
+    get name() {
         return this.#name;
     }
 
-    getSprite() {
-        return this.#sprite;
+    /**
+     * Resets the animation to its initial state, setting the frame index to 0.
+     */
+    reset() {
+        this.#frameIndex = 0;
+        this.#currentFrame = 0;
     }
 }
 
@@ -379,7 +2171,7 @@ export { Assets };
 
 <file path="src/components/components.js">
 import { Vector } from 'vecti';
-import { Interpolations, ComponentTypes } from '../utils/enums';
+import { Interpolations, ComponentTypes, PlayerStates } from '../utils/enums';
 
 class Component {
     exists = false;
@@ -399,23 +2191,27 @@ class Interpolation extends Component {
 
 class SpriteDimensions extends Component {
     dimensions = new Vector(0.0, 0.0);
-
+    trimmedRect = new Vector(0.0, 0.0);
     /**
      * Constructor for SpriteDimensions.
      * @param {Vector} rectangle - The sprite's initial size.
      */
-    constructor(dimensions) {
+    constructor(dimensions, trimmedRectangle) {
         super();
         this.dimensions = dimensions;
+        this.trimmedRect = trimmedRectangle;
     }
 }
 
 class Transform extends Component {
     position = new Vector(0.0, 0.0);
-    prevPos = new Vector(0.0, 0.0);
     velocity = new Vector(0.0, 0.0);
+    acceleration = new Vector(0.0, 0.0);
+    prevPos = new Vector(0.0, 0.0);
     scale = new Vector(1.0, 1.0);
     angle = 0.0;
+    hSpeed = 0;
+    vSpeed = 0;
 
     /**
      * Constructor for Transform.
@@ -424,13 +2220,15 @@ class Transform extends Component {
      * @param {Vector} scale - The initial scale of the component.
      * @param {number} angle - The initial angle of the component.
      */
-    constructor(position, velocity, scale, angle) {
+    constructor(position, velocity, scale, angle, hSpeed, vSpeed) {
         super();
 
         this.position = position;
         this.velocity = velocity;
         this.scale = scale;
         this.angle = angle;
+        this.hSpeed = hSpeed;
+        this.vSpeed = vSpeed;
     }
 }
 
@@ -451,15 +2249,16 @@ class Input extends Component {
     down = false;
     left = false;
     right = false;
-    shoot = false;
-    canShoot = false;
-    canJump = false;
+    attack = false;
+    isStart = false;
+    isEnd = false;
 }
 
 class BoundingBox extends Component {
     rectangle = new Vector(0, 0);
     halfSize = new Vector(0, 0);
     offset = new Vector(0, 0);
+    ratio = new Vector(0, 0);
 
     constructor(rectangle, offset) {
         super();
@@ -482,7 +2281,7 @@ class Animation extends Component {
 
 class Gravity extends Component {
     gravity = 0;
-
+    fallingThreshold;
     constructor(gravity) {
         super();
 
@@ -491,22 +2290,45 @@ class Gravity extends Component {
 }
 
 class State extends Component {
-    current = 'null';
-    previous = 'null';
+    /**
+     * The current state of the player
+     *
+     * @type {PlayerStates}
+     *
+     */
+    #current_ = 'null';
+    previous_ = 'null';
     changeAnimation = false;
+    canJump = true;
 
     constructor(state) {
         super();
-        this.current = state;
-        this.previous = state;
+        this.#current_ = state;
+        this.previous_ = state;
+    }
+
+    /**
+     * Set the current state of the player.
+     * This will also set the previous state to the current state.
+     * @param {PlayerStates} state - The new state of the player.
+     */
+    set current(state) {
+        this.previous_ = this.#current_;
+        this.#current_ = state;
+    }
+
+    get current() {
+        return this.#current_;
     }
 }
 
 class Sprite extends Component {
-    atlasKey = '';
-    constructor(atlasKey) {
+    sheetId;
+    frame;
+    constructor(sheetId, frame) {
         super();
-        this.atlasKey = atlasKey;
+        this.sheetId = sheetId;
+        this.frame = frame;
     }
 }
 
@@ -536,7 +2358,7 @@ const createComponent = (componentType, ...args) => {
         case ComponentTypes.CGravity:
             return new Gravity(...args);
         case ComponentTypes.CInput:
-            return new Input(...args);
+            return new Input();
         case ComponentTypes.CInterpolation:
             return new Interpolation(...args);
         case ComponentTypes.CLifespan:
@@ -547,21 +2369,12 @@ const createComponent = (componentType, ...args) => {
             return new Transform(...args);
         case ComponentTypes.CSpriteDimensions:
             return new SpriteDimensions(...args);
+        case ComponentTypes.CSprite:
+            return new Sprite(...args);
     }
 };
 
-export {
-    Transform,
-    Lifespan,
-    Input,
-    BoundingBox,
-    Animation,
-    Gravity,
-    State,
-    Interpolation,
-    createComponent,
-    SpriteDimensions,
-};
+export { createComponent };
 </file>
 
 <file path="src/entity/entity.js">
@@ -682,6 +2495,21 @@ class Entity {
         return this.#componentMap.get(component);
     }
 
+    /**
+     * Retrieves the tag associated with this entity.
+     * @returns {string} The tag associated with this entity.
+     */
+    get tag() {
+        return this.#entityTag;
+    }
+    /**
+     * Retrieves the unique identifier for this entity.
+     * @returns {number} The id of the entity.
+     */
+    get id() {
+        return this.#entityId;
+    }
+
     removeComponent(component) {
         this.#componentMap.delete(component);
     }
@@ -695,7 +2523,14 @@ class EntityManager {
 
     #removeDeadEntities() {}
 
+    /**
+     * Updates the entity manager by adding new entities to the live lists,
+     * removing dead entities from the live lists, and removing empty tag buckets.
+     * @returns {boolean} Whether any changes were made to the entity manager.
+     */
     update() {
+        let changed = false;
+        if (this.#entityListToAdd.length != 0) changed = true;
         // 1) Move queued entities into live lists
         for (const entity of this.#entityListToAdd) {
             this.#entityList.push(entity);
@@ -718,6 +2553,8 @@ class EntityManager {
                 this.#entityListMap.delete(tag);
             }
         }
+
+        return changed;
     }
 
     addEntity(tag) {
@@ -746,912 +2583,9 @@ class EntityManager {
     }
 }
 
+class EntityState {}
+
 export { EntityManager, Entity };
-</file>
-
-<file path="src/gameEngine/gameEngine.js">
-import { resolveConfiguration, waitForSpriteSheets } from '../utils/file';
-import { ActionKeys, ActionTypes, CustomEvents, SceneNames } from '../utils/enums';
-import { Play_Scene } from '../scene/play_scene';
-import { Scene } from '../scene/scene';
-import { Vector } from 'vecti';
-import { initUserInput } from '../utils/userInput';
-import { Action } from '../action/action';
-import { printSpriteCacheStats, SpriteCacheGPU } from '../utils/spriteCacheGPU';
-
-class GameEngine extends EventTarget {
-    /**
-     * Map of all scenes in the game
-     *
-     * @type {Map<string, Scene>}
-     */
-    #sceneMap = new Map();
-    // #assets = new Assets();
-
-    /**
-     * The current scene that the game is on
-     * @type {string}
-     */
-    #currentScene = '';
-    #simulationSpeed = 1;
-    #isRunning = true;
-
-    /**
-     * The canvas context
-     * @type {CanvasRenderingContext2D}
-     */
-    #canvasCTX;
-
-    /**
-     * The assets
-     */
-    #assets;
-    #configPath;
-    #fps;
-    updates = 0;
-    renders = 0;
-    spriteCache = null;
-    #pointerCoords = new Vector(0, 0);
-
-    constructor(path, ctx, fps = 60) {
-        super();
-
-        this.#fps = fps;
-        this.#configPath = path;
-        this.#canvasCTX = ctx;
-    }
-
-    async init() {
-        this.#canvasCTX.imageSmoothingEnabled = false;
-        this.#assets = await resolveConfiguration(this.#configPath);
-        this.spriteCache = new SpriteCacheGPU(128 * 1024 * 1024);
-
-        resizeCanvasForDPR(this.#canvasCTX.canvas, this.#canvasCTX);
-
-        // Wait for all images to load before proceeding
-        await waitForSpriteSheets(this.#assets);
-
-        for (let animation of this.getAnimations().values()) {
-            let sheetImage = this.getImage(animation.sheetId);
-            let frames = animation.frames.map((frame) => {
-                const r = this.getSpriteData(animation.sheetId, frame.frame);
-                return { sx: r.x, sy: r.y, sw: r.w, sh: r.h };
-            });
-
-            // Prewarm both orientations
-            await this.spriteCache.prewarm(sheetImage, frames, 'none');
-            await this.spriteCache.prewarm(sheetImage, frames, 'flipX');
-        }
-
-        console.log('assets loaded', this.#assets);
-        // console.log('sprite cache prewarmed', this.spriteCache.map, this.spriteCache.inflight);
-        // this.#canvasCTX.drawImage(this.#assets.spriteSheets.get('knight').image, 0, 0);
-        this.changeScene(SceneNames.Play, new Play_Scene(this));
-        initUserInput(this);
-
-        printSpriteCacheStats(this.spriteCache);
-
-        this.#addEventListeners();
-    }
-
-    changeScene(
-        sceneName,
-        scene, // A reference to the scene
-        endCurrentScene = false
-    ) {
-        if (endCurrentScene) {
-            this.#sceneMap.get(this.#currentScene).hasEnded = true;
-        }
-
-        this.#currentScene = sceneName;
-        if (!this.#sceneMap.has(sceneName)) {
-            this.#sceneMap.set(sceneName, scene);
-        } else {
-            this.#sceneMap.set(sceneName, scene);
-        }
-
-        // Add an event listener to the scene to listen for the game stopped event
-        this.#sceneMap.get(this.#currentScene).addEventListener(CustomEvents.GAME_STOPPED, () => {
-            this.setPaused(true);
-        });
-    }
-
-    update(dt) {
-        if (!this.isRunning()) return;
-        // Handle user input early to capture key presses even when paused
-        this.sUserInput();
-
-        // If the game was turned off stop the loop
-        // TODO: FOLLOW-UP handle reset and game end better
-        if (!this.isRunning()) return;
-
-        // call the update for the current scene
-        // TODO: uncomment once we have an inherited Scene
-        this.#sceneMap.get(this.#currentScene).update(dt);
-    }
-
-    render(alpha) {
-        if (!this.isRunning()) return;
-        // Clear the canvas
-        this.#canvasCTX.clearRect(0, 0, this.#canvasCTX.canvas.width, this.#canvasCTX.canvas.height);
-
-        // this.#canvasCTX.font = '12px serif';
-        // this.#canvasCTX.fillStyle = 'green';
-        // this.#canvasCTX.fillText(this.test.prop1, 10, 50);
-
-        // Call the scene's render method
-        // TODO: uncomment once we have an inherited Scene
-        // this.getCurrentScene.sRender(alpha);
-        this.#sceneMap.get(this.#currentScene).sRender(alpha);
-    }
-
-    sUserInput() {
-        // TODO: handle user input
-        // if (this.#keys['KeyG']) {
-        //     // dispatch a custom stopped event
-        //     this.dispatchEvent(new Event(CustomEvents.GAME_STOPPED));
-        //     // TODO: FOLLOW-UP pause or stop the game
-        //     this.#isRunning = false;
-        // }
-        // if (this.#keys['KeyR']) {
-        //     // dispatch a custom stopped event
-        //     this.dispatchEvent(new Event(CustomEvents.GAME_STOPPED));
-        //     // TODO: FOLLOW-UP pause or stop the game
-        //     this.#isRunning = false;
-        // }
-    }
-    quit() {
-        // TODO: quit the game
-        this.#isRunning = false;
-    }
-
-    stop() {
-        // TODO: FOLLOW-UP pause or stop the game
-        this.#isRunning = false;
-    }
-
-    start() {
-        this.#isRunning = true;
-    }
-
-    isRunning() {
-        return this.#isRunning;
-    }
-    getAssets() {
-        return this.#assets;
-    }
-
-    /**
-     * Gets the current scene that the game is on.
-     * @returns {Scene} The current scene.
-     */
-    getCurrentScene() {
-        return this.#sceneMap.get(this.#currentScene);
-    }
-
-    drawLine(point1, point2) {
-        this.#canvasCTX.beginPath();
-        this.#canvasCTX.moveTo(point1.x, point1.y);
-        this.#canvasCTX.lineTo(point2.x, point2.y);
-        this.#canvasCTX.stroke();
-    }
-
-    /**
-     * Draw a sprite from a sprite sheet onto the game canvas.
-     *
-     * @param {string} sheetId - The id of the sprite sheet.
-     * @param {string} spriteName - The name of the sprite to draw.
-     * @param {Vector} pos - The position of the top left of the
-     *     sprite in the canvas.
-     * @param {Vector} size - The size of the sprite in the canvas.
-     */
-    async drawSprite(sheetId, spriteName, pos, scale) {
-        let spriteSheet = this.#assets.spriteSheets.get(sheetId);
-        let img = spriteSheet.image;
-        let sprite = spriteSheet.frameMap.get(spriteName);
-        let size = new Vector(sprite.frame.w * scale.x, sprite.frame.h * scale.y);
-        let bpm = await this.spriteCache.get(
-            img,
-            sprite.frame.x,
-            sprite.frame.y,
-            sprite.frame.w,
-            sprite.frame.h,
-            scale.x >= 0 ? 'none' : 'flipX'
-        );
-
-        this.#canvasCTX.drawImage(bpm, pos.x, pos.y, size.x, size.y);
-    }
-
-    /**
-     * Draws a string onto the game canvas.
-     *
-     * @param {string} text - The string to draw.
-     * @param {Vector} pos - The position of the top left of the
-     *     text in the canvas.
-     * @param {string} color - The color of the text.
-     * @param {string} font - The css font string to use.
-     */
-    drawString(text, pos, color, font) {
-        this.#canvasCTX.fillStyle = color;
-        this.#canvasCTX.font = font;
-        this.#canvasCTX.fillText(text, pos.x, pos.y);
-    }
-
-    loadAllImages() {
-        this.#assets.textures.forEach((texture) => {});
-    }
-
-    getAnimations() {
-        return this.#assets.animations;
-    }
-
-    getAnimation(animationName) {
-        return this.#assets.animations.get(animationName);
-    }
-
-    getSpriteDimensions(sheetId) {
-        return this.#assets.spriteSheets.get(sheetId).frames[0].frame;
-    }
-
-    /**
-     * Returns the sprite data for a given sprite sheet and frame id.
-     *
-     * @param {string} sheetId - The id of the sprite sheet.
-     * @param {string} frameId - The id of the frame.
-     * @return {{w: number, h: number, x: number, y: number}} - The width, height, and
-     *     position of the frame in the sprite sheet.
-     */
-    getSpriteData(sheetId, frameId) {
-        // frame={
-        // "w": 192,
-        // "h": 168,
-        // "x": 0,
-        // "y": 0
-        // }
-        return this.#assets.spriteSheets.get(sheetId).frameMap.get(frameId).frame;
-    }
-
-    getImage(sheetId) {
-        // this.#assets.
-        return this.#assets.spriteSheets.get(sheetId).image;
-    }
-
-    /**
-     * Draws a circle on the canvas.
-     *
-     * @param {Vector} pos - The center of the circle.
-     * @param {number} radius - The radius of the circle.
-     */
-    drawCircle(pos, radius) {
-        this.#canvasCTX.beginPath();
-        this.#canvasCTX.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
-        this.#canvasCTX.stroke();
-        this.#canvasCTX.closePath();
-    }
-
-    drawCircleFilled(pos, radius, color) {
-        this.#canvasCTX.beginPath();
-        this.#canvasCTX.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
-        this.#canvasCTX.fillStyle = color;
-        this.#canvasCTX.fill();
-        this.#canvasCTX.closePath();
-    }
-
-    /**
-     * Draws a rectangle on the canvas.
-     *
-     * If `fillColor` is given, the rectangle is filled with that color. Otherwise,
-     * the rectangle is only stroked with the given `color`.
-     *
-     * @param {Vector} pos - The top left of the rectangle.
-     * @param {Vector} size - The size of the rectangle: size.x => width and size.y  => height
-     * @param {string} [color='#000000'] - The color of the border.
-     * @param {string} [fillColor] - The color to fill the rectangle with.
-     */
-    drawRect(pos, size, color = '#000000', fillColor = null) {
-        if (fillColor) {
-            this.#canvasCTX.fillStyle = fillColor;
-        }
-
-        if (!fillColor) {
-            this.#canvasCTX.strokeStyle = color;
-            this.#canvasCTX.strokeRect(pos.x, pos.y, size.x, size.y);
-        } else {
-            this.#canvasCTX.fillRect(pos.x, pos.y, size.x, size.y);
-            this.#canvasCTX.strokeRect(pos.x, pos.y, size.x, size.y);
-        }
-    }
-
-    /*****************************************************************************
-     * Getters and Setters
-     ******************************************************************************/
-
-    getImage(sheetId) {
-        // this.#assets.
-        return this.#assets.spriteSheets.get(sheetId).image;
-    }
-
-    /**
-     * The width of the canvas.
-     *
-     * @returns {number} The width of the canvas.
-     */
-    get width() {
-        return this.#canvasCTX.canvas.width;
-    }
-    /**
-     * The height of the canvas.
-     *
-     * @returns {number} The height of the canvas.
-     */
-
-    get height() {
-        return this.#canvasCTX.canvas.height;
-    }
-
-    /**
-     * The canvas context (2D drawing context) for the game canvas.
-     *
-     * @returns {CanvasRenderingContext2D} The canvas context.
-     */
-    get ctx() {
-        return this.#canvasCTX;
-    }
-
-    /**
-     * The current x-coordinate of the pointer in the game canvas.
-     *
-     * @returns {number} The x-coordinate of the pointer.
-     */
-    get pointerX() {
-        return this.#pointerCoords.x;
-    }
-
-    /**
-     * The current y-coordinate of the pointer in the game canvas.
-     *
-     * @returns {number} The y-coordinate of the pointer.
-     */
-    get pointerY() {
-        return this.#pointerCoords.y;
-    }
-
-    /**
-     * Gets the current pointer position as a Vector.
-     *
-     * @returns {Vector} The current pointer position.
-     */
-    get pointerPosition() {
-        return this.#pointerCoords;
-    }
-
-    /*----------------------------------------------------------------------------
-     * helper functions
-     *-----------------------------------------------------------------------------*/
-
-    #addEventListeners() {
-        /********************   Keyboard/button Events *******************/
-        this.addEventListener(CustomEvents.ACTION_START, (e) => {
-            if (e.detail.repeat) return;
-            if (e.detail.key == ActionKeys.p) {
-                if (this.isRunning()) {
-                    this.stop();
-                    this.dispatchEvent(new CustomEvent(CustomEvents.GAME_STOPPED));
-                    return;
-                }
-                if (!this.isRunning()) {
-                    this.start();
-                    this.dispatchEvent(new CustomEvent(CustomEvents.GAME_STARTED));
-                    return;
-                }
-                return;
-            }
-
-            let scene = this.#sceneMap.get(this.#currentScene);
-            if (!scene.actionMap.has(e.detail.key)) return;
-
-            let action = new Action(scene.actionMap.get(e.detail.key), ActionTypes.START);
-            scene.sDoAction(action);
-        });
-
-        this.addEventListener(CustomEvents.ACTION_END, (e) => {
-            let scene = this.#sceneMap.get(this.#currentScene);
-            if (!scene.actionMap.has(e.detail.key)) return;
-
-            let action = new Action(scene.actionMap.get(e.detail.key), ActionTypes.END);
-            scene.sDoAction(action);
-        });
-
-        /********************   Pointer Events *******************/
-
-        this.addEventListener(CustomEvents.POINTER_MOVE, (e) => {
-            // console.log(e.detail);
-            this.#pointerCoords = new Vector(e.detail.x, e.detail.y);
-            let scene = this.#sceneMap.get(this.#currentScene);
-            if (!scene.actionMap.has(ActionKeys.pointerMove)) return;
-
-            let action = new Action(scene.actionMap.get(ActionKeys.pointerMove), ActionTypes.END);
-            action.payload = this.#pointerCoords;
-            scene.sDoAction(action);
-        });
-
-        this.addEventListener(CustomEvents.POINTER_DOWN, (e) => {
-            let scene = this.#sceneMap.get(this.#currentScene);
-            if (!scene.actionMap.has(ActionKeys.pointerDown)) return;
-
-            let action = new Action(scene.actionMap.get(ActionKeys.pointerDown), ActionTypes.START);
-            action.payload = new Vector(e.detail.x, e.detail.y);
-            scene.sDoAction(action);
-        });
-
-        this.addEventListener(CustomEvents.POINTER_UP, (e) => {
-            let scene = this.#sceneMap.get(this.#currentScene);
-            if (!scene.actionMap.has(ActionKeys.pointerUp)) return;
-
-            let action = new Action(scene.actionMap.get(ActionKeys.pointerUp), ActionTypes.START);
-            scene.sDoAction(action);
-        });
-    }
-}
-
-function resizeCanvasForDPR(canvas, ctx) {
-    const dpr = window.devicePixelRatio || 1;
-    const { width: cssW, height: cssH } = canvas.getBoundingClientRect();
-    const w = Math.round(cssW * dpr);
-    const h = Math.round(cssH * dpr);
-    console.log(w, h);
-    console.log(canvas.width, canvas.height);
-    if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS units
-        ctx.imageSmoothingEnabled = false;
-    }
-}
-
-export { GameEngine };
-</file>
-
-<file path="src/scene/play_scene.js">
-import { Scene } from './scene';
-import { Vector } from 'vecti';
-import { EntityManager, Entity } from '../entityManager/entityManger';
-import { ActionEnums, ActionKeys, ActionTypes, ComponentTypes } from '../utils/enums';
-import { createComponent } from '../components/components';
-import { Animation } from '../animation/animation';
-
-//Player *1 1 64 64* 5 15 20 1 Buster
-/**
- * Play_Scene
- *
- * @description Scene for playing the game
- *
- *
- */
-class Play_Scene extends Scene {
-    #playerConfig = {
-        gridPos: new Vector(1, 1),
-        boundingBox: new Vector(15, 34),
-        boundingBoxOffset: new Vector(5, 5),
-        horizontalSpeed: 5,
-        jumpSpeed: 15,
-        maxSpeed: 20,
-        gravity: 1,
-        spriteRectangle: new Vector(16, 16),
-        animation: 'walk',
-        sprite: 'knight',
-        initialPosition: new Vector(0, 0),
-        initialVelocity: new Vector(0, 0),
-        initialScale: new Vector(2, 2),
-    };
-
-    #mapConfig = {
-        tileSize: new Vector(64, 64),
-        numTiles: 0,
-    };
-
-    #player = new Entity();
-    #drawTextures = true;
-    #drawCollisions = true;
-    #drawGrid = true;
-    #drawHoverTile = true;
-    #gridText;
-    #gridTiles = new Map();
-    #pointerX = null;
-    #pointerY = null;
-    #camera = new Vector(0, 0);
-
-    drawTexture = true;
-
-    #gridPattern = null; // CanvasPattern
-    #gridPatternCanvas = null; // OffscreenCanvas | HTMLCanvasElement (debug/cleanup)
-    #gridPatternTile = { x: 0, y: 0 }; // the tile size used to build the pattern
-    #gridPatternDPR = 0; // so we can rebuild when DPR changes
-    #gridMajorEvery = 1; // draw a stronger line every N cells
-
-    constructor(gameEngine) {
-        super(gameEngine);
-
-        this.registerAction(ActionKeys.p, ActionEnums.PAUSE);
-        this.registerAction(ActionKeys.escape, ActionEnums.QUIT);
-        this.registerAction(ActionKeys.num_0, ActionEnums.TOGGLE_TEXTURE);
-        this.registerAction(ActionKeys.num_1, ActionEnums.TOGGLE_COLLISION);
-        this.registerAction(ActionKeys.num_2, ActionEnums.TOGGLE_GRID);
-        this.registerAction(ActionKeys.space, ActionEnums.JUMP);
-        this.registerAction(ActionKeys.a, ActionEnums.LEFT);
-        this.registerAction(ActionKeys.d, ActionEnums.RIGHT);
-        this.registerAction(ActionKeys.s, ActionEnums.DOWN);
-        this.registerAction(ActionKeys.w, ActionEnums.UP);
-        this.registerAction(ActionKeys.pointerDown, ActionEnums.CLICK);
-        this.registerAction(ActionKeys.pointerMove, ActionEnums.POINTER_POSITION);
-
-        console.log('the tile map config');
-        console.log(this.#mapConfig);
-        this.#mapConfig.numTiles = new Vector(
-            this.gameEngine.width / this.#mapConfig.tileSize.x,
-            this.gameEngine.height / this.#mapConfig.tileSize.y
-        );
-        // this.#gridTiles = new Array(this.#mapConfig.numTiles);
-
-        this.#loadLevel();
-    }
-
-    #loadLevel() {
-        this.entityManager = new EntityManager();
-
-        this.#player = this.entityManager.addEntity('player');
-
-        // animation
-        // TODO: Use configuration files to create the components
-        let animation = new Animation(
-            this.#playerConfig.animation,
-            this.gameEngine.getAnimations().get(this.#playerConfig.animation),
-            this.gameEngine
-        );
-
-        // animation
-        let cAnimation = createComponent(ComponentTypes.CAnimation, animation, true);
-        this.#player.addComponent(cAnimation, ComponentTypes.CAnimation);
-
-        // transform
-        let pos = this.#playerConfig.initialPosition;
-        let vel = this.#playerConfig.initialVelocity;
-        let scale = this.#playerConfig.initialScale;
-        let trans = createComponent(ComponentTypes.CTransform, pos, vel, scale);
-        trans;
-        let angle = 0;
-        let cTransform = createComponent(ComponentTypes.CTransform, pos, vel, scale, angle);
-        this.#player.addComponent(cTransform, ComponentTypes.CTransform);
-
-        // boundingBox
-        let cBoundingBox = createComponent(
-            ComponentTypes.CBoundingBox,
-            this.#playerConfig.boundingBox,
-            this.#playerConfig.boundingBoxOffset
-        );
-        this.#player.addComponent(cBoundingBox, ComponentTypes.CBoundingBox);
-
-        let cInput = createComponent(ComponentTypes.CInput);
-        this.#player.addComponent(cInput, ComponentTypes.CInput);
-
-        // sprite dimensions
-        let spriteDimensions = this.gameEngine.getSpriteDimensions(this.#playerConfig.sprite);
-
-        let cSpriteDimensions = createComponent(
-            ComponentTypes.CSpriteDimensions,
-            new Vector(spriteDimensions.w, spriteDimensions.h)
-        );
-
-        this.#player.addComponent(cSpriteDimensions, ComponentTypes.CSpriteDimensions);
-        // this.entityManager.addEntity('player', this.#player);
-
-        console.log('player', this.#player, this.#playerConfig);
-    }
-
-    /**
-     * @returns {Map<string, Action>} - A Map of action name to Action object.
-     */
-    getActions() {
-        return this.actionMap;
-    }
-
-    #spawnPlayer() {}
-    #spawnBullet(entity) {}
-    #sMovement() {}
-    #sLifespan() {}
-    #sCollision() {}
-    #sAnimation() {}
-
-    async sRender(alpha) {
-        if (this.paused) return;
-
-        if (this.#drawGrid) this.#renderGridPattern(this.gameEngine.ctx);
-
-        for (let entity of this.entityManager.getAllEntities()) {
-            let { sheetId, frame } = entity.getComponent(ComponentTypes.CAnimation).animation.getCurrentFrame();
-            let transform = entity.getComponent(ComponentTypes.CTransform);
-
-            if (this.#drawCollisions) {
-                let bBoxRect = this.#centeredBoundingRect(entity);
-                // this.gameEngine.drawRect(bBoxRect.topLeft, bBoxRect.size, 'rgba(205, 29, 41, 1)');
-                this.gameEngine.drawRect(new Vector(0, 0), new Vector(192, 168), 'rgba(205, 29, 41, 1)');
-            }
-
-            if (this.drawTexture) {
-                await this.gameEngine.drawSprite(sheetId, frame, transform.position, transform.scale);
-            }
-
-            if (this.#drawCollisions) {
-                let bBoxRect = this.#centeredBoundingRect(entity);
-                this.gameEngine.drawCircleFilled(bBoxRect.center, 2, 'rgba(89, 255, 252, 1)');
-            }
-        }
-
-        if (this.#drawHoverTile && this.#pointerX && this.#pointerY) {
-            let gridX, gridY;
-            if (this.#pointerX > 0) {
-                gridX = (this.#pointerX / this.gameEngine.width) * this.#mapConfig.numTiles.x;
-            } else {
-                gridX = 0;
-            }
-            // this.gameEngine.drawRect();
-        }
-    }
-    /**
-     * Updates the player's input according to the given action.
-     * If the action is a START type, it enables the corresponding input.
-     * If the action is an END type, it disables the corresponding input.
-     * @param {Action} action - The action to process.
-     */
-    sDoAction(action) {
-        let input = this.#player.getComponent(ComponentTypes.CInput);
-        let isStart = action.type == ActionTypes.START;
-        switch (action.name) {
-            case ActionEnums.UP:
-                if (input.canJump) {
-                    input.up = isStart;
-                }
-                break;
-            case ActionEnums.LEFT:
-                input.left = isStart;
-                break;
-            case ActionEnums.RIGHT:
-                input.right = isStart;
-                break;
-            case ActionEnums.POINTER_POSITION:
-                this.#pointerX = action.payload.x;
-                this.#pointerY = action.payload.y;
-                break;
-            case ActionEnums.CLICK:
-                console.log('pointer down', action.payload);
-                this.#pointerX = action.payload.x;
-                this.#pointerY = action.payload.y;
-                break;
-            default:
-                break;
-        }
-
-        // console.log(this.#player.getComponent(ComponentTypes.CInput));
-    }
-    #onEnd() {
-        console.log('end');
-    }
-    #changePlayerStateTo(state) {}
-
-    setPaused(isPaused) {
-        console.log('setPaused', isPaused);
-        this.paused = isPaused;
-    }
-
-    update(dt) {
-        if (this.paused) return;
-        this.#player.getComponent(ComponentTypes.CAnimation).animation.update();
-        this.entityManager.update();
-    }
-    /****************************************************************************
-     * HELPER FUNCTIONS
-     ***************************************************************************/
-
-    #centeredBoundingRect(entity) {
-        let transform = entity.getComponent(ComponentTypes.CTransform);
-        let spriteDims = entity.getComponent(ComponentTypes.CSpriteDimensions).dimensions;
-
-        // Get the bounding box
-        let cBoundingBox = entity.getComponent(ComponentTypes.CBoundingBox);
-        let bBoxRect = cBoundingBox.rectangle;
-
-        // Scale the bounding box
-        bBoxRect = new Vector(bBoxRect.x * transform.scale.x, bBoxRect.y * transform.scale.y);
-        let halfSize = bBoxRect.divide(2);
-
-        // Find the center of the sprite and draw the collision box there
-        let center = new Vector(
-            transform.position.x - halfSize.x + (spriteDims.x * transform.scale.x) / 2,
-            transform.position.y - halfSize.y + (spriteDims.y * transform.scale.y) / 2
-        );
-
-        center = center.add(cBoundingBox.offset);
-        let topLeft = center;
-        center = center.add(halfSize);
-        return { size: bBoxRect, topLeft, center };
-    }
-
-    #renderGridPattern(ctx) {
-        this.#ensureGridPattern();
-        if (!this.#gridPattern) return;
-        // console.log('rendering grid pattern');
-        const w = Math.max(0, this.gameEngine.width | 0);
-        const h = Math.max(0, this.gameEngine.height | 0);
-        const tsX = this.#mapConfig.tileSize.x | 0;
-        const tsY = this.#mapConfig.tileSize.y | 0;
-
-        // Guard: bail if anything is invalid
-        if (!isFinite(w) || !isFinite(h) || tsX < 2 || tsY < 1) return;
-
-        // Camera/world offset (update when you add a camera)
-        const camX = this.#camera.x,
-            camY = this.#camera.y;
-
-        // Align to world grid
-        const offX = -(camX % tsX);
-        const offY = -(camY % tsY);
-
-        ctx.save();
-        ctx.translate(offX | 0, offY | 0); // integer translate keeps 0.5 lines crisp
-        ctx.fillStyle = this.#gridPattern;
-
-        // Bleed 1 tile so seams never show at edges
-        ctx.fillRect(-tsX, -tsY, w + tsX * 2, h + tsY * 2);
-
-        // DEBUG ONE-FRAME OUTLINE: uncomment to verify we are drawing
-        ctx.strokeStyle = 'magenta';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(0.5, 0.5, 64, 64);
-        ctx.restore();
-
-        // ===== Optional: major lines and sparse labels =====
-        const majorEvery = this.#gridMajorEvery | 0;
-        if (majorEvery > 0) {
-            const startCol = Math.floor(camX / tsX);
-            const startRow = Math.floor(camY / tsY);
-
-            // Count how many lines we actually need on-screen (+2 for bleed)
-            const cols = Math.ceil((w - offX) / tsX) + 2;
-            const rows = Math.ceil((h - offY) / tsY) + 2;
-
-            const major = new Path2D();
-            // Vertical majors
-            for (let i = 0; i <= cols; i++) {
-                const col = startCol + i;
-                if (col % majorEvery !== 0) continue;
-                const x = Math.round(offX + i * tsX) + 0.5;
-                major.moveTo(x, 0);
-                major.lineTo(x, h);
-            }
-
-            // Horizontal majors
-            for (let j = 0; j <= rows; j++) {
-                const row = startRow + j;
-                if (row % majorEvery !== 0) continue;
-                const y = Math.round(offY + j * tsY) + 0.5;
-                major.moveTo(0, y);
-                major.lineTo(w, y);
-            }
-
-            ctx.save();
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
-            ctx.stroke(major);
-
-            // Sparse labels at major intersections
-            ctx.font = '10px ui-monospace, SFMono-Regular, Menlo, monospace';
-            ctx.fillStyle = 'rgba(28, 16, 16, 0.87)';
-            for (let i = 0; i <= cols; i += majorEvery) {
-                const col = startCol + i;
-                const x = Math.round(offX + i * tsX) + 4;
-                for (let j = 0; j <= rows; j += majorEvery) {
-                    const row = startRow + j;
-                    const y = Math.round(offY + j * tsY) + 12;
-                    if (x <= w && y <= h) ctx.fillText(`${col},${row}`, x, y);
-                }
-            }
-            ctx.restore();
-        }
-    }
-
-    #ensureGridPattern() {
-        const tsX = this.#mapConfig.tileSize.x | 0;
-        const tsY = this.#mapConfig.tileSize.y | 0;
-        const dpr = window.devicePixelRatio || 1;
-
-        if (tsX < 1 || tsY < 1) {
-            this.#gridPattern = null;
-            return;
-        }
-
-        if (
-            this.#gridPattern &&
-            this.#gridPatternTile.x === tsX &&
-            this.#gridPatternTile.y === tsY &&
-            this.#gridPatternDPR === dpr
-        )
-            return;
-
-        this.#gridPattern = null;
-        this.#gridPatternCanvas = null;
-
-        const pxW = Math.max(1, Math.round(tsX * dpr));
-        const pxH = Math.max(1, Math.round(tsY * dpr));
-
-        const makeCanvas = (w, h) => {
-            if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
-            const c = document.createElement('canvas');
-            c.width = w;
-            c.height = h;
-            return c;
-        };
-
-        const off = makeCanvas(pxW, pxH);
-        const octx = off.getContext('2d');
-        octx.imageSmoothingEnabled = false;
-        octx.clearRect(0, 0, pxW, pxH);
-
-        // draw crisp 1px lines in device pixels (top & left only)
-        octx.lineWidth = 1;
-        octx.strokeStyle = 'rgba(255,255,255,0.15)';
-        octx.beginPath();
-        octx.moveTo(0.5, 0);
-        octx.lineTo(0.5, pxH); // left edge
-        octx.moveTo(0, 0.5);
-        octx.lineTo(pxW, 0.5); // top edge
-        octx.stroke();
-
-        let pattern = this.gameEngine.ctx.createPattern(off, 'repeat');
-
-        // If supported, neutralize DPR so each cell is tsX×tsY in user space
-        if (pattern && 'setTransform' in pattern) {
-            const m = new DOMMatrix();
-            m.a = 1 / dpr; // scaleX
-            m.d = 1 / dpr; // scaleY
-            pattern.setTransform(m);
-        }
-
-        if (!pattern) {
-            const dom = document.createElement('canvas');
-            dom.width = pxW;
-            dom.height = pxH;
-            dom.getContext('2d').drawImage(off, 0, 0);
-            pattern = this.gameEngine.ctx.createPattern(dom, 'repeat');
-            this.#gridPatternCanvas = dom;
-        } else {
-            this.#gridPatternCanvas = off;
-        }
-
-        this.#gridPattern = pattern;
-        this.#gridPatternTile = { x: tsX, y: tsY };
-        this.#gridPatternDPR = dpr;
-    }
-}
-
-export { Play_Scene };
-
-// drawSprite
-// Object { x: 192, y: 168 }
-// Object ​
-// {
-//   "size": {
-//     "x": 30,
-//     "y": 68
-//   },
-//   "topLeft": {
-//     "x": 86,
-//     "y": 55
-//   },
-//   "center": {
-//     "x": 101,
-//     "y": 89
-//   }
-// }
 </file>
 
 <file path="src/scene/scene.js">
@@ -1705,16 +2639,12 @@ class Scene extends EventTarget {
         this.width = gameEngine.width;
     }
 
-    update(dt) {
-        throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
-    }
-
     /**
      * Handle an action as specified by the action map.
      *
      * @param {Action} action - the action to handle
      */
-    sDoAction(action) {
+    sQueue(action) {
         throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
     }
 
@@ -2144,6 +3074,7 @@ export class DockManager extends EventTarget {
     cursor: grab;
     min-width: 400px;
     min-height: 500px;
+    max-width: 480px;
 }
 
 .tab-container.ui-draggable-dragging {
@@ -2171,6 +3102,7 @@ export class DockManager extends EventTarget {
     background: var(--tabs-bg, var(--ui-surface-2, var(--ui-surface)));
     border-bottom: var(--tabs-border, 1px solid var(--ui-border));
     overflow-x: auto;
+    /* max-width: 100%; */
 }
 
 /* tab button */
@@ -2218,6 +3150,8 @@ export class DockManager extends EventTarget {
     display: none;
     background: var(--panel-bg, var(--ui-bg, var(--ui-surface)));
     padding: var(--panel-pad, 16px);
+    max-height: 400px;
+    overflow: auto;
 }
 .tab-content.active {
     display: block;
@@ -2672,6 +3606,11 @@ export class Tabs extends EventTarget {
 </file>
 
 <file path="src/utils/enums.js">
+/**
+ * Enum for component types.
+ * @enum {string}
+ * @readonly
+ */
 const ComponentTypes = Object.freeze({
     CAnimation: 'ANIMATION',
     CBoundingBox: 'BOUNDING-BOX',
@@ -2685,8 +3624,66 @@ const ComponentTypes = Object.freeze({
     CState: 'STATE',
     CTransform: 'TRANSFORM',
     CSpriteDimensions: 'SPRITE-DIMENSIONS',
+    CSprite: 'SPRITE',
 });
 
+/**
+ * The player can be in one or more of these state at any time
+ *
+ * @enum {string}
+ * @see {@link }
+ * @readonly
+ */
+const PlayerStates = Object.freeze({
+    JUMPING: 'JUMPING',
+    WALKING: {
+        LEFT: 'WALKING:LEFT',
+        RIGHT: 'WALKING:RIGHT',
+    },
+    RUNNING: 'RUNNING',
+    FALLING: 'FALLING',
+    TAKING_DAMAGE: 'TAKING_DAMAGE',
+    CAN_ATTACK: 'CAN_ATTACK',
+    IDLE: 'IDLE',
+    ATTACKING: {
+        ONE: 'ATTACKING:ONE',
+        TWO: 'ATTACKING:TWO',
+    },
+});
+
+/**
+ * Available types of entities
+ *
+ * @enum {string}
+ * @see {@link EntityManager}
+ * @readonly
+ */
+const EntityTypes = Object.freeze({
+    PLAYER: 'PLAYER',
+    TILE: 'TILE',
+    GROUND: 'GROUND',
+});
+
+/**
+ * Scale policies
+ * @enum {string}
+ * @see {@link 'Sprite'}
+ * @readonly
+ */
+const ScalePolicies = Object.freeze({
+    FREE: 'FREE',
+    UNIFORM_X: 'UNIFORM_X',
+    UNIFORM_Y: 'UNIFORM_Y',
+    FIT: 'FIT',
+    COVER: 'COVER',
+    NONE: 'NONE',
+});
+
+/**
+ * Enum for interpolation types.
+ * @enum {string}
+ * @readonly
+ */
 const Interpolations = Object.freeze({
     EASEIN_EXPO: 'EASEIN_EXPO',
     EASEIN_SINE: 'EASEIN_SINE',
@@ -2698,11 +3695,21 @@ const Interpolations = Object.freeze({
     EASEOUT_SINE: 'EASEOUT_SINE',
 });
 
+/**
+ * Enum for scene names.
+ * @enum {string}
+ * @readonly
+ */
 const SceneNames = Object.freeze({
     MENU: 'MENU',
     PLAY: 'PLAY',
 });
 
+/**
+ * Enum for custom events.
+ * @enum {string}
+ * @readonly
+ */
 const CustomEvents = Object.freeze({
     GAME_STOPPED: 'GAME_STOPPED',
     GAME_RESUMED: 'GAME_RESUMED',
@@ -2717,11 +3724,20 @@ const CustomEvents = Object.freeze({
     POINTER_DOWN: 'POINTER_DOWN',
     POINTER_UP: 'POINTER_UP',
     POINTER_MOVE: 'POINTER_MOVE',
+    WINDOW_RESIZED: 'WINDOW_RESIZED',
+    SPRITE: {
+        SELECT: 'SPRITE:SELECT',
+        DELETE: 'SPRITE:DELETE',
+    },
+    ENTITIES: {
+        UPDATED: 'ENTITIES:UPDATED',
+    },
 });
 
 /**
- *
- *
+ * Enum for action types.
+ * @enum {string}
+ * @readonly
  */
 const ActionEnums = Object.freeze({
     PAUSE: 'PAUSE',
@@ -2742,6 +3758,11 @@ const ActionEnums = Object.freeze({
     POINTER_POSITION: 'POINTER_POSITION',
 });
 
+/**
+ * Enum for action keys.
+ * @enum {string}
+ * @readonly
+ */
 const ActionKeys = Object.freeze({
     // Letters (lowercase)
     a: 'a',
@@ -2887,13 +3908,29 @@ const ActionKeys = Object.freeze({
     pointerMove: 'mouseMove',
 });
 
+/**
+ * Enum for action types.
+ * @enum {string}
+ * @readonly
+ */
 const ActionTypes = Object.freeze({
     START: 'START',
     END: 'END',
     MOUSE: 'MOUSE',
 });
 
-export { Interpolations, ComponentTypes, SceneNames, CustomEvents, ActionEnums, ActionKeys, ActionTypes };
+export {
+    Interpolations,
+    ComponentTypes,
+    SceneNames,
+    CustomEvents,
+    ActionEnums,
+    ActionKeys,
+    ActionTypes,
+    ScalePolicies,
+    EntityTypes,
+    PlayerStates,
+};
 </file>
 
 <file path="src/utils/events.js">
@@ -2955,12 +3992,9 @@ async function resolveImages() {
 }
 
 async function resolveConfiguration(configJsonPath) {
+    //TODO : use a the function buildMaskAndTrimmedBounds to get the trimmedRect and create a cli option https://chatgpt.com/c/68bdd016-fe00-832f-8907-915b800dfd3b
     try {
         const data = await loadJSON(configJsonPath);
-
-        /*
-
-        */
         const animationMap = new Map();
         const spriteSheetMap = new Map();
         const assets = {
@@ -2971,7 +4005,7 @@ async function resolveConfiguration(configJsonPath) {
         };
 
         for (const e of data.assets.spriteSheets) {
-            // console.log(e);
+            console.log(e);
             // get the actual atlas from the path
             const atlas = await loadJSON('../../assets' + e.atlasPath); // await works here
 
@@ -2984,7 +4018,9 @@ async function resolveConfiguration(configJsonPath) {
             // create an object with each frame of the sprite sheet for faster access
             var frameMap = new Map();
             for (const frame of atlas.frames) {
-                frameMap.set(frame.filename, {
+                frame.frameName = frame.filename;
+                delete frame.filename;
+                frameMap.set(frame.frameName, {
                     frame: frame.frame,
                     anchor: frame.anchor,
                 });
@@ -2995,9 +4031,11 @@ async function resolveConfiguration(configJsonPath) {
                 imagePath: e.imagePath,
                 frameMap: frameMap,
                 image,
+                trimmedRect: e.trimmedRect || null,
             });
         }
-        // console.log('unpacked sprite sheets from config file: ', assets.spriteSheets);
+
+        console.log('unpacked sprite sheets from config file: ', assets.spriteSheets);
         let animSheets = [];
         // do the same for the animations
         for (const e of data.assets.animations) {
@@ -3018,18 +4056,6 @@ async function resolveConfiguration(configJsonPath) {
                 });
             }
         }
-
-        // console.log('assets', assets);
-        // console.log('sample animation', assets.animations.get('knight_walk'));
-        // console.log('sample sheet', assets.spriteSheets.get('knight'));
-
-        // const animationFrame = assets.animations.get('knight_walk').frames[0];
-
-        // console.log('animation frame', animationFrame);
-        // console.log(
-        //     'animation and sprite sheet used together',
-        //     assets.spriteSheets.get(animationFrame.key).frameMap.get(animationFrame.frame)
-        // );
         assets.sheets = animSheets;
         // console.log(animSheets);
         return assets;
@@ -3076,13 +4102,183 @@ async function waitForSpriteSheets(assets, { timeoutMs = 15000 } = {}) {
     await Promise.all(images.map((img) => waitForImage(img, { timeoutMs })));
 }
 
+// thresholdAlpha: 1..255 (often 1 to treat any non-zero alpha as visible)
+function buildMaskAndTrimmedBounds(imageData, thresholdAlpha = 1) {
+    const { data, width, height } = imageData;
+    const bitlen = width * height;
+    const bytelength = ((bitlen + 7) >> 3) >>> 0;
+    const mask = new Uint8Array(bytelength);
+
+    let minX = width,
+        minY = height,
+        maxX = -1,
+        maxY = -1;
+
+    // Walk pixels once
+    for (let y = 0, i = 0; y < height; y++) {
+        for (let x = 0; x < width; x++, i++) {
+            const a = data[(i << 2) + 3]; // RGBA -> alpha at +3
+            if (a >= thresholdAlpha) {
+                // set bit
+                mask[i >> 3] |= 1 << (i & 7);
+
+                // expand bounds
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            }
+        }
+    }
+
+    const hasVisible = maxX >= 0;
+    const trimmedBounds = hasVisible
+        ? { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 }
+        : { x: 0, y: 0, w: 0, h: 0 };
+
+    return { mask, width, height, trimmedBounds };
+}
+
+// helpers
+function maskTest(mask, w, x, y) {
+    const i = y * w + x;
+    return (mask[i >> 3] >>> (i & 7)) & 1;
+}
+
+// axis-aligned mask-vs-mask collision (same scale, same orientation):
+function masksOverlap(m1, w1, h1, m2, w2, h2, dx, dy) {
+    // test if any visible pixels overlap when m2 is placed at (dx,dy) relative to m1
+    const x0 = Math.max(0, dx),
+        y0 = Math.max(0, dy);
+    const x1 = Math.min(w1, dx + w2),
+        y1 = Math.min(h1, dy + h2);
+    if (x1 <= x0 || y1 <= y0) return false;
+
+    for (let y = y0; y < y1; y++) {
+        const r1 = y * w1,
+            r2 = (y - dy) * w2 - dx;
+        // walk row in chunks of bits for speed (here: fall back to per-pixel for clarity)
+        for (let x = x0; x < x1; x++) {
+            const i1 = r1 + x,
+                i2 = r2 + x;
+            const b1 = (m1[i1 >> 3] >>> (i1 & 7)) & 1;
+            if (!b1) continue;
+            const b2 = (m2[i2 >> 3] >>> (i2 & 7)) & 1;
+            if (b2) return true;
+        }
+    }
+    return false;
+}
+
 export { loadJSON, waitForSpriteSheets, resolveConfiguration };
 </file>
 
 <file path="src/utils/sprite.js">
-class Sprite {}
+import { Vector } from 'vecti';
+import { ScalePolicies } from './enums';
 
-export { Sprite };
+/**
+ * Calculate the scaled size of a sprite given its trimmed opaque bounds,
+ * user scale factors, and a policy for handling aspect ratio.
+ *
+ * @param {Object} tr - Trimmed opaque bounds of the sprite {w, h}
+ * @param {Object} scale - User scale factors {x, y}
+ * @param {string} policy - Aspect ratio policy
+ *     - none: scale each axis independently
+ *     - uniformX: scale by X only, preserving aspect
+ *     - uniformY: scale by Y only, preserving aspect
+ *     - fit: fit the sprite inside the targetBox, preserving aspect
+ *     - cover: cover the targetBox, preserving aspect
+ * @param {Vector} targetBox - Target box {x, y} for fit and cover policies
+ * @returns {Vector} Scaled size of the sprite {x, y}
+ */
+function getScaledSpriteSize(tr, scale, policy = 'uniformX', targetBox) {
+    // tr: {w, h} from trimmedRect (opaque bounds)
+    // scale: {x, y} user scale (sign only used for flipping)
+    const sx = Math.abs(scale.x ?? 1);
+    const sy = Math.abs(scale.y ?? 1);
+    // const ar = tr.w > 0 && tr.h > 0 ? tr.w / tr.h : 1; // aspect ratio
+
+    switch (policy) {
+        case ScalePolicies.NONE: {
+            // No aspect lock: scale each axis independently.
+            return new Vector(tr.x * sx, tr.y * sy);
+        }
+        case ScalePolicies.UNIFORM_X: {
+            // Drive by X only; preserve aspect.
+            const k = sx;
+            return new Vector(tr.x * k, tr.y * k);
+        }
+        case ScalePolicies.UNIFORM_Y: {
+            // Drive by Y only; preserve aspect.
+            const k = sy;
+            return new Vector(tr.x * k, tr.y * k);
+        }
+        case ScalePolicies.FIT: {
+            // Fit inside targetBox {x,y}, preserving aspect
+            const k = Math.min(targetBox.x / tr.x, targetBox.y / tr.y);
+            return new Vector(tr.x * k, tr.y * k);
+        }
+        case ScalePolicies.COVER: {
+            // Cover targetBox {x,y}, preserving aspect
+            const k = Math.max(targetBox.x / tr.x, targetBox.x / tr.x);
+            return new Vector(tr.x * k, tr.y * k);
+        }
+        default: {
+            // default = uniform by X
+            const k = sx;
+            return new Vector(tr.x * k, tr.h * k); // { w: tr.w * k, h: tr.h * k };
+        }
+    }
+}
+
+/**
+ * Position & scale a trimmed sprite inside its scaled logical box.
+ *
+ * @param {Vector} trimmed        opaque bounds size (w,h) -> {x,y}
+ * @param {Vector} logicalSize    original full size incl. padding (w,h) -> {x,y}
+ * @param {Vector} scale          user scale (sign only for flipping) -> {x,y}
+ * @param {ScalePolicies} policy  NONE | UNIFORM_X | UNIFORM_Y | FIT | COVER
+ * @param {Vector} logicalPos     top-left of the *scaled* logical box in world space
+ * @param {Vector} [targetBox]    required for FIT/COVER -> {x,y}
+ * @param {Vector} [trimOffset]   unscaled offset of trimmed rect inside logical (top-left) -> {x,y}
+ * @returns {{
+ *   drawSize: Vector,                  // scaled size of trimmed rect
+ *   logicalSizeScaled: Vector,         // scaled size of logical/original rect
+ *   trimmedTopLeft: Vector,            // top-left to draw the trimmed rect in world space
+ *   kx: number, ky: number
+ * }}
+ */
+function getScaledSpriteLayout(
+    trimmed,
+    logicalSize,
+    scale,
+    policy = ScalePolicies.UNIFORM_X,
+    logicalPos,
+    targetBox,
+    trimOffset = new Vector(0, 0)
+) {
+    // Scale sizes using your existing helper (keeps policies consistent)
+    const drawSize = getScaledSpriteSize(trimmed, scale, policy, targetBox);
+    const logicalSizeScaled = getScaledSpriteSize(logicalSize, scale, policy, targetBox);
+
+    // Final multipliers applied to logical space
+    const kx = logicalSizeScaled.x / (logicalSize.x || 1);
+    const ky = logicalSizeScaled.y / (logicalSize.y || 1);
+
+    // If a real trim offset is available, use it; otherwise center the trimmed rect
+    const hasRealOffset = trimOffset.x !== 0 || trimOffset.y !== 0;
+    const logicalCenter = new Vector(logicalPos.x + logicalSizeScaled.x / 2, logicalPos.y + logicalSizeScaled.y / 2);
+
+    const trimmedTopLeft = hasRealOffset
+        ? new Vector(logicalPos.x - trimOffset.x * kx, logicalPos.y + trimOffset.y * ky)
+        : new Vector(
+              logicalPos.x - (logicalSizeScaled.x - drawSize.x) / 2,
+              logicalPos.y - (logicalSizeScaled.y - drawSize.y) / 2
+          );
+    return { drawSize, logicalSizeScaled, trimmedTopLeft, kx, ky };
+}
+export { getScaledSpriteSize, getScaledSpriteLayout };
 </file>
 
 <file path="src/utils/spriteCacheGPU.js">
@@ -3271,15 +4467,15 @@ function printSpriteCacheStats(cache) {
     for (const v of byMode.values()) total += v.bytes;
 
     console.group('SpriteCache Stats');
-    console.log('Total:', human(total), `(entries: ${cache.map.size})`);
+    console.info('Total:', human(total), `(entries: ${cache.map.size})`);
     console.group('By mode');
     for (const [mode, v] of byMode.entries()) {
-        console.log(`  ${mode}: ${human(v.bytes)} (${v.count} frames)`);
+        console.info(`  ${mode}: ${human(v.bytes)} (${v.count} frames)`);
     }
     console.groupEnd();
     console.group('By sheet');
     for (const [sheet, v] of bySheet.entries()) {
-        console.log(`  ${sheet}: ${human(v.bytes)} (${v.count} frames)`);
+        console.info(`  ${sheet}: ${human(v.bytes)} (${v.count} frames)`);
     }
     console.groupEnd();
     console.groupEnd();
@@ -3307,110 +4503,6 @@ class Texture {
 }
 
 export { Texture };
-</file>
-
-<file path="src/utils/userInput.js">
-import { ActionEnums } from './enums';
-import { Action } from '../action/action';
-import { GameEngine } from '../gameEngine/gameEngine';
-import { CustomEvents } from './enums';
-import { Scene } from '../scene/scene';
-
-/**
- * Initializes event listeners for user input on the window, document, and canvas elements.
- * The listeners are for 'keydown', 'keyup', and 'mousedown' events.
- *
- * @param {GameEngine} game - The game engine object.
- *
- * @since 0.0.1
- */
-function initUserInput(game) {
-    const canvas = document.getElementById('canvas');
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-        keys[e.key] = true;
-
-        // If the current scene does not contain the key as an action
-        // if (!currScene.getActionMap().get(e.key)) return;
-        // currScene.doAction(new Action(currScene.getActionMap().get(e.key), ActionEnums.START));
-        game.dispatchEvent(new CustomEvent(CustomEvents.ACTION_START, { detail: { key: e.key, repeat: e.repeat } }));
-    });
-
-    window.addEventListener('keyup', (e) => {
-        keys[e.key] = false;
-        // If the current scene does not contain the key as an action
-        // if (!currScene.getActionMap().get(e.key)) return;
-        // currScene.doAction(new Action(currScene.getActionMap().get(e.key), ActionEnums.END));
-        game.dispatchEvent(new CustomEvent(CustomEvents.ACTION_END, { detail: { key: e.key, repeat: e.repeat } }));
-    });
-
-    // // src/utils/userInput.js
-    canvas.addEventListener('pointerdown', (e) => {
-        const { x, y } = getMouseInCanvas(e, canvas);
-
-        game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_DOWN, { detail: { x, y } }));
-    });
-
-    canvas.addEventListener('pointerup', (e) => {
-        const { x, y } = getMouseInCanvas(e, canvas);
-
-        game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_UP, { detail: { x, y } }));
-    });
-
-    canvas.addEventListener('pointermove', (e) => {
-        const { x, y } = getMouseInCanvas(e, canvas);
-
-        game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_MOVE, { detail: { x, y } }));
-    });
-}
-
-/**
- * Gets the mouse coordinates relative to the canvas element. The coordinates
- * are calculated from the clientX and clientY coordinates of the event object,
- * and are scaled to the size of the canvas element's backing buffer.
- *
- * @param {MouseEvent} e - The mouse event.
- * @param {HTMLCanvasElement} canvas - The canvas element.
- * @returns {Object} - An object with two properties, x and y, which are the
- *     coordinates of the mouse relative to the canvas element.
- */
-function getMouseInCanvas(e, canvas) {
-    const rect = canvas.getBoundingClientRect(); // CSS box (includes border)
-    const style = getComputedStyle(canvas);
-
-    const padL = parseFloat(style.paddingLeft) || 0;
-    const padT = parseFloat(style.paddingTop) || 0;
-    const padR = parseFloat(style.paddingRight) || 0;
-    const padB = parseFloat(style.paddingBottom) || 0;
-
-    const bL = parseFloat(style.borderLeftWidth) || 0;
-    const bT = parseFloat(style.borderTopWidth) || 0;
-    const bR = parseFloat(style.borderRightWidth) || 0;
-    const bB = parseFloat(style.borderBottomWidth) || 0;
-
-    // Mouse in CSS pixels, relative to the content box
-    const xCss = e.clientX - rect.left - bL - padL;
-    const yCss = e.clientY - rect.top - bT - padT;
-
-    // Content-box size in CSS pixels
-    const contentW = rect.width - (padL + padR + bL + bR);
-    const contentH = rect.height - (padT + padB + bT + bB);
-
-    // Scale to the backing buffer
-    const scaleX = canvas.width / contentW;
-    const scaleY = canvas.height / contentH;
-
-    return { x: xCss * scaleX, y: yCss * scaleY };
-}
-
-// function addAction(e, type, scene) {
-//     // If the current scene does not contain the key as an action
-//     if (!scene.getActionMap().get(e.key)) return;
-//     scene.doAction(scene.getActionMap().get(e.key), type);
-// }
-
-export { initUserInput };
 </file>
 
 <file path="src/counter.js">
@@ -3515,16 +4607,14 @@ dock.rightTabs.addTab({
 
 <file path="src/main.js">
 import GameLoop from '@tenoch_code/tlaloopi';
-// import { Vector } from 'vecti';
 import { GameEngine } from './gameEngine/gameEngine';
 import { CustomEvents } from './utils/enums';
-
 import { Tabs } from './ui/tabs/tabs';
-// import './ui/tabs/tabs-retro.css';
+import { createTabs } from './ui/tabs/createTabs';
 
+const debug = true;
 let ctx = document.getElementById('canvas').getContext('2d');
-let gameEngine = new GameEngine('../assets/config.json', ctx);
-const tabs = new Tabs(document.getElementById('tab-container'), { title: 'Editor' });
+let gameEngine = new GameEngine('../assets/config.json', ctx, debug);
 
 function resizeCanvas(canvas, ctx) {
     const dpr = window.devicePixelRatio || 1;
@@ -3538,6 +4628,7 @@ function resizeCanvas(canvas, ctx) {
 }
 
 window.addEventListener('resize', (e) => {
+    gameEngine.dispatchEvent(new CustomEvent(CustomEvents.WINDOW_RESIZED));
     resizeCanvas(canvas, ctx);
 });
 resizeCanvas(canvas, ctx);
@@ -3545,17 +4636,26 @@ resizeCanvas(canvas, ctx);
 // onload
 $(async function () {
     $('#tab-container').draggable();
-    $('#tab-container').draggable('option', 'cursor', 'grabbing');
+    await startGame();
+});
 
+async function startGame() {
     let gameLoop = new GameLoop(
         {
-            fps: 120,
+            fps: 60,
         },
-        gameEngine.update.bind(gameEngine),
+        gameEngine.fixedUpdate.bind(gameEngine),
         gameEngine.render.bind(gameEngine),
-        (timestamp, deltaTime) => {},
-        (fps, numUpdateSteps) => {
-            $('#logging').html('<p>FPS: ' + fps + ' Steps: ' + numUpdateSteps + '</p>');
+        (timestamp, delta) => {},
+        (stats) => {
+            // all values in ms
+            // stats: { fps, fixedDt, elapsedTime, simulatedTime, leftOverTime, numUpdateSteps}
+            $('#fps').text(stats.fps.toFixed(3));
+            $('#fixed').text(stats.fixedDt.toFixed(3) / 1000);
+            $('#elapsed').text(stats.elapsedTime.toFixed(3) / 1000);
+            $('#simTime').text(stats.simulatedTime.toFixed(3) / 1000);
+            $('#ticks').text(stats.numUpdateSteps);
+            gameEngine.onFrameEnd(stats);
         }
     );
 
@@ -3571,122 +4671,14 @@ $(async function () {
         gameLoop.start();
     });
 
-    $('#start-btn').on('click', () => {
-        // dispatch a custom started event
-        gameEngine.dispatchEvent(new Event(CustomEvents.GAME_STARTED));
-        gameEngine.start();
-    });
-
-    $('#end-btn').on('click', () => {
-        gameEngine.stop();
-    });
-
-    $('#change-test-btn').on('click', () => {
-        gameEngine.test.prop1 = 'has new text';
-    });
-
     await gameEngine.init();
     gameEngine.dispatchEvent(new Event(CustomEvents.GAME_STARTED));
     gameEngine.start();
 
-    // Sprites panel
-    tabs.addTab({
-        id: 'sprites',
-        title: 'Sprites',
-        icon: '🖼️',
-        tooltip: 'Browse sprites',
-        active: true,
-        // closable: true,
-
-        mount(root) {
-            root.innerHTML = `
-      <div class="panel-row">
-        <div><label>Filter</label><input id="spriteFilter" placeholder="name"></div>
-        <div id="spriteGrid" style="display:grid;grid-template-columns:repeat(auto-fill,72px);gap:8px;margin-top:10px;"></div>
-      </div>`;
-            // TODO: render your sprites here (thumbs into #spriteGrid)
-        },
-        onShow(root) {
-            /* refresh if needed */
-        },
+    await createTabs(new Tabs(document.getElementById('tab-container'), { title: 'Editor' }), gameEngine, {
+        entityManager: gameEngine.getSceneEntityManager(),
     });
-
-    // Animations panel
-    tabs.addTab({
-        id: 'animations',
-        title: 'Animations',
-        icon: '🎞️',
-        tooltip: 'Browse animations',
-        mount(root) {
-            root.innerHTML = `
-      <div>
-        <button id="btnPlay">Play</button>
-        <button id="btnPause">Pause</button>
-        <div id="animPreview" style="height:160px;border:1px solid var(--ui-border);margin-top:8px;border-radius:8px;"></div>
-      </div>`;
-            // Hook your engine’s preview canvas here…
-        },
-    });
-
-    tabs.addTab({
-        id: 'actions',
-        title: 'Actions',
-        icon: '⚙️',
-        tooltip: 'Browse actions',
-        mount(root) {
-            root.innerHTML = `
-      <div>
-        <button id="btnPlay">Play</button>
-        <button id="btnPause">Pause</button>
-        <div id="animPreview" style="height:160px;border:1px solid var(--ui-border);margin-top:8px;border-radius:8px;"></div>
-      </div>`;
-            // Hook your engine’s preview canvas here...
-        },
-    });
-
-    // Test
-    tabs.addTab({
-        id: 'test',
-        title: 'Test',
-        icon: '💾',
-        tooltip: 'Test',
-        mount(root) {
-            root.innerHTML = `
-      <div>
-        <button id="btnTest">Test</button>
-        <div id="testPreview" style="height:160px;border:1px solid var(--ui-border);margin-top:8px;border-radius:8px;"></div>
-      </div>`;
-            // Hook your engine’s preview canvas here...
-        },
-        onShow(root) {
-            /* refresh if needed */
-        },
-    });
-
-    // Tiles panel
-    tabs.addTab({
-        id: 'tiles',
-        title: 'Tiles',
-        icon: '🧱',
-        badge: 0,
-        tooltip: 'Tile editor',
-        mount(root) {
-            root.innerHTML = `<div id="tileset" style="display:flex; gap:10px;">
-      <canvas id="tilesetCanvas" width="256" height="256" style="border:1px solid var(--ui-border)"></canvas>
-      <div>
-        <label>Brush Size</label>
-        <select id="brush"><option>1×1</option><option>2×2</option><option>3×3</option></select>
-        <div style="margin-top:8px"><button id="place">Place</button> <button id="erase">Erase</button></div>
-      </div>
-    </div>`;
-        },
-    });
-
-    // Listen to tab lifecycle if you need cross-module behavior
-    tabs.addEventListener('tab:select', (e) => {
-        // e.detail.id -> 'sprites' | 'animations' | 'tiles'
-    });
-});
+}
 </file>
 
 <file path=".gitignore">
@@ -3725,25 +4717,46 @@ dist-ssr
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Tlatoonie</title>
         <link rel="stylesheet" href="./css/style.css" />
+        <link rel="stylesheet" href="./src/ui/buttons/entityList/entity.base.css" />
         <link rel="stylesheet" href="./src/ui/tabs/tabs.base.css" />
         <link rel="stylesheet" href="./src/ui/tabs/theme-win95.css" />
         <link rel="stylesheet" href="./src/ui/tabs/theme-mac9.css" />
         <link rel="stylesheet" href="./src/ui/tabs/theme-crt.css" />
         <link rel="stylesheet" href="./src/ui/tabs/theme-synthwave.css" />
+        <link rel="stylesheet" href="./src/ui/tabs/theme-light.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css" />
     </head>
 
     <body>
         <div id="logging">
             <h1>Logging</h1>
+            <ul>
+                <li>
+                    FPS(ms):
+                    <div id="fps"></div>
+                </li>
+                <li>
+                    Fixed Delta(ms):
+                    <div id="fixed"></div>
+                </li>
+                <li>
+                    Elapsed Time(ms):
+                    <div id="elapsed"></div>
+                </li>
+                <li>
+                    Simulated Time(ms):
+                    <div id="simTime"></div>
+                </li>
+                <li>
+                    Number of Ticks(ms):
+                    <div id="ticks"></div>
+                </li>
+            </ul>
         </div>
-        <canvas id="canvas"> Your browser does not support the canvas element. </canvas>
-        <!-- <div class="button-container">
-            <button id="start-btn" class="button">Start Game</button>
-            <button id="end-btn" class="button">End Game</button>
-            <button id="change-test-btn" class="button">change test</button>
-        </div> -->
 
-        <div id="tab-theme-root" data-theme="synthwave">
+        <canvas id="canvas"> Your browser does not support the canvas element. </canvas>
+
+        <div id="tab-theme-root" data-theme="mac9">
             <div class="tab-container" id="tab-container" data-title="Panels"></div>
         </div>
 
@@ -3753,6 +4766,1370 @@ dist-ssr
         <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
     </body>
 </html>
+</file>
+
+<file path="src/gameEngine/gameEngine.js">
+import { resolveConfiguration, waitForSpriteSheets } from '../utils/file';
+import { ActionKeys, ActionTypes, CustomEvents, SceneNames, ScalePolicies, EntityTypes } from '../utils/enums';
+import { Play_Scene } from '../scene/play_scene';
+import { Scene } from '../scene/scene';
+import { Vector } from 'vecti';
+import { initUserInput } from '../utils/userInput';
+import { Action } from '../action/action';
+import { printSpriteCacheStats, SpriteCacheGPU } from '../utils/spriteCacheGPU';
+import { getScaledSpriteLayout, getScaledSpriteSize } from '../utils/sprite';
+
+class GameEngine extends EventTarget {
+    /**
+     * Map of all scenes in the game
+     *
+     * @type {Map<string, Play_Scene>}
+     */
+    #sceneMap = new Map();
+    // #assets = new Assets();
+
+    /**
+     * The current scene that the game is on
+     * @type {string}
+     */
+    #currentScene = '';
+    #simulationSpeed = 1;
+    #isRunning = true;
+    #DEBUG;
+
+    /**
+     * The canvas context
+     * @type {CanvasRenderingContext2D}
+     */
+    #canvasCTX;
+
+    /**
+     * The assets
+     */
+    #assets;
+    #configPath;
+    updates = 0;
+    renders = 0;
+    spriteCache = null;
+    #pointerCoords = new Vector(0, 0);
+    #frameCount = 0;
+
+    /**
+     * Sprite selection
+     * {
+     * details
+     * }
+     */
+    #spriteSelected = null;
+
+    /**
+     * Creates a new GameEngine instance
+     * @param {string} path - the path to the game configuration file
+     * @param {CanvasRenderingContext2D} ctx - the canvas context to render the game on
+     * @param {number} fps - the target frames per second for the game (default: 60)
+     */
+    constructor(path, ctx, debug = false) {
+        super();
+
+        this.#configPath = path;
+        this.#canvasCTX = ctx;
+        this.#DEBUG = debug;
+    }
+
+    async init() {
+        this.#canvasCTX.imageSmoothingEnabled = false;
+        this.#assets = await resolveConfiguration(this.#configPath);
+        this.spriteCache = new SpriteCacheGPU(128 * 1024 * 1024);
+
+        // resizeCanvasForDPR(this.#canvasCTX.canvas, this.#canvasCTX);
+
+        // Wait for all images to load before proceeding
+        await waitForSpriteSheets(this.#assets);
+
+        for (let sheet of this.#assets.spriteSheets.values()) {
+            let sheetImage = sheet.image;
+            let frames = sheet.frames.map((frame) => {
+                const r = frame.frame;
+                return { sx: r.x, sy: r.y, sw: r.w, sh: r.h };
+            });
+
+            // Prewarm both orientations
+            await this.spriteCache.prewarm(sheetImage, frames, 'none');
+            await this.spriteCache.prewarm(sheetImage, frames, 'flipX');
+        }
+
+        console.log('assets loaded', this.#assets);
+
+        // this.#canvasCTX.drawImage(this.#assets.spriteSheets.get('knight').image, 0, 0);
+        this.changeScene(SceneNames.Play, new Play_Scene(this));
+        initUserInput(this);
+        console.log('sprite cache prewarmed', this.spriteCache.map, this.spriteCache.inflight);
+        printSpriteCacheStats(this.spriteCache);
+
+        this.#addEventListeners();
+    }
+
+    changeScene(
+        sceneName,
+        scene, // A reference to the scene
+        endCurrentScene = false
+    ) {
+        if (endCurrentScene) {
+            this.#sceneMap.get(this.#currentScene).hasEnded = true;
+        }
+
+        this.#currentScene = sceneName;
+        if (!this.#sceneMap.has(sceneName)) {
+            this.#sceneMap.set(sceneName, scene);
+        } else {
+            this.#sceneMap.set(sceneName, scene);
+        }
+
+        // Add an event listener to the scene to listen for the game stopped event
+        this.#sceneMap.get(this.#currentScene).addEventListener(CustomEvents.GAME_STOPPED, () => {
+            this.setPaused(true);
+        });
+    }
+
+    fixedUpdate(dt) {
+        // If the game was turned off stop the loop
+        // TODO: FOLLOW-UP handle reset and game end better
+        if (!this.isRunning()) return;
+
+        // call the update for the current scene
+        // TODO: uncomment once we have an inherited Scene
+        this.#sceneMap.get(this.#currentScene).fixedUpdate(dt);
+    }
+
+    onFrameEnd({ fps, fixedDt, elapsedTime, simulatedTime, leftOverTime, numUpdateSteps }) {
+        // stats: { fps, fixedDt, elapsedTime, simulatedTime, leftOverTime, numUpdateSteps}
+        this.#sceneMap.get(this.#currentScene).onFrameEnd(elapsedTime, numUpdateSteps);
+    }
+
+    render(alpha) {
+        if (!this.isRunning()) return;
+        // Clear the canvas
+        this.#canvasCTX.clearRect(0, 0, this.#canvasCTX.canvas.width, this.#canvasCTX.canvas.height);
+
+        // Call the scene's render method
+        this.#sceneMap.get(this.#currentScene).sRender(alpha);
+    }
+
+    quit() {
+        // TODO: quit the game
+        this.#isRunning = false;
+    }
+
+    stop() {
+        // TODO: FOLLOW-UP pause or stop the game
+        this.#isRunning = false;
+    }
+
+    start() {
+        this.#isRunning = true;
+    }
+
+    isRunning() {
+        return this.#isRunning;
+    }
+    getAssets() {
+        return this.#assets;
+    }
+
+    /**
+     * Gets the current scene that the game is on.
+     * @returns {Scene} The current scene.
+     */
+    getCurrentScene() {
+        return this.#sceneMap.get(this.#currentScene);
+    }
+
+    drawLine(point1, point2) {
+        this.#canvasCTX.beginPath();
+        this.#canvasCTX.moveTo(point1.x, point1.y);
+        this.#canvasCTX.lineTo(point2.x, point2.y);
+        this.#canvasCTX.stroke();
+    }
+
+    /**
+     * Draw a sprite from a sprite sheet onto the game canvas.
+     *
+     * @param {string} sheetId - The id of the sprite sheet.
+     * @param {string} spriteName - The name of the sprite to draw.
+     * @param {Vector} pos - The position of the top left of the
+     *     sprite in the canvas.
+     * @param {Vector} size - The size of the sprite in the canvas.
+     */
+    async drawSprite(sheetId, spriteName, pos, scale) {
+        const sheet = this.#assets.spriteSheets.get(sheetId);
+        const img = sheet.image;
+        const sprite = sheet.frameMap.get(spriteName);
+        const frame = sprite.frame;
+        const tr = new Vector(frame.w, frame.h);
+        if (sheet.trimmedRect) {
+            tr.x = sheet.trimmedRect.width;
+            tr.y = sheet.trimmedRect.height;
+        }
+
+        // const sx = Math.abs(scale.x);
+        // let scaledBox = getScaledSpriteSize(tr, scale, ScalePolicies.UNIFORM_Y, null);
+        let { drawSize, logicalSizeScaled, trimmedTopLeft, kx, ky } = getScaledSpriteLayout(
+            tr,
+            new Vector(frame.w, frame.h),
+            scale,
+            ScalePolicies.UNIFORM_Y,
+            pos,
+            null
+        );
+
+        const bmp = await this.spriteCache.get(
+            img,
+            frame.x,
+            frame.y,
+            frame.w,
+            frame.h,
+            scale.x >= 0 ? 'none' : 'flipX'
+        );
+        this.#canvasCTX.drawImage(bmp, trimmedTopLeft.x, trimmedTopLeft.y, logicalSizeScaled.x, logicalSizeScaled.y);
+    }
+
+    /**
+     * Draws a string onto the game canvas.
+     *
+     * @param {string} text - The string to draw.
+     * @param {Vector} pos - The position of the top left of the
+     *     text in the canvas.
+     * @param {string} color - The color of the text.
+     * @param {string} font - The css font string to use.
+     */
+    drawString(text, pos, color, font) {
+        this.#canvasCTX.fillStyle = color;
+        this.#canvasCTX.font = font;
+        this.#canvasCTX.fillText(text, pos.x, pos.y);
+    }
+
+    loadAllImages() {
+        this.#assets.textures.forEach((texture) => {});
+    }
+
+    getAnimations() {
+        return this.#assets.animations;
+    }
+
+    getAnimation(animationName) {
+        return this.#assets.animations.get(animationName);
+    }
+
+    getSpriteDimensions(sheetId) {
+        return this.#assets.spriteSheets.get(sheetId).frames[0].frame;
+    }
+
+    /**
+     * Returns the sprite data for a given sprite sheet and frame id.
+     *
+     * @param {string} sheetId - The id of the sprite sheet.
+     * @param {string} frameId - The id of the frame.
+     * @return {{w: number, h: number, x: number, y: number}} - The width, height, and
+     *     position of the frame in the sprite sheet.
+     */
+    getSpriteData(sheetId, frameId) {
+        // frame={
+        // "w": 192,
+        // "h": 168,
+        // "x": 0,
+        // "y": 0
+        // }
+        return this.#assets.spriteSheets.get(sheetId).frameMap.get(frameId).frame;
+    }
+
+    getImage(sheetId) {
+        // this.#assets.
+        return this.#assets.spriteSheets.get(sheetId).image;
+    }
+
+    /**
+     * Draws a circle on the canvas.
+     *
+     * @param {Vector} pos - The center of the circle.
+     * @param {number} radius - The radius of the circle.
+     */
+    drawCircle(pos, radius) {
+        this.#canvasCTX.beginPath();
+        this.#canvasCTX.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
+        this.#canvasCTX.stroke();
+        this.#canvasCTX.closePath();
+    }
+
+    drawCircleFilled(pos, radius, color) {
+        this.#canvasCTX.beginPath();
+        this.#canvasCTX.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
+        this.#canvasCTX.fillStyle = color;
+        this.#canvasCTX.fill();
+        this.#canvasCTX.closePath();
+    }
+
+    /**
+     * Draws a rectangle on the canvas.
+     *
+     * If `fillColor` is given, the rectangle is filled with that color. Otherwise,
+     * the rectangle is only stroked with the given `color`.
+     *
+     * @param {Vector} pos - The top left of the rectangle.
+     * @param {Vector} size - The size of the rectangle: size.x => width and size.y  => height
+     * @param {string} [color='#000000'] - The color of the border.
+     * @param {string} [fillColor] - The color to fill the rectangle with.
+     */
+    drawRect(pos, size, color = '#000000', fillColor = null) {
+        if (fillColor) {
+            this.#canvasCTX.fillStyle = fillColor;
+        }
+
+        if (!fillColor) {
+            this.#canvasCTX.strokeStyle = color;
+            this.#canvasCTX.strokeRect(pos.x, pos.y, size.x, size.y);
+        } else {
+            this.#canvasCTX.fillRect(pos.x, pos.y, size.x, size.y);
+            this.#canvasCTX.strokeRect(pos.x, pos.y, size.x, size.y);
+        }
+    }
+
+    /*****************************************************************************
+     * Getters and Setters
+     ******************************************************************************/
+
+    getSceneEntityManager() {
+        const scene = this.getCurrentScene();
+        return scene.entityManager;
+    }
+
+    getImage(sheetId) {
+        // this.#assets.
+        return this.#assets.spriteSheets.get(sheetId).image;
+    }
+
+    getSpriteTrimmedRect(spriteId) {
+        return this.#assets.spriteSheets.get(spriteId).trimmedRect || null;
+    }
+
+    /**
+     * The width of the canvas.
+     *
+     * @returns {number} The width of the canvas.
+     */
+    get width() {
+        return this.#canvasCTX.canvas.width;
+    }
+
+    getTest() {
+        console.log('testing get ');
+    }
+
+    /**
+     * The height of the canvas.
+     *
+     * @returns {number} The height of the canvas.
+     */
+
+    get height() {
+        return this.#canvasCTX.canvas.height;
+    }
+
+    get assets() {
+        return this.#assets;
+    }
+
+    /** Device pixel ratio in effect for the main ctx */
+    get dpr() {
+        const m = this.#canvasCTX.getTransform?.();
+        return m && m.a ? m.a : window.devicePixelRatio || 1;
+    }
+    /**
+     * The width of the canvas in logical (CSS) units.
+     *
+     * This is the width of the canvas, divided by the device pixel ratio.
+     *
+     * @returns {number} The width of the canvas in logical units.
+     */
+    get logicalWidth() {
+        return this.width / this.dpr;
+    }
+
+    get logicalHeight() {
+        return this.height / this.dpr;
+    }
+
+    /**
+     * The canvas context (2D drawing context) for the game canvas.
+     *
+     * @returns {CanvasRenderingContext2D} The canvas context.
+     */
+    get ctx() {
+        return this.#canvasCTX;
+    }
+
+    /**
+     * The current x-coordinate of the pointer in the game canvas.
+     *
+     * @returns {number} The x-coordinate of the pointer.
+     */
+    get pointerX() {
+        return this.#pointerCoords.x;
+    }
+
+    /**
+     * The current y-coordinate of the pointer in the game canvas.
+     *
+     * @returns {number} The y-coordinate of the pointer.
+     */
+    get pointerY() {
+        return this.#pointerCoords.y;
+    }
+
+    /**
+     * Gets the current pointer position as a Vector.
+     *
+     * @returns {Vector} The current pointer position.
+     */
+    get pointerPosition() {
+        return this.#pointerCoords;
+    }
+
+    /*----------------------------------------------------------------------------
+     * helper functions
+     *-----------------------------------------------------------------------------*/
+
+    #addEventListeners() {
+        /********************   Window Events          *******************/
+        this.addEventListener(CustomEvents.WINDOW_RESIZED, (e) => {
+            // resizeCanvas(this.#canvasCTX.canvas, this.#canvasCTX);
+        });
+
+        /********************   Keyboard/button Events *******************/
+        this.addEventListener(CustomEvents.ACTION_START, (e) => {
+            if (e.detail.repeat) return;
+            if (e.detail.key == ActionKeys.p) {
+                if (this.isRunning()) {
+                    this.stop();
+                    this.dispatchEvent(new CustomEvent(CustomEvents.GAME_STOPPED));
+                    return;
+                }
+                if (!this.isRunning()) {
+                    this.start();
+                    this.dispatchEvent(new CustomEvent(CustomEvents.GAME_STARTED));
+                    return;
+                }
+                return;
+            }
+
+            let scene = this.#sceneMap.get(this.#currentScene);
+            if (!scene.actionMap.has(e.detail.key)) return;
+            let action = new Action(scene.actionMap.get(e.detail.key), ActionTypes.START);
+            scene.actionEnqueue(action);
+        });
+
+        this.addEventListener(CustomEvents.ACTION_END, (e) => {
+            let scene = this.#sceneMap.get(this.#currentScene);
+            if (!scene.actionMap.has(e.detail.key)) return;
+            let action = new Action(scene.actionMap.get(e.detail.key), ActionTypes.END);
+            scene.actionEnqueue(action);
+        });
+
+        /********************   Pointer Events *******************/
+
+        this.addEventListener(CustomEvents.POINTER_MOVE, (e) => {
+            // console.log(e.detail);
+            this.#pointerCoords = new Vector(e.detail.x, e.detail.y);
+            let scene = this.#sceneMap.get(this.#currentScene);
+            if (!scene.actionMap.has(ActionKeys.pointerMove)) return;
+
+            let action = new Action(scene.actionMap.get(ActionKeys.pointerMove), ActionTypes.END);
+            action.payload = this.#pointerCoords;
+            scene.sDoActionImm(action);
+        });
+
+        this.addEventListener(CustomEvents.POINTER_DOWN, (e) => {
+            let scene = this.#sceneMap.get(this.#currentScene);
+            if (!scene.actionMap.has(ActionKeys.pointerDown)) return;
+
+            let action = new Action(scene.actionMap.get(ActionKeys.pointerDown), ActionTypes.START);
+            action.payload = new Vector(e.detail.x, e.detail.y);
+            scene.sDoActionImm(action);
+
+            // **** event:sprite select
+            if (this.#spriteSelected) {
+                console.log('placing sprite');
+                console.info(this.#spriteSelected);
+                scene.placeSpriteEntityGrid(
+                    EntityTypes.GROUND,
+                    e.detail.x,
+                    e.detail.y,
+                    this.#spriteSelected.sheetId,
+                    this.#spriteSelected.frame,
+                    false
+                );
+                this.#spriteSelected = null;
+            }
+        });
+
+        this.addEventListener(CustomEvents.POINTER_UP, (e) => {
+            let scene = this.#sceneMap.get(this.#currentScene);
+            if (!scene.actionMap.has(ActionKeys.pointerUp)) return;
+
+            let action = new Action(scene.actionMap.get(ActionKeys.pointerUp), ActionTypes.START);
+            scene.sDoActionImm(action);
+        });
+
+        /******************** Debugging   Sprite Events ******************* */
+        if (this.#DEBUG) {
+            this.addEventListener(CustomEvents.SPRITE.SELECT, (e) => {
+                this.#spriteSelected = {
+                    sheetId: e.detail.sheetId,
+                    frame: e.detail.frame.frameName,
+                    // position: new Vector(e.detail.x, e.detail.y),
+                };
+                console.log('sprite selected', this.#spriteSelected);
+            });
+        }
+    }
+}
+
+export { GameEngine };
+</file>
+
+<file path="src/scene/play_scene.js">
+import { Scene } from './scene';
+import { Vector } from 'vecti';
+import { EntityManager, Entity } from '../entityManager/entityManger';
+import {
+    ActionEnums,
+    ActionKeys,
+    ActionTypes,
+    ComponentTypes,
+    CustomEvents,
+    EntityTypes,
+    PlayerStates,
+    ScalePolicies,
+} from '../utils/enums';
+import { createComponent } from '../components/components';
+import { Animation } from '../animation/animation';
+import { getScaledSpriteSize } from '../utils/sprite';
+import playerStateCallbacks from '../playerStates';
+
+/**
+ * TODO: Refactor entity configs out into JSON files
+ *
+ * GOAL
+ * - Move hardcoded entity setup (player, tiles, NPCs, etc.) into data-driven JSON.
+ * - Keep code generic: read JSON → build components → spawn entities.
+ *
+ * FILE LAYOUT (proposed)
+ * - /assets/config.json                      → root index (lists packs/files, version)
+ * - /assets/entities/player.json             → a single entity archetype
+ * - /assets/entities/tile.json               → tile archetype(s)
+ * - /assets/entities/*.json                  → other archetypes
+ * - /assets/animations/*.json                → animation clips (or inside entity)
+ * - /assets/spritesheets/*.json              → atlas metadata (if not already)
+ *
+ * JSON SCHEMA (entity) – v1
+ * {
+ *   "version": 1,
+ *   "entityType": "PLAYER",                // maps to EntityTypes.*
+ *   "tag": "PLAYER",
+ *   "spawn": { "grid": [1,1] },            // or "world": [x,y]
+ *   "components": {
+ *     "CTransform": {
+ *       "position": { "x": 0, "y": 0 },   // CENTER in world space (source of truth)
+ *       "velocity": { "x": 5, "y": 3 },
+ *       "scale":    { "x": 1, "y": 1 },
+ *       "angle": 0
+ *     },
+ *     "CSprite": {
+ *       "sheetId": "knight",               // must exist in assets.spriteSheets
+ *       "frame":   "idle_000"
+ *     },
+ *     "CSpriteDimensions": {
+ *       "logical": { "x": 64, "y": 64 },   // original (incl. padding)
+ *       "trimmed": { "x": 16, "y": 16 }    // opaque area; optional, infer from atlas if missing
+ *     },
+ *     "CBoundingBox": {
+ *       "rectangle": { "x": 15, "y": 34 }, // unscaled logical bbox
+ *       "offset":    { "x": 0,  "y": 0 }   // logical units; scaled at runtime
+ *     },
+ *     "CAnimation": {
+ *       "clip": "idle",                    // default clip name
+ *       "clips": ["idle","walk","jump"],   // optional preloaded pool for this entity
+ *       "fps": 12,                         // default if clip lacks fps
+ *       "loop": true
+ *     },
+ *     "CInput": {},
+ *     "CState": { "current": "IDLE" },
+ *     "CPhysics": {
+ *       "horizontalSpeed": 5,
+ *       "jumpSpeed": 15,
+ *       "maxSpeed": 20,
+ *       "gravity": 1
+ *     }
+ *   }
+ * }
+ *
+ */
+
+//Player *1 1 64 64* 5 15 20 1 Buster
+/**
+ * Play_Scene
+ *
+ * @description Scene for playing the game
+ *
+ *
+ */
+class Play_Scene extends Scene {
+    /*
+     * TODO (anchors): Use CENTER as the single source of truth in CTransform.
+     *
+     * - Physics & interpolation operate on center (world space).
+     * - Rendering/UI need top-left → derive it from center + scaled logical size (+ scaled offsets).
+     * - Do NOT store both center and top-left; compute one from the other to avoid drift.
+     *
+     * Helpers:
+     * edit the current centeredBoundingRect method
+     *
+     * Tiles placed by top-left? Convert once at spawn:
+     *   transform.position = topLeftToCenter(tileTopLeft, scaledTileSize);
+     *
+     */
+
+    //TODO: refactor configs out into json files (entity)
+    #playerConfig = {
+        gridPos: new Vector(1, 1),
+        boundingBox: new Vector(15, 34),
+        boundingBoxOffset: new Vector(0, 0),
+        horizontalSpeed: 200,
+        verticalSpeed: 200,
+        jumpSpeed: 15,
+        maxSpeed: 20,
+        gravity: 1,
+        spriteRectangle: new Vector(16, 16),
+        animation: PlayerStates.IDLE,
+        sprite: 'knight',
+        initialPosition: new Vector(0, 0),
+        initialVelocity: new Vector(5, 3),
+        size: new Vector(64, 64),
+        initialScale: new Vector(26, 34),
+    };
+
+    #entityConfig = {
+        [EntityTypes.PLAYER]: this.#playerConfig,
+        [EntityTypes.TILE]: {
+            gridPos: new Vector(1, 1),
+            boundingBox: null,
+            boundingBoxOffset: new Vector(0, 0),
+            horizontalSpeed: null,
+            jumpSpeed: 15,
+            maxSpeed: 20,
+            gravity: 1,
+            // spriteRectangle: new Vector(16, 16),
+            // animation: 'jump',
+            // sprite: 'knight',
+            // initialPosition: new Vector(0, 0),
+            // initialVelocity: new Vector(5, 3),
+            // size: new Vector(64, 64),
+            // initialScale: new Vector(26, 34),
+        },
+    };
+
+    #actionsQueue = [];
+
+    #playerAnimationMap = new Map();
+
+    #simTime = 0;
+
+    #mapConfig = {
+        tileSize: new Vector(64, 64),
+        numTiles: 0,
+    };
+
+    #player = new Entity();
+    #drawTextures = true;
+    #drawCollisions = true;
+    #drawGrid = true;
+    #drawHoverTile = true;
+    #gridText;
+    #gridTiles = new Map();
+    #pointerX = null;
+    #pointerY = null;
+    #camera = new Vector(0, 0);
+    #fallingThreshold = 1; // in seconds
+
+    drawTexture = true;
+
+    #gridPattern = null; // CanvasPattern
+    #gridPatternCanvas = null; // OffscreenCanvas | HTMLCanvasElement (debug/cleanup)
+    #gridPatternTile = { x: 0, y: 0 }; // the tile size used to build the pattern
+    #gridPatternDPR = 0; // so we can rebuild when DPR changes
+    #gridMajorEvery = 1; // draw a stronger line every N cells
+
+    constructor(gameEngine) {
+        super(gameEngine);
+
+        this.registerAction(ActionKeys.p, ActionEnums.PAUSE);
+        this.registerAction(ActionKeys.escape, ActionEnums.QUIT);
+        this.registerAction(ActionKeys.num_0, ActionEnums.TOGGLE_TEXTURE);
+        this.registerAction(ActionKeys.num_1, ActionEnums.TOGGLE_COLLISION);
+        this.registerAction(ActionKeys.num_2, ActionEnums.TOGGLE_GRID);
+        this.registerAction(ActionKeys.space, ActionEnums.JUMP);
+        this.registerAction(ActionKeys.a, ActionEnums.LEFT);
+        this.registerAction(ActionKeys.d, ActionEnums.RIGHT);
+        this.registerAction(ActionKeys.s, ActionEnums.DOWN);
+        this.registerAction(ActionKeys.w, ActionEnums.UP);
+        this.registerAction(ActionKeys.pointerDown, ActionEnums.CLICK);
+        this.registerAction(ActionKeys.pointerMove, ActionEnums.POINTER_POSITION);
+
+        this.#mapConfig.numTiles = new Vector(
+            this.gameEngine.logicalWidth / this.#mapConfig.tileSize.x,
+            this.gameEngine.logicalHeight / this.#mapConfig.tileSize.y
+        );
+
+        // create a ready animation for each
+        console.log('create an animation pool for the player to re-use');
+        for (let anim of gameEngine.getAnimations().keys()) {
+            this.#playerAnimationMap.set(anim, new Animation(anim, gameEngine.getAnimation(anim), gameEngine));
+        }
+
+        console.log(this.#playerAnimationMap);
+        this.#loadLevel();
+    }
+
+    #loadLevel() {
+        this.entityManager = new EntityManager();
+        // TODO: Use configuration files to create the components and entities
+
+        // sprite dimensions
+        let spriteDimensions = this.gameEngine.getSpriteDimensions(this.#playerConfig.sprite);
+        let trimmedRect = this.gameEngine.getSpriteTrimmedRect(this.#playerConfig.sprite);
+
+        // initial transformations
+        let pos = this.#playerConfig.initialPosition;
+        let vel = new Vector(0, 0);
+        let scale = new Vector(
+            this.#playerConfig.size.x / trimmedRect.width,
+            this.#playerConfig.size.y / trimmedRect.height
+        );
+        let angle = 0;
+        let hSpeed = this.#playerConfig.horizontalSpeed;
+        let vSpeed = this.#playerConfig.verticalSpeed;
+
+        // animation
+        let animFrame = this.#playerStateToAnimation(this.#playerConfig.animation);
+        const animation = this.#playerAnimationMap.get(animFrame);
+        console.log('The initial animation', animation);
+
+        this.#player = this.#spawnEntity(
+            {
+                [ComponentTypes.CAnimation]: [animation, false],
+                [ComponentTypes.CSpriteDimensions]: [
+                    new Vector(spriteDimensions.w, spriteDimensions.h),
+                    new Vector(trimmedRect.width, trimmedRect.height),
+                ],
+                [ComponentTypes.CTransform]: [pos, vel, scale, angle, hSpeed, vSpeed],
+                [ComponentTypes.CBoundingBox]: [
+                    new Vector(trimmedRect.width, trimmedRect.height),
+                    this.#playerConfig.boundingBoxOffset,
+                ],
+                [ComponentTypes.CInput]: [],
+                [ComponentTypes.CState]: [PlayerStates.IDLE],
+            },
+            'PLAYER',
+            3,
+            4
+        );
+
+        console.log('player ', this.#player);
+    }
+
+    /**
+     * @returns {Map<string, Action>} - A Map of action name to Action object.
+     */
+    getActions() {
+        return this.actionMap;
+    }
+
+    #spawnPlayer() {}
+    #spawnBullet(entity) {}
+
+    /**********************************************************************
+     *  Systems
+     *********************************************************************/
+    /* Move the entity based on its current state */
+    #sMovement(entity, dt) {
+        let ctr = entity.getComponent(ComponentTypes.CTransform);
+        // Reset the current velocity and set based on the entity's current state
+        ctr.position = ctr.position.add(ctr.velocity.multiply(dt));
+    }
+    #sLifespan(entity) {}
+    #sAnimation(entity) {
+        // TODO: handle non repeating animations and state changes
+        const cst = entity.getComponent(ComponentTypes.CState);
+        const ctr = entity.getComponent(ComponentTypes.CTransform);
+        const ca = entity.getComponent(ComponentTypes.CAnimation);
+        let animFrame;
+        animFrame = this.#playerStateToAnimation(cst.current);
+        if (ca.animation.name !== animFrame) {
+            ca.animation = this.#playerAnimationMap.get(animFrame);
+            ca.animation.reset();
+        }
+    }
+
+    fixedUpdate(dt) {
+        if (this.paused) return;
+        this.#simTime += dt;
+
+        for (let entity of this.entityManager.getAllEntities()) {
+            this.#sMovement(entity, dt);
+            if (entity.getComponent(ComponentTypes.CAnimation)) this.#sAnimation(entity);
+
+            this.sActions();
+        }
+
+        let changed = this.entityManager.update();
+        if (changed)
+            this.gameEngine.dispatchEvent(
+                new CustomEvent(CustomEvents.ENTITIES.UPDATED, {
+                    detail: {
+                        count: this.entityManager.getAllEntities().length,
+                        entities: this.entityManager.getAllEntities(),
+                    },
+                })
+            );
+    }
+
+    onFrameEnd(elapsedTime, numUpdateSteps) {
+        for (let entity of this.entityManager.getAllEntities()) {
+            if (entity.getComponent(ComponentTypes.CAnimation))
+                entity.getComponent(ComponentTypes.CAnimation).animation.update(elapsedTime);
+        }
+    }
+
+    async sRender(alpha) {
+        if (this.paused) return;
+
+        if (this.#drawGrid) this.#renderGridPattern(this.gameEngine.ctx);
+
+        for (let entity of this.entityManager.getAllEntities()) {
+            let transform = entity.getComponent(ComponentTypes.CTransform);
+
+            // show the bounding box
+            if (this.#drawCollisions) {
+                let bBoxRect = this.#centeredBoundingRect(entity);
+                this.gameEngine.drawRect(bBoxRect.topLeft, bBoxRect.size, 'rgba(205, 29, 41, 1)');
+            }
+
+            // show the sprite
+            if (this.drawTexture && entity.getComponent(ComponentTypes.CAnimation)) {
+                let { sheetId, frame } = entity.getComponent(ComponentTypes.CAnimation).animation.getCurrentFrame();
+                if (!transform.scale) {
+                    transform.scale = new Vector(1, 1);
+                }
+                await this.gameEngine.drawSprite(sheetId, frame, transform.position, transform.scale);
+                // await this.gameEngine.drawSprite(sheetId, frame, transform.position, new Vector(-1, 1));
+            } else if (this.drawTexture) {
+                let cSprite = entity.getComponent(ComponentTypes.CSprite);
+                if (!transform.scale) {
+                    transform.scale = new Vector(1, 1);
+                }
+                await this.gameEngine.drawSprite(cSprite.sheetId, cSprite.frame, transform.position, transform.scale);
+            }
+
+            // show the center of the bounding box
+            if (this.#drawCollisions) {
+                let bBoxRect = this.#centeredBoundingRect(entity);
+                this.gameEngine.drawCircleFilled(bBoxRect.center, 2, 'rgba(89, 255, 252, 1)');
+            }
+        }
+
+        if (this.#drawHoverTile && this.#pointerX && this.#pointerY) {
+            let tile = this.#getTileUnderMouse();
+
+            this.gameEngine.drawRect(
+                new Vector(tile.x * this.#mapConfig.tileSize.x, tile.y * this.#mapConfig.tileSize.y),
+                this.#mapConfig.tileSize,
+                'rgba(145, 0, 0, 0.5)',
+                'rgba(243, 157, 95, 0.57)'
+            );
+        }
+    }
+
+    sCollision(entity) {}
+
+    sActions() {
+        // The player's current state
+        let cState = this.#player.getComponent(ComponentTypes.CState);
+        let state_ = playerStateCallbacks.get(cState.current);
+
+        let action = this.actionsDequeue();
+        while (action) {
+            state_ = playerStateCallbacks.get(cState.current);
+            state_.handleAction(this.#player, action);
+            action = this.actionsDequeue();
+        }
+    }
+
+    /**
+     * Processes an immediate action.
+     * Immediate actions are processed immediately, and are not queued.
+     * This function is used to process actions that are not related to the player's state, such as mouse movements.
+     *
+     * @param {Action} action - The action to process.
+     */
+    sDoActionImm(action) {
+        switch (action.name) {
+            case ActionEnums.POINTER_POSITION:
+                this.#pointerX = action.payload.x;
+                this.#pointerY = action.payload.y;
+                break;
+            case ActionEnums.CLICK:
+                this.#pointerX = action.payload.x;
+                this.#pointerY = action.payload.y;
+                // get grid coords
+                const coords = this.#getTileUnderMouse();
+                console.log(coords, { x: this.#pointerX, y: this.#pointerY });
+                break;
+            default:
+                break;
+        }
+    }
+
+    sApplyGravity() {}
+
+    // #onEnd() {
+    //     console.log('end');
+    // }
+    // #changePlayerStateTo(state) {}
+
+    setPaused(isPaused) {
+        console.log('setPaused', isPaused);
+        this.paused = isPaused;
+    }
+
+    /**
+     * Spawns an entity at the given grid coordinates with the given components.
+     * @param {Component[]} components - A map of component type to component arguments.
+     * @param {string} type - The type of entity to spawn.
+     * @param {number} gridX - The x coordinate in the grid.
+     * @param {number} gridY - The y coordinate in the grid.
+     */
+    placeSpriteEntityGrid(type, x = 0, y = 0, sheetId, frame) {
+        let dims = this.gameEngine.getSpriteDimensions(sheetId);
+        dims = new Vector(dims.w, dims.h);
+        let trimmedRect = this.gameEngine.getSpriteTrimmedRect(sheetId);
+        let hasTrimmedRect = trimmedRect != null;
+        if (trimmedRect) trimmedRect = new Vector(trimmedRect.width, trimmedRect.height);
+        else trimmedRect = new Vector(1, 1);
+
+        let scale = new Vector(this.#mapConfig.tileSize.x / dims.x, this.#mapConfig.tileSize.y / dims.y);
+        let pos = new Vector(x, y);
+        let gridPos = this.#worldToGrid(new Vector(x, y));
+        let components = {
+            [ComponentTypes.CSprite]: [sheetId, frame],
+            [ComponentTypes.CSpriteDimensions]: [dims, trimmedRect],
+            [ComponentTypes.CTransform]: [pos, new Vector(0, 0), scale, 0],
+            [ComponentTypes.CBoundingBox]: [hasTrimmedRect ? trimmedRect : dims, new Vector(0, 0)],
+        };
+        this.#spawnEntity(components, type, gridPos.x, gridPos.y);
+    }
+
+    /**
+     * Adds an action to the end of the action queue.
+     * @param {Action} action - The action to add to the queue.
+     */
+    actionEnqueue(action) {
+        this.#actionsQueue.push(action);
+    }
+
+    /**
+     * Removes and returns the first action from the action queue.
+     * If the queue is empty, returns null.
+     * @returns {Action|null} The first action from the queue, or null if the queue is empty.
+     */
+    actionsDequeue() {
+        let action = this.#actionsQueue.shift();
+        if (action) return action;
+        return null;
+    }
+
+    /****************************************************************************
+     * GETTERS AND SETTERS
+     ***************************************************************************/
+
+    /****************************************************************************
+     * HELPER FUNCTIONS
+     ***************************************************************************/
+    /**
+     *
+     * @param {number} gridX the x coordinate in the grid
+     * @param {number} gridY the y coordinate in the grid
+     * @returns
+     */
+    #gridToWorld(gridX, gridY) {
+        let worldX = gridX * this.#mapConfig.tileSize.x;
+        let worldY = gridY * this.#mapConfig.tileSize.y;
+        return new Vector(worldX, worldY);
+    }
+
+    #getTileUnderMouse() {
+        let gridX, gridY;
+        if (this.#pointerX > 0) {
+            gridX = (this.#pointerX / this.gameEngine.logicalWidth) * this.#mapConfig.numTiles.x;
+        } else {
+            gridX = 0;
+        }
+
+        if (this.#pointerY > 0) {
+            gridY = (this.#pointerY / this.gameEngine.logicalHeight) * this.#mapConfig.numTiles.y;
+        } else {
+            gridY = 0;
+        }
+
+        gridX = Math.floor(gridX);
+        gridY = Math.floor(gridY);
+        return this.#worldToGrid(new Vector(this.#pointerX, this.#pointerY));
+    }
+
+    #worldToGrid(worldPos) {
+        let gridX, gridY;
+        if (worldPos.x > 0) {
+            gridX = (worldPos.x / this.gameEngine.logicalWidth) * this.#mapConfig.numTiles.x;
+        } else {
+            gridX = 0;
+        }
+
+        if (worldPos.y > 0) {
+            gridY = (worldPos.y / this.gameEngine.logicalHeight) * this.#mapConfig.numTiles.y;
+        } else {
+            gridY = 0;
+        }
+
+        gridX = Math.floor(gridX);
+        gridY = Math.floor(gridY);
+        return new Vector(gridX, gridY);
+    }
+
+    #centeredBoundingRect(entity) {
+        let transform = entity.getComponent(ComponentTypes.CTransform);
+        // / Get the bounding box
+        let cBoundingBox = entity.getComponent(ComponentTypes.CBoundingBox);
+        let bBoxRect = cBoundingBox.rectangle;
+
+        // Scale the bounding box
+        let scaledBox = getScaledSpriteSize(bBoxRect, transform.scale, ScalePolicies.UNIFORM_Y, null);
+        let halfSize = scaledBox.divide(2);
+
+        // Find the center and top left of the sprite
+        let center;
+        let topLeft = new Vector(
+            transform.position.x - halfSize.x + scaledBox.x / 2,
+            transform.position.y - halfSize.y + scaledBox.y / 2
+        );
+
+        // The collision box is offset from the sprite
+        topLeft = topLeft.add(cBoundingBox.offset);
+
+        center = topLeft.add(halfSize);
+        return { size: scaledBox, topLeft, center };
+    }
+
+    #renderGridPattern(ctx) {
+        this.#ensureGridPattern();
+        if (!this.#gridPattern) return;
+        const w = Math.max(0, this.gameEngine.logicalWidth | 0);
+        const h = Math.max(0, this.gameEngine.logicalHeight | 0);
+        const tsX = this.#mapConfig.tileSize.x | 0;
+        const tsY = this.#mapConfig.tileSize.y | 0;
+
+        // Guard: bail if anything is invalid
+        if (!isFinite(w) || !isFinite(h) || tsX < 2 || tsY < 1) return;
+
+        // Camera/world offset (update when you add a camera)
+        const camX = this.#camera.x,
+            camY = this.#camera.y;
+
+        // Align to world grid
+        const offX = -(camX % tsX);
+        const offY = -(camY % tsY);
+
+        ctx.save();
+        ctx.translate(offX | 0, offY | 0); // integer translate keeps 0.5 lines crisp
+        ctx.fillStyle = this.#gridPattern;
+
+        // Bleed 1 tile so seams never show at edges
+        ctx.fillRect(-tsX, -tsY, w + tsX * 2, h + tsY * 2);
+
+        // DEBUG ONE-FRAME OUTLINE: uncomment to verify we are drawing
+        ctx.strokeStyle = 'magenta';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, 64, 64);
+        ctx.restore();
+
+        // ===== Optional: major lines and sparse labels =====
+        const majorEvery = this.#gridMajorEvery | 0;
+        if (majorEvery > 0) {
+            const startCol = Math.floor(camX / tsX);
+            const startRow = Math.floor(camY / tsY);
+
+            // Count how many lines we actually need on-screen (+2 for bleed)
+            const cols = Math.ceil((w - offX) / tsX) + 2;
+            const rows = Math.ceil((h - offY) / tsY) + 2;
+
+            const major = new Path2D();
+            // Vertical majors
+            for (let i = 0; i <= cols; i++) {
+                const col = startCol + i;
+                if (col % majorEvery !== 0) continue;
+                const x = Math.round(offX + i * tsX) + 0.5;
+                major.moveTo(x, 0);
+                major.lineTo(x, h);
+            }
+
+            // Horizontal majors
+            for (let j = 0; j <= rows; j++) {
+                const row = startRow + j;
+                if (row % majorEvery !== 0) continue;
+                const y = Math.round(offY + j * tsY) + 0.5;
+                major.moveTo(0, y);
+                major.lineTo(w, y);
+            }
+
+            ctx.save();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+            ctx.stroke(major);
+
+            // Sparse labels at major intersections
+            ctx.font = '10px ui-monospace, SFMono-Regular, Menlo, monospace';
+            ctx.fillStyle = 'rgba(28, 16, 16, 0.87)';
+            for (let i = 0; i <= cols; i += majorEvery) {
+                const col = startCol + i;
+                const x = Math.round(offX + i * tsX) + 4;
+                for (let j = 0; j <= rows; j += majorEvery) {
+                    const row = startRow + j;
+                    const y = Math.round(offY + j * tsY) + 12;
+                    if (x <= w && y <= h) ctx.fillText(`${col},${row}`, x, y);
+                }
+            }
+            ctx.restore();
+        }
+    }
+
+    #ensureGridPattern() {
+        const tsX = this.#mapConfig.tileSize.x | 0;
+        const tsY = this.#mapConfig.tileSize.y | 0;
+        const dpr = window.devicePixelRatio || 1;
+
+        if (tsX < 1 || tsY < 1) {
+            this.#gridPattern = null;
+            return;
+        }
+
+        if (
+            this.#gridPattern &&
+            this.#gridPatternTile.x === tsX &&
+            this.#gridPatternTile.y === tsY &&
+            this.#gridPatternDPR === dpr
+        )
+            return;
+
+        this.#gridPattern = null;
+        this.#gridPatternCanvas = null;
+
+        const pxW = Math.max(1, Math.round(tsX * dpr));
+        const pxH = Math.max(1, Math.round(tsY * dpr));
+
+        const makeCanvas = (w, h) => {
+            if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
+            const c = document.createElement('canvas');
+            c.width = w;
+            c.height = h;
+            return c;
+        };
+
+        const off = makeCanvas(pxW, pxH);
+        const octx = off.getContext('2d');
+        octx.imageSmoothingEnabled = false;
+        octx.clearRect(0, 0, pxW, pxH);
+
+        // draw crisp 1px lines in device pixels (top & left only)
+        octx.lineWidth = 1;
+        octx.strokeStyle = 'rgba(255,255,255,0.15)';
+        octx.beginPath();
+        octx.moveTo(0.5, 0);
+        octx.lineTo(0.5, pxH); // left edge
+        octx.moveTo(0, 0.5);
+        octx.lineTo(pxW, 0.5); // top edge
+        octx.stroke();
+
+        let pattern = this.gameEngine.ctx.createPattern(off, 'repeat');
+
+        // If supported, neutralize DPR so each cell is tsX×tsY in user space
+        if (pattern && 'setTransform' in pattern) {
+            const m = new DOMMatrix();
+            m.a = 1 / dpr; // scaleX
+            m.d = 1 / dpr; // scaleY
+            pattern.setTransform(m);
+        }
+
+        if (!pattern) {
+            const dom = document.createElement('canvas');
+            dom.width = pxW;
+            dom.height = pxH;
+            dom.getContext('2d').drawImage(off, 0, 0);
+            pattern = this.gameEngine.ctx.createPattern(dom, 'repeat');
+            this.#gridPatternCanvas = dom;
+        } else {
+            this.#gridPatternCanvas = off;
+        }
+
+        this.#gridPattern = pattern;
+        this.#gridPatternTile = { x: tsX, y: tsY };
+        this.#gridPatternDPR = dpr;
+    }
+
+    #spawnEntity(components = {}, type, gridX = 0, gridY = 0) {
+        let entity = this.entityManager.addEntity(type);
+
+        for (let [componentType, args] of Object.entries(components)) {
+            entity.addComponent(createComponent(componentType, ...args), componentType);
+        }
+
+        let worldCoords = this.#gridToWorld(gridX, gridY);
+        entity.getComponent(ComponentTypes.CTransform).position = worldCoords;
+        console.log('spawn entity');
+        console.log(components);
+        // console.log(entity);
+        return entity;
+    }
+
+    #playerStateToAnimation(stateEnum) {
+        switch (stateEnum) {
+            case PlayerStates.WALKING.RIGHT:
+                return 'walk';
+            case PlayerStates.WALKING.LEFT:
+                return 'walk';
+            case PlayerStates.JUMPING:
+                return 'jump';
+            case PlayerStates.ATTACKING.ONE:
+                return 'attack_1';
+            case PlayerStates.ATTACKING.TWO:
+                return 'attack_2';
+            case PlayerStates.IDLE:
+                return 'idle';
+        }
+    }
+}
+
+export { Play_Scene };
+</file>
+
+<file path="src/utils/userInput.js">
+import { ActionEnums } from './enums';
+import { Action } from '../action/action';
+import { GameEngine } from '../gameEngine/gameEngine';
+import { CustomEvents } from './enums';
+import { Scene } from '../scene/scene';
+
+/**
+ * Initializes event listeners for user input on the canvas, document, and canvas elements.
+ * The listeners are for 'keydown', 'keyup', and 'mousedown' events.
+ *
+ * @param {GameEngine} game - The game engine object.
+ *
+ * @since 0.0.1
+ */
+function initUserInput(game) {
+    const canvas = document.getElementById('canvas');
+    let keys = {};
+
+    window.addEventListener('keydown', (e) => {
+        e.preventDefault();
+        keys[e.key] = true;
+
+        game.dispatchEvent(new CustomEvent(CustomEvents.ACTION_START, { detail: { key: e.key, repeat: e.repeat } }));
+    });
+
+    window.addEventListener('keyup', (e) => {
+        e.preventDefault();
+        keys[e.key] = false;
+        game.dispatchEvent(new CustomEvent(CustomEvents.ACTION_END, { detail: { key: e.key, repeat: e.repeat } }));
+    });
+
+    // // src/utils/userInput.js
+    canvas.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        const { x, y } = getMouseInCanvas(e, canvas);
+
+        game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_DOWN, { detail: { x, y } }));
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+        e.preventDefault();
+        const { x, y } = getMouseInCanvas(e, canvas);
+
+        game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_UP, { detail: { x, y } }));
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+        e.preventDefault();
+        const { x, y } = getMouseInCanvas(e, canvas);
+
+        game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_MOVE, { detail: { x, y } }));
+    });
+}
+
+/**
+ * Gets the mouse coordinates relative to the canvas element. The coordinates
+ * are calculated from the clientX and clientY coordinates of the event object,
+ * and are scaled to the size of the canvas element's backing buffer.
+ *
+ * @param {MouseEvent} e - The mouse event.
+ * @param {HTMLCanvasElement} canvas - The canvas element.
+ * @returns {Object} - An object with two properties, x and y, which are the
+ *     coordinates of the mouse relative to the canvas element.
+ */
+function getMouseInCanvas(e, canvas) {
+    const rect = canvas.getBoundingClientRect(); // CSS box (includes border)
+    const style = getComputedStyle(canvas);
+
+    const padL = parseFloat(style.paddingLeft) || 0;
+    const padT = parseFloat(style.paddingTop) || 0;
+    const padR = parseFloat(style.paddingRight) || 0;
+    const padB = parseFloat(style.paddingBottom) || 0;
+
+    const bL = parseFloat(style.borderLeftWidth) || 0;
+    const bT = parseFloat(style.borderTopWidth) || 0;
+    const bR = parseFloat(style.borderRightWidth) || 0;
+    const bB = parseFloat(style.borderBottomWidth) || 0;
+
+    // Mouse in CSS pixels, relative to the content box
+    const xCss = e.clientX - rect.left - bL - padL;
+    const yCss = e.clientY - rect.top - bT - padT;
+
+    // // Content-box size in CSS pixels
+    // const contentW = rect.width - (padL + padR + bL + bR);
+    // const contentH = rect.height - (padT + padB + bT + bB);
+
+    // // Scale to the backing buffer
+    // const scaleX = canvas.width / contentW;
+    // const scaleY = canvas.height / contentH;
+
+    // return { x: xCss * scaleX, y: yCss * scaleY };
+    return { x: xCss, y: yCss };
+}
+
+// function addAction(e, type, scene) {
+//     // If the current scene does not contain the key as an action
+//     if (!scene.getActionMap().get(e.key)) return;
+//     scene.doAction(scene.getActionMap().get(e.key), type);
+// }
+
+export { initUserInput };
 </file>
 
 </files>

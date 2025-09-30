@@ -1,3 +1,8 @@
+/**
+ * Enum for component types.
+ * @enum {string}
+ * @readonly
+ */
 const ComponentTypes = Object.freeze({
     CAnimation: 'ANIMATION',
     CBoundingBox: 'BOUNDING-BOX',
@@ -11,8 +16,66 @@ const ComponentTypes = Object.freeze({
     CState: 'STATE',
     CTransform: 'TRANSFORM',
     CSpriteDimensions: 'SPRITE-DIMENSIONS',
+    CSprite: 'SPRITE',
 });
 
+/**
+ * The player can be in one or more of these state at any time
+ *
+ * @enum {string}
+ * @see {@link }
+ * @readonly
+ */
+const PlayerStates = Object.freeze({
+    JUMPING: 'JUMPING',
+    WALKING: {
+        LEFT: 'WALKING:LEFT',
+        RIGHT: 'WALKING:RIGHT',
+    },
+    RUNNING: 'RUNNING',
+    FALLING: 'FALLING',
+    TAKING_DAMAGE: 'TAKING_DAMAGE',
+    CAN_ATTACK: 'CAN_ATTACK',
+    IDLE: 'IDLE',
+    ATTACKING: {
+        ONE: 'ATTACKING:ONE',
+        TWO: 'ATTACKING:TWO',
+    },
+});
+
+/**
+ * Available types of entities
+ *
+ * @enum {string}
+ * @see {@link EntityManager}
+ * @readonly
+ */
+const EntityTypes = Object.freeze({
+    PLAYER: 'PLAYER',
+    TILE: 'TILE',
+    GROUND: 'GROUND',
+});
+
+/**
+ * Scale policies
+ * @enum {string}
+ * @see {@link 'Sprite'}
+ * @readonly
+ */
+const ScalePolicies = Object.freeze({
+    FREE: 'FREE',
+    UNIFORM_X: 'UNIFORM_X',
+    UNIFORM_Y: 'UNIFORM_Y',
+    FIT: 'FIT',
+    COVER: 'COVER',
+    NONE: 'NONE',
+});
+
+/**
+ * Enum for interpolation types.
+ * @enum {string}
+ * @readonly
+ */
 const Interpolations = Object.freeze({
     EASEIN_EXPO: 'EASEIN_EXPO',
     EASEIN_SINE: 'EASEIN_SINE',
@@ -24,11 +87,21 @@ const Interpolations = Object.freeze({
     EASEOUT_SINE: 'EASEOUT_SINE',
 });
 
+/**
+ * Enum for scene names.
+ * @enum {string}
+ * @readonly
+ */
 const SceneNames = Object.freeze({
     MENU: 'MENU',
     PLAY: 'PLAY',
 });
 
+/**
+ * Enum for custom events.
+ * @enum {string}
+ * @readonly
+ */
 const CustomEvents = Object.freeze({
     GAME_STOPPED: 'GAME_STOPPED',
     GAME_RESUMED: 'GAME_RESUMED',
@@ -43,11 +116,20 @@ const CustomEvents = Object.freeze({
     POINTER_DOWN: 'POINTER_DOWN',
     POINTER_UP: 'POINTER_UP',
     POINTER_MOVE: 'POINTER_MOVE',
+    WINDOW_RESIZED: 'WINDOW_RESIZED',
+    SPRITE: {
+        SELECT: 'SPRITE:SELECT',
+        DELETE: 'SPRITE:DELETE',
+    },
+    ENTITIES: {
+        UPDATED: 'ENTITIES:UPDATED',
+    },
 });
 
 /**
- *
- *
+ * Enum for action types.
+ * @enum {string}
+ * @readonly
  */
 const ActionEnums = Object.freeze({
     PAUSE: 'PAUSE',
@@ -68,6 +150,11 @@ const ActionEnums = Object.freeze({
     POINTER_POSITION: 'POINTER_POSITION',
 });
 
+/**
+ * Enum for action keys.
+ * @enum {string}
+ * @readonly
+ */
 const ActionKeys = Object.freeze({
     // Letters (lowercase)
     a: 'a',
@@ -213,10 +300,26 @@ const ActionKeys = Object.freeze({
     pointerMove: 'mouseMove',
 });
 
+/**
+ * Enum for action types.
+ * @enum {string}
+ * @readonly
+ */
 const ActionTypes = Object.freeze({
     START: 'START',
     END: 'END',
     MOUSE: 'MOUSE',
 });
 
-export { Interpolations, ComponentTypes, SceneNames, CustomEvents, ActionEnums, ActionKeys, ActionTypes };
+export {
+    Interpolations,
+    ComponentTypes,
+    SceneNames,
+    CustomEvents,
+    ActionEnums,
+    ActionKeys,
+    ActionTypes,
+    ScalePolicies,
+    EntityTypes,
+    PlayerStates,
+};

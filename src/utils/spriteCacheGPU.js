@@ -183,15 +183,15 @@ function printSpriteCacheStats(cache) {
     for (const v of byMode.values()) total += v.bytes;
 
     console.group('SpriteCache Stats');
-    console.log('Total:', human(total), `(entries: ${cache.map.size})`);
+    console.info('Total:', human(total), `(entries: ${cache.map.size})`);
     console.group('By mode');
     for (const [mode, v] of byMode.entries()) {
-        console.log(`  ${mode}: ${human(v.bytes)} (${v.count} frames)`);
+        console.info(`  ${mode}: ${human(v.bytes)} (${v.count} frames)`);
     }
     console.groupEnd();
     console.group('By sheet');
     for (const [sheet, v] of bySheet.entries()) {
-        console.log(`  ${sheet}: ${human(v.bytes)} (${v.count} frames)`);
+        console.info(`  ${sheet}: ${human(v.bytes)} (${v.count} frames)`);
     }
     console.groupEnd();
     console.groupEnd();

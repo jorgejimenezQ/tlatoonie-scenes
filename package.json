@@ -12,7 +12,7 @@
     "vite": "^7.0.4"
   },
   "dependencies": {
-    "@tenoch_code/tlaloopi": "^1.0.4",
+    "@tenoch_code/tlaloopi": "^1.0.5",
     "jquery": "^3.7.1",
     "vecti": "^3.1.1"
   }

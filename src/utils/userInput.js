@@ -5,7 +5,7 @@ import { CustomEvents } from './enums';
 import { Scene } from '../scene/scene';
 
 /**
- * Initializes event listeners for user input on the window, document, and canvas elements.
+ * Initializes event listeners for user input on the canvas, document, and canvas elements.
  * The listeners are for 'keydown', 'keyup', and 'mousedown' events.
  *
  * @param {GameEngine} game - The game engine object.
@@ -17,36 +17,35 @@ function initUserInput(game) {
     let keys = {};
 
     window.addEventListener('keydown', (e) => {
+        e.preventDefault();
         keys[e.key] = true;
 
-        // If the current scene does not contain the key as an action
-        // if (!currScene.getActionMap().get(e.key)) return;
-        // currScene.doAction(new Action(currScene.getActionMap().get(e.key), ActionEnums.START));
         game.dispatchEvent(new CustomEvent(CustomEvents.ACTION_START, { detail: { key: e.key, repeat: e.repeat } }));
     });
 
     window.addEventListener('keyup', (e) => {
+        e.preventDefault();
         keys[e.key] = false;
-        // If the current scene does not contain the key as an action
-        // if (!currScene.getActionMap().get(e.key)) return;
-        // currScene.doAction(new Action(currScene.getActionMap().get(e.key), ActionEnums.END));
         game.dispatchEvent(new CustomEvent(CustomEvents.ACTION_END, { detail: { key: e.key, repeat: e.repeat } }));
     });
 
     // // src/utils/userInput.js
     canvas.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
         const { x, y } = getMouseInCanvas(e, canvas);
 
         game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_DOWN, { detail: { x, y } }));
     });
 
     canvas.addEventListener('pointerup', (e) => {
+        e.preventDefault();
         const { x, y } = getMouseInCanvas(e, canvas);
 
         game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_UP, { detail: { x, y } }));
     });
 
     canvas.addEventListener('pointermove', (e) => {
+        e.preventDefault();
         const { x, y } = getMouseInCanvas(e, canvas);
 
         game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_MOVE, { detail: { x, y } }));

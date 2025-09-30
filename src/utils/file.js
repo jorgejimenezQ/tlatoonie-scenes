@@ -44,12 +44,9 @@ async function resolveImages() {
 }
 
 async function resolveConfiguration(configJsonPath) {
+    //TODO : use a the function buildMaskAndTrimmedBounds to get the trimmedRect and create a cli option https://chatgpt.com/c/68bdd016-fe00-832f-8907-915b800dfd3b
     try {
         const data = await loadJSON(configJsonPath);
-
-        /*
-
-        */
         const animationMap = new Map();
         const spriteSheetMap = new Map();
         const assets = {
@@ -60,7 +57,7 @@ async function resolveConfiguration(configJsonPath) {
         };
 
         for (const e of data.assets.spriteSheets) {
-            // console.log(e);
+            console.log(e);
             // get the actual atlas from the path
             const atlas = await loadJSON('../../assets' + e.atlasPath); // await works here
 
@@ -73,7 +70,9 @@ async function resolveConfiguration(configJsonPath) {
             // create an object with each frame of the sprite sheet for faster access
             var frameMap = new Map();
             for (const frame of atlas.frames) {
-                frameMap.set(frame.filename, {
+                frame.frameName = frame.filename;
+                delete frame.filename;
+                frameMap.set(frame.frameName, {
                     frame: frame.frame,
                     anchor: frame.anchor,
                 });
@@ -84,9 +83,11 @@ async function resolveConfiguration(configJsonPath) {
                 imagePath: e.imagePath,
                 frameMap: frameMap,
                 image,
+                trimmedRect: e.trimmedRect || null,
             });
         }
-        // console.log('unpacked sprite sheets from config file: ', assets.spriteSheets);
+
+        console.log('unpacked sprite sheets from config file: ', assets.spriteSheets);
         let animSheets = [];
         // do the same for the animations
         for (const e of data.assets.animations) {
@@ -107,18 +108,6 @@ async function resolveConfiguration(configJsonPath) {
                 });
             }
         }
-
-        // console.log('assets', assets);
-        // console.log('sample animation', assets.animations.get('knight_walk'));
-        // console.log('sample sheet', assets.spriteSheets.get('knight'));
-
-        // const animationFrame = assets.animations.get('knight_walk').frames[0];
-
-        // console.log('animation frame', animationFrame);
-        // console.log(
-        //     'animation and sprite sheet used together',
-        //     assets.spriteSheets.get(animationFrame.key).frameMap.get(animationFrame.frame)
-        // );
         assets.sheets = animSheets;
         // console.log(animSheets);
         return assets;
@@ -163,6 +152,74 @@ async function waitForSpriteSheets(assets, { timeoutMs = 15000 } = {}) {
     // assumes: assets.spriteSheets is a Map<string, { image: HTMLImageElement, ... }>
     const images = Array.from(assets.spriteSheets.values()).map((s) => s.image);
     await Promise.all(images.map((img) => waitForImage(img, { timeoutMs })));
+}
+
+// thresholdAlpha: 1..255 (often 1 to treat any non-zero alpha as visible)
+function buildMaskAndTrimmedBounds(imageData, thresholdAlpha = 1) {
+    const { data, width, height } = imageData;
+    const bitlen = width * height;
+    const bytelength = ((bitlen + 7) >> 3) >>> 0;
+    const mask = new Uint8Array(bytelength);
+
+    let minX = width,
+        minY = height,
+        maxX = -1,
+        maxY = -1;
+
+    // Walk pixels once
+    for (let y = 0, i = 0; y < height; y++) {
+        for (let x = 0; x < width; x++, i++) {
+            const a = data[(i << 2) + 3]; // RGBA -> alpha at +3
+            if (a >= thresholdAlpha) {
+                // set bit
+                mask[i >> 3] |= 1 << (i & 7);
+
+                // expand bounds
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            }
+        }
+    }
+
+    const hasVisible = maxX >= 0;
+    const trimmedBounds = hasVisible
+        ? { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 }
+        : { x: 0, y: 0, w: 0, h: 0 };
+
+    return { mask, width, height, trimmedBounds };
+}
+
+// helpers
+function maskTest(mask, w, x, y) {
+    const i = y * w + x;
+    return (mask[i >> 3] >>> (i & 7)) & 1;
+}
+
+// axis-aligned mask-vs-mask collision (same scale, same orientation):
+function masksOverlap(m1, w1, h1, m2, w2, h2, dx, dy) {
+    // test if any visible pixels overlap when m2 is placed at (dx,dy) relative to m1
+    const x0 = Math.max(0, dx),
+        y0 = Math.max(0, dy);
+    const x1 = Math.min(w1, dx + w2),
+        y1 = Math.min(h1, dy + h2);
+    if (x1 <= x0 || y1 <= y0) return false;
+
+    for (let y = y0; y < y1; y++) {
+        const r1 = y * w1,
+            r2 = (y - dy) * w2 - dx;
+        // walk row in chunks of bits for speed (here: fall back to per-pixel for clarity)
+        for (let x = x0; x < x1; x++) {
+            const i1 = r1 + x,
+                i2 = r2 + x;
+            const b1 = (m1[i1 >> 3] >>> (i1 & 7)) & 1;
+            if (!b1) continue;
+            const b2 = (m2[i2 >> 3] >>> (i2 & 7)) & 1;
+            if (b2) return true;
+        }
+    }
+    return false;
 }
 
 export { loadJSON, waitForSpriteSheets, resolveConfiguration };

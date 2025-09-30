@@ -48,6 +48,21 @@ class Entity {
         return this.#componentMap.get(component);
     }
 
+    /**
+     * Retrieves the tag associated with this entity.
+     * @returns {string} The tag associated with this entity.
+     */
+    get tag() {
+        return this.#entityTag;
+    }
+    /**
+     * Retrieves the unique identifier for this entity.
+     * @returns {number} The id of the entity.
+     */
+    get id() {
+        return this.#entityId;
+    }
+
     removeComponent(component) {
         this.#componentMap.delete(component);
     }
@@ -61,7 +76,14 @@ class EntityManager {
 
     #removeDeadEntities() {}
 
+    /**
+     * Updates the entity manager by adding new entities to the live lists,
+     * removing dead entities from the live lists, and removing empty tag buckets.
+     * @returns {boolean} Whether any changes were made to the entity manager.
+     */
     update() {
+        let changed = false;
+        if (this.#entityListToAdd.length != 0) changed = true;
         // 1) Move queued entities into live lists
         for (const entity of this.#entityListToAdd) {
             this.#entityList.push(entity);
@@ -84,6 +106,8 @@ class EntityManager {
                 this.#entityListMap.delete(tag);
             }
         }
+
+        return changed;
     }
 
     addEntity(tag) {
@@ -111,5 +135,7 @@ class EntityManager {
         return this.#entityListMap;
     }
 }
+
+class EntityState {}
 
 export { EntityManager, Entity };
