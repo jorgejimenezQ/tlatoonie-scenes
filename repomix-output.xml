@@ -72,7 +72,6 @@ src/
       dock.js
     tabs/
       createTabs.js
-      repomix-output.xml
       tabs-retro.css
       tabs.base.css
       tabs.js
@@ -100,6 +99,130 @@ index.html
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="src/asset/assets.js">
+import { loadJSON } from '../utils/file';
+import { Texture } from '../utils/texture';
+
+class Assets {
+    // A map of all textures **loaded** for use in the game.
+    #textureMap = new Map();
+    #animationMap = new Map();
+    #fontMap = new Map();
+
+    // TODO: implement the methods of Assets class
+    // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Using_images
+    /*
+    async function draw() {
+  // Wait for all images to be loaded:
+  await Promise.all(
+    Array.from(document.images).map(
+      (image) =>
+        new Promise((resolve) => image.addEventListener("load", resolve)),
+    ),
+  );
+
+  // const ctx = document.getElementById("canvas").getContext("2d");
+  // call drawImage() as usual
+}
+draw();
+*/
+
+    // TODO: implement the methods of Assets class
+    async loadFromFile(path) {
+        const data = await loadJSON(path);
+        // Get all the images in the config file and the texture to the map
+        // for (const texture of data.assets.textures) {
+        //     this.#textureMap.set(texture.name, new Texture(texture.name, texture.atlas, texture.image));
+        // }
+
+        // // Get all the animations from the config json file
+        // for (const anim of data.assets.textures) {
+        // }
+        // console.log(data.assets.animation);
+
+        // // for (const texture of data.assets.animation)
+
+        // console.log(this.#textureMap);
+    }
+
+    // addTexture(name, path) {}
+    addAnimation(name, animation) {}
+    addFont(name, path) {}
+    getTexture(name) {}
+    getAnimation(name) {}
+    getFont(name) {}
+}
+
+export { Assets };
+</file>
+
+<file path="src/entity/entity.js">
+import enums from '../utils/enums';
+import { createComponent } from '../components/components';
+
+class Entity {
+    #componentMap = new Map();
+    #isActive = true;
+    #entityId = 0;
+    #entityTag = '';
+
+    constructor(id, tag) {
+        this.#entityId = id;
+        this.#entityTag = tag;
+    }
+
+    destroy() {
+        this.#isActive = false;
+    }
+
+    isActive() {
+        return this.#isActive;
+    }
+
+    /*************  ✨ Windsurf Command ⭐  *************/
+    /**
+     * Retrieves the tag associated with this entity.
+     * @returns {string} The tag.
+     */
+    /*******  8279ce70-b1fd-41aa-89c0-e5d3314a6622  *******/
+    getTag() {
+        return this.#entityTag;
+    }
+
+    getId() {
+        return this.#entityId;
+    }
+
+    hasComponent(component) {
+        this.#componentMap.has(component);
+    }
+
+    addComponent(component) {
+        if (this.#componentMap.has(component)) {
+            throw new Error(
+                "A component of that type already exists on this entity. Try altering the entity's component instead."
+            );
+        }
+
+        let newComponent = createComponent(component);
+        this.#componentMap.set(component, newComponent);
+    }
+
+    /**
+     * Retrieves a component of the given type from this entity.
+     * @param {Component} component The type of component to retrieve.
+     * @returns {Component} The component of the given type associated with this entity, or null if no such component exists.
+     */
+    getComponent(component) {
+        return this.#componentMap.get(component);
+    }
+
+    removeComponent(component) {
+        this.#componentMap.delete(component);
+    }
+}
+</file>
 
 <file path="src/ui/buttons/entityList/entities.template.html">
 <template id="entityItemTemplate">
@@ -354,6 +477,225 @@ input[type='checkbox'] {
 /* Utility: tighten vertical rhythm between components */
 .component + .component {
     margin-top: 12px;
+}
+</file>
+
+<file path="src/ui/buttons/button.js">
+function createButton() {}
+</file>
+
+<file path="src/ui/dock/dock.css">
+/* ---- Dock layout ---- */
+.dock-root {
+    --dock-bg: #0f1115;
+    --dock-surface: #151821;
+    --dock-border: #2a3040;
+    --dock-size-left: 320px; /* initial */
+    --dock-size-right: 360px; /* initial */
+    --dock-size-bottom: 260px; /* if you add bottom later */
+    position: relative;
+    inset: 0;
+    display: grid;
+    height: 100%;
+    grid-template-columns: var(--dock-size-left) 6px 1fr 6px var(--dock-size-right);
+    grid-template-rows: 1fr;
+    background: var(--dock-bg);
+}
+
+/* Zones */
+.dock-left,
+.dock-right,
+.dock-bottom {
+    background: #151821;
+    border-right: 1px solid var(--dock-border);
+    overflow: hidden;
+}
+.dock-right {
+    border-right: none;
+    border-left: 1px solid var(--dock-border);
+}
+
+.dock-center {
+    position: relative;
+    overflow: hidden;
+    background: #0c0e12;
+}
+
+/* Splitters */
+.dock-splitter {
+    background: transparent;
+    position: relative;
+    z-index: 5;
+}
+.dock-splitter:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+.dock-splitter.vertical {
+    cursor: col-resize;
+}
+.dock-splitter.horizontal {
+    cursor: row-resize;
+}
+
+/* Canvas fills center */
+.dock-center canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Optional header in docks if you want */
+.dock-header {
+    font: 600 12px/1 system-ui, Segoe UI, Roboto, sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8b93a7;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--dock-border);
+    background: linear-gradient(180deg, #181c25 0%, #141826 100%);
+}
+
+/* Use the tabs styles from earlier for content inside docks */
+</file>
+
+<file path="src/ui/dock/dock.js">
+// dock.js
+// Minimal dock system: resizable left/right areas that host Tabs instances.
+
+import { Tabs } from './tabs.js';
+
+export class DockManager extends EventTarget {
+    /**
+     * @param {HTMLElement} root  Container that should fill the screen/parent.
+     * @param {{storageKey?:string, withRight?:boolean}} [opts]
+     */
+    constructor(root, opts = {}) {
+        super();
+        this.root = root;
+        this.storageKey = opts.storageKey ?? 'ui.dock.v1';
+        this.withRight = opts.withRight ?? true;
+
+        this.#buildLayout();
+        this.#restoreSizes();
+        this.#wireSplitters();
+    }
+
+    /** Accessors for the embedded Tabs instances */
+    get leftTabs() {
+        return this._leftTabs;
+    }
+    get rightTabs() {
+        return this._rightTabs;
+    } // may be undefined if withRight=false
+
+    /** Programmatically set the left/right sizes (in px) and persist */
+    setSize(which, px) {
+        const min = 200,
+            max = 700;
+        px = Math.max(min, Math.min(max, Math.round(px)));
+        if (which === 'left') this.root.style.setProperty('--dock-size-left', px + 'px');
+        if (which === 'right') this.root.style.setProperty('--dock-size-right', px + 'px');
+        this.#persistSizes();
+    }
+
+    // ---------- internal ----------
+
+    #buildLayout() {
+        this.root.classList.add('dock-root');
+
+        // Left dock
+        const left = document.createElement('div');
+        left.className = 'dock-left';
+        const splitL = document.createElement('div');
+        splitL.className = 'dock-splitter vertical';
+        splitL.dataset.side = 'left';
+
+        // Center (canvas goes here)
+        const center = document.createElement('div');
+        center.className = 'dock-center';
+
+        // Right dock (optional)
+        const splitR = document.createElement('div');
+        let right = null;
+        if (this.withRight) {
+            splitR.className = 'dock-splitter vertical';
+            splitR.dataset.side = 'right';
+            right = document.createElement('div');
+            right.className = 'dock-right';
+        }
+
+        // Grid slots
+        // columns: left | splitL | center | splitR | right
+        this.root.append(left, splitL, center);
+        if (this.withRight) this.root.append(splitR, right);
+
+        // Create Tabs inside left/right
+        const leftShell = document.createElement('div');
+        leftShell.className = 'dock-shell';
+        left.appendChild(leftShell);
+        this._leftTabs = new Tabs(leftShell, { title: 'Left Dock', storageKey: this.storageKey + '.left' });
+
+        if (this.withRight) {
+            const rightShell = document.createElement('div');
+            rightShell.className = 'dock-shell';
+            right.appendChild(rightShell);
+            this._rightTabs = new Tabs(rightShell, { title: 'Right Dock', storageKey: this.storageKey + '.right' });
+        }
+
+        // Expose center for your canvas
+        this.centerEl = center;
+    }
+
+    #wireSplitters() {
+        const onDown = (e) => {
+            const side = e.currentTarget.dataset.side;
+            const rect = this.root.getBoundingClientRect();
+            const startX = e.clientX;
+            const startLeft = parseFloat(getComputedStyle(this.root).getPropertyValue('--dock-size-left'));
+            const startRight = parseFloat(getComputedStyle(this.root).getPropertyValue('--dock-size-right'));
+
+            const onMove = (ev) => {
+                if (side === 'left') {
+                    const delta = ev.clientX - startX;
+                    this.setSize('left', startLeft + delta);
+                } else if (side === 'right') {
+                    const delta = startX - ev.clientX;
+                    this.setSize('right', startRight + delta);
+                }
+                ev.preventDefault();
+            };
+            const onUp = () => {
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+            };
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+            e.preventDefault();
+        };
+
+        this.root.querySelectorAll('.dock-splitter.vertical').forEach((s) => {
+            s.addEventListener('mousedown', onDown);
+        });
+    }
+
+    #persistSizes() {
+        try {
+            const styles = getComputedStyle(this.root);
+            const left = parseInt(styles.getPropertyValue('--dock-size-left')) || 320;
+            const right = parseInt(styles.getPropertyValue('--dock-size-right')) || 360;
+            localStorage.setItem(this.storageKey + '.sizes', JSON.stringify({ left, right }));
+        } catch {}
+    }
+
+    #restoreSizes() {
+        try {
+            const raw = localStorage.getItem(this.storageKey + '.sizes');
+            if (!raw) return;
+            const { left, right } = JSON.parse(raw);
+            if (left) this.root.style.setProperty('--dock-size-left', left + 'px');
+            if (right) this.root.style.setProperty('--dock-size-right', right + 'px');
+        } catch {}
+    }
 }
 </file>
 
@@ -654,2256 +996,6 @@ function createTabs(tab, gameEngine, payload) {
 export { createTabs };
 </file>
 
-<file path="src/ui/tabs/repomix-output.xml">
-This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
-
-<file_summary>
-This section contains a summary of this file.
-
-<purpose>
-This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
-It is designed to be easily consumable by AI systems for analysis, code review,
-or other automated processes.
-</purpose>
-
-<file_format>
-The content is organized as follows:
-1. This summary section
-2. Repository information
-3. Directory structure
-4. Repository files (if enabled)
-5. Multiple file entries, each consisting of:
-  - File path as an attribute
-  - Full contents of the file
-</file_format>
-
-<usage_guidelines>
-- This file should be treated as read-only. Any changes should be made to the
-  original repository files, not this packed version.
-- When processing this file, use the file path to distinguish
-  between different files in the repository.
-- Be aware that this file may contain sensitive information. Handle it with
-  the same level of security as you would the original repository.
-</usage_guidelines>
-
-<notes>
-- Some files may have been excluded based on .gitignore rules and Repomix's configuration
-- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Files matching these patterns are excluded: .vscode/*, ./assets/*, **/*.json, **/*.svg, **/*.png
-- Files matching patterns in .gitignore are excluded
-- Files matching default ignore patterns are excluded
-- Files are sorted by Git change count (files with more changes are at the bottom)
-</notes>
-
-</file_summary>
-
-<directory_structure>
-createTabs.js
-tabs-retro.css
-tabs.base.css
-tabs.js
-theme-crt.css
-theme-light.css
-theme-mac9.css
-theme-synthwave.css
-theme-win95.css
-</directory_structure>
-
-<files>
-This section contains the contents of the repository's files.
-
-<file path="createTabs.js">
-import { Tabs } from './tabs';
-import { CustomEvents } from '../../utils/enums';
-
-/**
- * Creates the default tabs for the editor.
- * @param {Tab} tab - an object with the following properties:
- *   id: string, title: string, icon?: string, tooltip?: string,
- *   closable?: boolean, badge?: string|number,
- *   mount?: (root: HTMLElement)=>void, unmount?: (root: HTMLElement)=>void,
- *   onShow?: (root: HTMLElement)=>void, onHide?: (root: HTMLElement)=>void,
- *   active?: boolean
- * @returns {Tabs} - the created tabs instance
- */
-function createTabs(tab, gameEngine) {
-    // Sprites panel
-    tab.addTab({
-        id: 'sprites',
-        title: 'Sprites',
-        icon: '🖼️',
-        tooltip: 'Browse sprites',
-        active: true,
-        // closable: true,
-
-        async mount(root) {
-            root.innerHTML = `
-        <div class="panel-row">
-            <div><label>Filter</label><input id="spriteFilter" placeholder="name"></div>
-            <div id="spriteGrid" style="display:grid;grid-template-columns:repeat(auto-fill,72px);margin-top:10px;"></div>
-        </div>`;
-
-            async function loadSprites() {
-                try {
-                    let spriteBlob = [];
-                    const sheets = gameEngine.assets.spriteSheets;
-                    for (let sheetId of sheets.keys()) {
-                        const sheet = sheets.get(sheetId);
-                        for (let i = 0; i < sheet.frames.length; i++) {
-                            const frame = sheet.frames[i].frame;
-                            const osCanvas = new OffscreenCanvas(frame.w, frame.h);
-                            const ctx2d = osCanvas.getContext('2d');
-                            ctx2d.imageSmoothingEnabled = false;
-                            const bmp = await gameEngine.spriteCache.get(
-                                sheet.image,
-                                frame.x,
-                                frame.y,
-                                frame.w,
-                                frame.h,
-                                'none'
-                            );
-
-                            ctx2d.drawImage(bmp, 0, 0);
-                            const blob = await osCanvas.convertToBlob({ type: 'image/png' });
-
-                            spriteBlob.push({
-                                url: URL.createObjectURL(blob),
-                                sheetId: sheetId,
-                                sheet,
-                                frame: sheet.frames[i],
-                            });
-                        }
-                    }
-                    return spriteBlob;
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-
-            const elSpriteGrid = $('#spriteGrid');
-            const blobs = await loadSprites();
-            console.log(blobs);
-            for (let blob of blobs) {
-                const box = document.createElement('div');
-                box.style.width = '100%';
-                box.style.aspectRatio = '1 / 1';
-                box.style.display = 'grid';
-                box.style.placeItems = 'center';
-                box.style.background = 'var(--ui-bg-muted, rgba(0,0,0,.04))';
-                box.style.border = '1px solid var(--ui-border, rgba(0,0,0,.12))';
-                box.style.borderRadius = '6px';
-                box.style.cursor = 'pointer';
-
-                const img = new Image();
-                img.src = blob.url;
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.imageRendering = 'pixelated';
-                img.style.objectFit = 'fill';
-                img.style.objectPosition = 'center';
-                img.decoding = 'async';
-                img.loading = 'lazy';
-                box.appendChild(img);
-                elSpriteGrid.append(box);
-
-                // console.log('event', { sheetId: blob.key, sheet: blob.sheet });
-                box.addEventListener('click', (e) => {
-                    gameEngine.width;
-                    // console.log('event', { sheetId: blob.key, sheet: blob.sheet, frame: blob.frame });
-                    gameEngine.dispatchEvent(
-                        new CustomEvent(CustomEvents.SPRITE.SELECT, {
-                            detail: {
-                                sheetId: blob.sheetId,
-                                sheet: blob.sheet,
-                                frame: blob.frame,
-                            },
-                        })
-                    );
-                });
-            }
-        },
-        onShow(root) {
-            /* refresh if needed */
-        },
-    });
-
-    // Animations panel
-    tab.addTab({
-        id: 'animations',
-        title: 'Animations',
-        icon: '🎞️',
-        tooltip: 'Browse animations',
-        mount(root) {
-            root.innerHTML = `
-        <div>
-            <button id="btnPlay">Play</button>
-            <button id="btnPause">Pause</button>
-            <div id="animPreview" style="height:160px;border:1px solid var(--ui-border);margin-top:8px;border-radius:8px;"></div>
-        </div>`;
-            // Hook your engine’s preview canvas here…
-        },
-    });
-
-    tab.addTab({
-        id: 'actions',
-        title: 'Actions',
-        icon: '⚙️',
-        tooltip: 'Browse actions',
-        mount(root) {
-            root.innerHTML = `
-        <div>
-            <button id="btnPlay">Play</button>
-            <button id="btnPause">Pause</button>
-            <div id="animPreview" style="height:160px;border:1px solid var(--ui-border);margin-top:8px;border-radius:8px;"></div>
-        </div>`;
-            // Hook your engine’s preview canvas here...
-        },
-    });
-
-    // Tiles panel
-    tab.addTab({
-        id: 'tiles',
-        title: 'Tiles',
-        icon: '🧱',
-        badge: 0,
-        tooltip: 'Tile editor',
-        mount(root) {
-            root.innerHTML = `<div id="tileset" style="display:flex; gap:10px;">
-        <canvas id="tilesetCanvas" width="256" height="256" style="border:1px solid var(--ui-border)"></canvas>
-        <div>
-            <label>Brush Size</label>
-            <select id="brush"><option>1×1</option><option>2×2</option><option>3×3</option></select>
-            <div style="margin-top:8px"><button id="place">Place</button> <button id="erase">Erase</button></div>
-        </div>
-        </div>`;
-        },
-    });
-
-    // Listen to tab lifecycle if you need cross-module behavior
-    tab.addEventListener('tab:select', (e) => {
-        // e.detail.id -> 'sprites' | 'animations' | 'tiles'
-    });
-}
-
-export { createTabs };
-</file>
-
-<file path="tabs-retro.css">
-/* ==== RETRO (Win95/98) TAB THEME ======================================= */
-/* Palette + metrics */
-.tab-container {
-    --retro-bg: #c0c0c0; /* classic dialog gray */
-    --retro-face: #dcdcdc; /* raised face */
-    --retro-dark: #808080; /* dark edge */
-    --retro-darker: #404040; /* shadow edge */
-    --retro-light: #ffffff; /* light edge */
-    --retro-text: #000000;
-    --retro-accent: #000080; /* Win95 blue */
-    --retro-hover: #e8e8e8;
-    --retro-active: #b8b8b8;
-    --retro-font: 'Tahoma', 'MS Sans Serif', system-ui, sans-serif;
-
-    color: var(--retro-text);
-    background: var(--retro-bg);
-    border: 2px solid var(--retro-dark);
-    /* 3D raised frame */
-    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light),
-        inset -2px -2px 0 var(--retro-darker), inset 2px 2px 0 var(--retro-face);
-    border-radius: 0;
-    overflow: hidden;
-    font-family: var(--retro-font);
-}
-
-/* subtle dithered plastic feel */
-.tab-container::before {
-    content: '';
-    display: block;
-    height: 18px;
-    background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.18) 0 2px, rgba(255, 255, 255, 0) 2px 4px);
-    border-bottom: 1px solid var(--retro-dark);
-}
-
-/* ===== Tabs header row (toolbar strip) */
-.tab-container .tabs {
-    display: flex;
-    gap: 2px;
-    padding: 3px;
-    background: var(--retro-bg);
-    border-bottom: 2px solid var(--retro-dark);
-    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
-    overflow-x: auto;
-    scrollbar-width: thin;
-}
-.tab-container .tabs::-webkit-scrollbar {
-    height: 12px;
-}
-.tab-container .tabs::-webkit-scrollbar-thumb {
-    background: var(--retro-dark);
-    border: 2px solid var(--retro-bg);
-}
-
-/* ===== Tab buttons (raised, beveled) */
-.tab-links {
-    position: relative;
-    appearance: none;
-    border: 2px solid var(--retro-dark);
-    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light),
-        inset -2px -2px 0 var(--retro-darker), inset 2px 2px 0 var(--retro-face);
-    background: var(--retro-face);
-    color: var(--retro-text);
-    padding: 4px 10px 3px;
-    border-radius: 0;
-    font: 12px/1 var(--retro-font);
-    cursor: default;
-    white-space: nowrap;
-}
-.tab-links:hover {
-    background: var(--retro-hover);
-}
-
-.tab-links:focus-visible {
-    outline: 1px dotted var(--retro-text);
-    outline-offset: -4px;
-}
-
-/* Active tab: pressed look + top border merges with content */
-.tab-links.active {
-    background: var(--retro-active);
-    /* invert bevel for pressed */
-    box-shadow: inset -1px -1px 0 var(--retro-light), inset 1px 1px 0 var(--retro-dark),
-        inset -2px -2px 0 var(--retro-face), inset 2px 2px 0 var(--retro-darker);
-    border-bottom-color: var(--retro-active);
-}
-.tab-links.active::after {
-    /* tiny accent line like selected title bar */
-    content: '';
-    position: absolute;
-    left: 2px;
-    right: 2px;
-    top: 1px;
-    height: 2px;
-    background: var(--retro-accent);
-}
-
-/* Optional close button if you have one */
-.tab-close {
-    margin-left: 8px;
-    width: 14px;
-    height: 14px;
-    display: inline-grid;
-    place-items: center;
-    border: 1px solid var(--retro-dark);
-    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
-    background: var(--retro-face);
-    color: var(--retro-text);
-    font: 12px/1 var(--retro-font);
-    padding: 0;
-}
-.tab-close:hover {
-    background: var(--retro-hover);
-}
-
-/* ===== Panels (sunken 3D client area) */
-.tab-content {
-    display: none;
-    background: var(--retro-face);
-    padding: 10px;
-    min-height: 220px;
-
-    /* sunken panel look */
-    border-top: 2px solid var(--retro-light);
-    box-shadow: inset 1px 1px 0 var(--retro-light), inset -1px -1px 0 var(--retro-dark),
-        inset 2px 2px 0 var(--retro-face), inset -2px -2px 0 var(--retro-darker);
-}
-.tab-content.active {
-    display: block;
-}
-
-/* Retro form bits inside panels */
-.tab-content button,
-.tab-content input,
-.tab-content select {
-    font: 12px/1 var(--retro-font);
-    color: var(--retro-text);
-    background: var(--retro-face);
-    border: 2px solid var(--retro-dark);
-    box-shadow: inset -1px -1px 0 var(--retro-dark), inset 1px 1px 0 var(--retro-light);
-    border-radius: 0;
-    padding: 3px 6px;
-}
-.tab-content button:hover {
-    background: var(--retro-hover);
-}
-.tab-content button:active {
-    box-shadow: inset -1px -1px 0 var(--retro-light), inset 1px 1px 0 var(--retro-dark);
-    background: var(--retro-active);
-}
-
-/* If you show icons/emoji in tab labels, keep them crisp */
-.tab-links .tab-icon {
-    image-rendering: pixelated;
-}
-</file>
-
-<file path="tabs.base.css">
-/* tabs.base.css */
-.tab-container {
-    font-family: system-ui, Segoe UI, Roboto, sans-serif;
-    color: var(--ui-text);
-    background: var(--ui-surface);
-    border: var(--ui-border-width, 1px) solid var(--ui-border);
-    border-radius: var(--ui-radius, 8px);
-    box-shadow: var(--ui-shadow, none);
-    overflow: hidden;
-    cursor: grab;
-    min-width: 400px;
-    min-height: 500px;
-}
-
-.tab-container.ui-draggable-dragging {
-    cursor: grabbing;
-}
-
-/* header strip / title */
-.tab-container::before {
-    content: attr(data-title);
-    display: block;
-    padding: var(--hdr-pad, 8px 12px);
-    background: var(--hdr-bg, transparent);
-    color: var(--hdr-fg, var(--ui-text));
-    border-bottom: var(--hdr-border, 1px solid var(--ui-border));
-    font: var(--hdr-font, 600 12px/1 system-ui, sans-serif);
-    letter-spacing: var(--hdr-tracking, 0.04em);
-    text-transform: var(--hdr-transform, uppercase);
-}
-
-/* tabs row */
-.tabs {
-    display: flex;
-    gap: var(--tab-gap, 4px);
-    padding: var(--tab-pad, 6px);
-    background: var(--tabs-bg, var(--ui-surface-2, var(--ui-surface)));
-    border-bottom: var(--tabs-border, 1px solid var(--ui-border));
-    overflow-x: auto;
-}
-
-/* tab button */
-.tab-links {
-    appearance: none;
-    cursor: pointer;
-    white-space: nowrap;
-    background: var(--tab-bg, transparent);
-    color: var(--tab-fg, var(--ui-muted));
-    border: var(--tab-border, 1px solid transparent);
-    border-radius: var(--tab-radius, 6px 6px 0 0);
-    padding: var(--tab-btn-pad, 8px 12px);
-    font: var(--tab-font, 500 13px/1 system-ui, sans-serif);
-    box-shadow: var(--tab-shadow, none);
-}
-.tab-links:hover {
-    background: var(--tab-hover-bg, rgba(255, 255, 255, 0.05));
-    color: var(--ui-text);
-}
-.tab-links:focus-visible {
-    outline: var(--focus-outline, 2px solid var(--ui-accent));
-    outline-offset: var(--focus-offset, 2px);
-}
-
-.tab-links.active {
-    background: var(--tab-active-bg, var(--ui-surface));
-    color: var(--ui-text);
-    border: var(--tab-active-border, 1px solid var(--ui-border));
-    box-shadow: var(--tab-active-shadow, none);
-    position: relative;
-}
-.tab-links.active::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    height: var(--tab-accent-h, 0);
-    background: var(--ui-accent);
-    border-radius: var(--tab-accent-radius, 0);
-}
-
-/* panels */
-.tab-content {
-    display: none;
-    background: var(--panel-bg, var(--ui-bg, var(--ui-surface)));
-    padding: var(--panel-pad, 16px);
-    max-height: 400px;
-    overflow: auto;
-}
-.tab-content.active {
-    display: block;
-}
-
-/* small bits */
-.tab-title {
-    pointer-events: none;
-}
-.tab-icon {
-    margin-right: 6px;
-}
-</file>
-
-<file path="tabs.js">
-export class Tabs extends EventTarget {
-    /**
-     * @param {HTMLElement} container  Wrapper element where the tabs UI will render.
-     * @param {{title?:string, storageKey?:string}} [opts]
-     */
-    constructor(container, opts = {}) {
-        super();
-        this.container = container;
-        this.title = opts.title ?? 'Panels';
-        this.storageKey = opts.storageKey ?? 'ui.tabs.v2';
-        this.tabs = new Map(); // id -> meta
-        this.order = []; // tab id order
-        this.activeId = null;
-
-        this.#buildShell();
-        this.#restore();
-        this.#wireKeyboardNav();
-    }
-
-    // ---------- Public API ----------
-
-    /**
-     * Add a tab.
-     * @param {{
-     *   id:string, title:string, icon?:string, tooltip?:string,
-     *   closable?:boolean, badge?:string|number,
-     *   mount?:(root:HTMLElement)=>void, unmount?:(root:HTMLElement)=>void,
-     *   onShow?:(root:HTMLElement)=>void, onHide?:(root:HTMLElement)=>void,
-     *   active?:boolean
-     * }} conf
-     */
-    addTab(conf) {
-        if (!conf?.id || !conf?.title) throw new Error('addTab requires {id, title}');
-        if (this.tabs.has(conf.id)) throw new Error(`Tab '${conf.id}' already exists`);
-
-        // Elements
-        const btn = document.createElement('button');
-        btn.className = 'tab-links';
-        btn.type = 'button';
-        btn.role = 'tab';
-        btn.id = `tab-${conf.id}`;
-        btn.dataset.tabId = conf.id;
-        btn.setAttribute('aria-selected', 'false');
-        btn.setAttribute('tabindex', '-1');
-        if (conf.tooltip) btn.title = conf.tooltip;
-
-        const label = document.createElement('span');
-        label.className = 'tab-title';
-        label.textContent = conf.title;
-
-        if (conf.icon) {
-            const ic = document.createElement('span');
-            ic.className = 'tab-icon';
-            ic.textContent = conf.icon;
-            btn.append(ic);
-        }
-        btn.append(label);
-
-        const badge = document.createElement('span');
-        badge.className = 'tab-badge';
-        if (conf.badge != null) {
-            badge.textContent = String(conf.badge);
-            btn.append(badge);
-        }
-
-        let closeBtn = null;
-        if (conf.closable) {
-            closeBtn = document.createElement('button');
-            closeBtn.className = 'tab-close';
-            closeBtn.type = 'button';
-            closeBtn.setAttribute('aria-label', `Close ${conf.title}`);
-            closeBtn.textContent = '×';
-            btn.append(closeBtn);
-            closeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.removeTab(conf.id);
-            });
-        }
-
-        const panel = document.createElement('div');
-        panel.className = 'tab-content';
-        panel.id = conf.id;
-        panel.role = 'tabpanel';
-        panel.setAttribute('aria-labelledby', btn.id);
-        panel.hidden = true;
-
-        this.tablist.append(btn);
-        this.contentRegion.append(panel);
-
-        const meta = {
-            ...conf,
-            button: btn,
-            badgeEl: badge,
-            panel,
-            mounted: false,
-        };
-        this.tabs.set(conf.id, meta);
-        this.order.push(conf.id);
-
-        btn.addEventListener('click', () => this.select(conf.id));
-
-        this.#persist();
-
-        this.dispatchEvent(new CustomEvent('tab:add', { detail: { id: conf.id } }));
-
-        const shouldAutoSelect =
-            conf.active || (this.activeId == null && (!this._restoredActiveId || this._restoredActiveId === conf.id));
-
-        if (shouldAutoSelect) this.select(conf.id);
-
-        if (!this.order.includes(conf.id)) this.order.push(conf.id);
-    }
-
-    /** Remove a tab by id. */
-    removeTab(id) {
-        const meta = this.tabs.get(id);
-        if (!meta) return;
-        if (meta.unmount && meta.mounted) meta.unmount(meta.panel);
-        meta.button.remove();
-        meta.panel.remove();
-        this.tabs.delete(id);
-        this.order = this.order.filter((x) => x !== id);
-
-        if (this.activeId === id) {
-            const next = this.order[this.order.length - 1] || null; // select previous tab if any
-            this.activeId = null;
-            if (next) this.select(next);
-        }
-        this.#persist();
-        this.dispatchEvent(new CustomEvent('tab:remove', { detail: { id } }));
-    }
-
-    /** Select a tab by id. */
-    select(id) {
-        if (!this.tabs.has(id)) return;
-
-        const prev = this.activeId ? this.tabs.get(this.activeId) : null;
-        const next = this.tabs.get(id);
-
-        // Deactivate previous
-        if (prev) {
-            prev.button.classList.remove('active');
-            prev.button.setAttribute('aria-selected', 'false');
-            prev.button.setAttribute('tabindex', '-1');
-            prev.panel.hidden = true;
-            prev.panel.classList.remove('active');
-            prev.onHide?.(prev.panel);
-        }
-
-        // Activate next
-        this.activeId = id;
-        next.button.classList.add('active');
-        next.button.setAttribute('aria-selected', 'true');
-        next.button.setAttribute('tabindex', '0');
-        next.panel.hidden = false;
-        next.panel.classList.add('active');
-        next.button.focus({ preventScroll: true });
-
-        // Lazy mount
-        if (!next.mounted && next.mount) {
-            next.mount(next.panel);
-            next.mounted = true;
-        }
-        next.onShow?.(next.panel);
-
-        this.#persist();
-        this.dispatchEvent(new CustomEvent('tab:select', { detail: { id } }));
-    }
-
-    /** Update tab metadata: title, icon, badge, tooltip. */
-    update(id, patch = {}) {
-        const t = this.tabs.get(id);
-        if (!t) return;
-        if (patch.title) t.panel.setAttribute('aria-label', patch.title);
-        if (patch.title) t.button.querySelector('.tab-title').textContent = patch.title;
-        if (patch.icon != null) {
-            let ic = t.button.querySelector('.tab-icon');
-            if (patch.icon === '' || patch.icon === false) {
-                ic?.remove();
-            } else {
-                if (!ic) {
-                    ic = document.createElement('span');
-                    ic.className = 'tab-icon';
-                    t.button.prepend(ic);
-                }
-                ic.textContent = patch.icon;
-            }
-        }
-        if ('badge' in patch) {
-            if (patch.badge == null || patch.badge === '') {
-                t.badgeEl.textContent = '';
-                t.badgeEl.style.display = 'none';
-            } else {
-                t.badgeEl.textContent = String(patch.badge);
-                t.badgeEl.style.display = '';
-            }
-        }
-        if (patch.tooltip != null) t.button.title = patch.tooltip;
-    }
-
-    /** Returns the active tab id or null. */
-    get active() {
-        return this.activeId;
-    }
-
-    /** Reorder tabs by array of ids. */
-    reorder(ids) {
-        if (!Array.isArray(ids)) return;
-        // keep only known ids in given order + append any missing
-        const set = new Set(ids.filter((id) => this.tabs.has(id)));
-        this.order = [...set, ...this.order.filter((id) => !set.has(id))];
-        // apply DOM order
-        this.order.forEach((id) => this.tablist.append(this.tabs.get(id).button));
-        this.#persist();
-        this.dispatchEvent(new CustomEvent('tab:reorder', { detail: { order: this.order.slice() } }));
-    }
-
-    // ---------- Private ----------
-
-    #buildShell() {
-        this.container.classList.add('tab-container');
-        // Optional title bar
-        const titleBar = document.createElement('div');
-        titleBar.className = 'tab-titlebar';
-        titleBar.textContent = this.title;
-
-        const tablist = document.createElement('div');
-        tablist.className = 'tabs';
-        tablist.role = 'tablist';
-        tablist.setAttribute('aria-label', this.title);
-
-        const content = document.createElement('div');
-        content.className = 'tab-contents';
-
-        this.container.replaceChildren(titleBar, tablist, content);
-        this.tablist = tablist;
-        this.contentRegion = content;
-    }
-
-    #wireKeyboardNav() {
-        this.tablist.addEventListener('keydown', (e) => {
-            const ids = this.order;
-            if (!ids.length) return;
-            const idx = ids.indexOf(this.activeId);
-            if (e.key === 'ArrowRight') {
-                this.select(ids[(idx + 1) % ids.length]);
-                e.preventDefault();
-            } else if (e.key === 'ArrowLeft') {
-                this.select(ids[(idx - 1 + ids.length) % ids.length]);
-                e.preventDefault();
-            } else if (e.key === 'Home') {
-                this.select(ids[0]);
-                e.preventDefault();
-            } else if (e.key === 'End') {
-                this.select(ids[ids.length - 1]);
-                e.preventDefault();
-            } else if (e.ctrlKey && e.key === 'Tab') {
-                this.select(ids[(idx + (e.shiftKey ? -1 : 1) + ids.length) % ids.length]);
-                e.preventDefault();
-            }
-        });
-    }
-
-    #persist() {
-        try {
-            const data = { order: this.order, activeId: this.activeId };
-            localStorage.setItem(this.storageKey, JSON.stringify(data));
-        } catch {}
-    }
-
-    #restore() {
-        try {
-            const raw = localStorage.getItem(this.storageKey);
-            if (!raw) return;
-            const { order, activeId } = JSON.parse(raw);
-            if (Array.isArray(order)) {
-                // keep unique strings only
-                this.order = [...new Set(order.filter((id) => typeof id === 'string'))];
-            }
-            // don't set active yet; just remember it
-            this._restoredActiveId = typeof activeId === 'string' ? activeId : null;
-            this.activeId = null;
-        } catch {}
-    }
-}
-</file>
-
-<file path="theme-crt.css">
-[data-theme='crt'] {
-    --ui-text: #a6ff7a;
-    --ui-accent: #a6ff7a;
-    --ui-surface: #061006;
-    --ui-surface-2: #0b1a0b;
-    --ui-bg: #020602;
-    --ui-border: #0f2a0f;
-    --ui-border-width: 1px;
-    --ui-radius: 4px;
-
-    --ui-shadow: 0 0 20px rgba(166, 255, 122, 0.08);
-
-    --hdr-bg: #061006;
-    --hdr-border: 1px solid #0f2a0f;
-    --hdr-font: 600 11px/1 ui-monospace, monospace;
-    --hdr-transform: none;
-
-    --tabs-bg: #061006;
-    --tab-gap: 2px;
-    --tab-border: 1px solid #0f2a0f;
-    --tab-bg: #0b1a0b;
-    --tab-hover-bg: #0e230e;
-
-    --tab-active-bg: #0e230e;
-    --tab-active-border: 1px solid #1e4d1e;
-    --tab-active-shadow: inset 0 0 0 1px #153a15;
-    --tab-accent-h: 0;
-
-    --panel-bg: repeating-linear-gradient(180deg, rgba(166, 255, 122, 0.06) 0 2px, rgba(0, 0, 0, 0) 2px 4px), #061006;
-
-    --focus-outline: 1px dashed #a6ff7a;
-    --focus-offset: 2px;
-}
-</file>
-
-<file path="theme-light.css">
-[data-theme='lighting'] {
-    --ui-text: #f5f5ff;
-    --ui-accent: #ff2bd6;
-    --ui-surface: #060f368d;
-    --ui-surface-2: #060f368d;
-    --ui-bg: #090b1600;
-    --ui-border: #0d101e;
-    --ui-border-width: 1px;
-    --ui-radius: 12px;
-
-    --ui-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 43, 214, 0.06);
-
-    /* Header */
-    --hdr-bg: linear-gradient(90deg, #1a0b2b, #0b1a2b);
-    --hdr-border: 1px solid #2a2f46;
-    --hdr-font: 700 11px/1 'Orbitron', system-ui, sans-serif;
-    --hdr-transform: uppercase;
-    --hdr-tracking: 0.08em;
-
-    --tabs-bg: #11162a7d;
-    --tab-gap: 6px;
-    --tab-border: 1px solid #293050;
-    --tab-bg: #141b33;
-    --tab-hover-bg: #19224a;
-
-    --tab-active-bg: #0f142853;
-    --tab-active-border: 1px solid #3a4270;
-    --tab-active-shadow: 0 0 0 1px rgba(255, 43, 214, 0.18), 0 8px 20px rgba(0, 0, 0, 0.35);
-    --tab-accent-h: 2px;
-    --tab-accent-radius: 2px;
-
-    --panel-bg: radial-gradient(1200px 400px at 10% -10%, rgba(255, 43, 214, 0.08), transparent),
-        radial-gradient(1200px 400px at 90% -10%, rgba(0, 255, 255, 0.08), transparent), #0b0e1a40;
-
-    --focus-outline: 2px solid #ff2bd6;
-    --focus-offset: 1px;
-}
-</file>
-
-<file path="theme-mac9.css">
-[data-theme='mac9'] {
-    --ui-text: #000;
-    --ui-accent: #0a84ff;
-    --ui-surface: #efefef;
-    --ui-surface-2: #e6e6e6;
-    --ui-bg: #f4f4f4;
-    --ui-border: #b9b9b9;
-    --ui-border-width: 1px;
-    --ui-radius: 10px;
-
-    --ui-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
-
-    --hdr-bg: linear-gradient(#fdfdfd, #e9e9e9);
-    --hdr-border: 1px solid #cfcfcf;
-    --hdr-font: 600 12px/1 'Chicago', system-ui, sans-serif;
-    --hdr-transform: none;
-    --hdr-tracking: 0;
-
-    --tabs-bg: #efefef;
-    --tab-gap: 6px;
-    --tab-radius: 10px 10px 0 0;
-    --tab-border: 1px solid #cfcfcf;
-    --tab-bg: #f8f8f8;
-    --tab-hover-bg: #ffffff;
-
-    --tab-active-bg: #ffffff;
-    --tab-active-border: 1px solid #bdbdbd;
-    --tab-active-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
-    --tab-accent-h: 0; /* no accent bar */
-
-    --panel-bg: #ffffff;
-    --panel-pad: 18px;
-    --focus-outline: 2px solid color-mix(in oklab, #0a84ff 60%, transparent);
-}
-</file>
-
-<file path="theme-synthwave.css">
-[data-theme='synthwave'] {
-    --ui-text: #f5f5ff;
-    --ui-accent: #ff2bd6;
-    --ui-surface: #0b0e1a;
-    --ui-surface-2: #11162a;
-    --ui-bg: #090b16;
-    --ui-border: #2a2f46;
-    --ui-border-width: 1px;
-    --ui-radius: 12px;
-
-    --ui-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 43, 214, 0.06);
-
-    --hdr-bg: linear-gradient(90deg, #1a0b2b, #0b1a2b);
-    --hdr-border: 1px solid #2a2f46;
-    --hdr-font: 700 11px/1 'Orbitron', system-ui, sans-serif;
-    --hdr-transform: uppercase;
-    --hdr-tracking: 0.08em;
-
-    --tabs-bg: #11162a;
-    --tab-gap: 6px;
-    --tab-border: 1px solid #293050;
-    --tab-bg: #141b33;
-    --tab-hover-bg: #19224a;
-
-    --tab-active-bg: #0f1428;
-    --tab-active-border: 1px solid #3a4270;
-    --tab-active-shadow: 0 0 0 1px rgba(255, 43, 214, 0.18), 0 8px 20px rgba(0, 0, 0, 0.35);
-    --tab-accent-h: 2px;
-    --tab-accent-radius: 2px;
-
-    --panel-bg: radial-gradient(1200px 400px at 10% -10%, rgba(255, 43, 214, 0.08), transparent),
-        radial-gradient(1200px 400px at 90% -10%, rgba(0, 255, 255, 0.08), transparent), #0b0e1a;
-
-    --focus-outline: 2px solid #ff2bd6;
-    --focus-offset: 1px;
-}
-</file>
-
-<file path="theme-win95.css">
-/* Apply theme by wrapping container in [data-theme="win95"] */
-[data-theme='win95'] {
-    --ui-text: #000;
-    --ui-accent: #000080;
-    --ui-surface: #dcdcdc;
-    --ui-surface-2: #c0c0c0;
-    --ui-bg: #dcdcdc;
-    --ui-border: #808080;
-    --ui-border-width: 2px;
-    --ui-radius: 0;
-
-    --ui-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #fff, inset -2px -2px 0 #404040, inset 2px 2px 0 #dcdcdc;
-
-    --hdr-bg: linear-gradient(#e6e6e6, #d3d3d3);
-    --hdr-border: 1px solid #808080;
-    --hdr-font: 700 12px/1 'Tahoma', 'MS Sans Serif', system-ui, sans-serif;
-
-    --tabs-bg: #c0c0c0;
-    --tab-gap: 2px;
-    --tab-btn-pad: 4px 10px 3px;
-    --tab-radius: 0;
-    --tab-border: 2px solid #808080;
-    --tab-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #fff, inset -2px -2px 0 #404040, inset 2px 2px 0 #dcdcdc;
-    --tab-hover-bg: #e8e8e8;
-
-    --tab-active-bg: #b8b8b8;
-    --tab-active-border: 2px solid #808080;
-    --tab-active-shadow: inset -1px -1px 0 #fff, inset 1px 1px 0 #808080, inset -2px -2px 0 #dcdcdc,
-        inset 2px 2px 0 #404040;
-
-    --tab-accent-h: 2px;
-    --tab-accent-radius: 0;
-
-    --panel-pad: 10px;
-    --panel-bg: #dcdcdc;
-}
-</file>
-
-</files>
-</file>
-
-<file path="src/ui/tabs/theme-light.css">
-[data-theme='lighting'] {
-    --ui-text: #f5f5ff;
-    --ui-accent: #ff2bd6;
-    --ui-surface: #060f368d;
-    --ui-surface-2: #060f368d;
-    --ui-bg: #090b1600;
-    --ui-border: #0d101e;
-    --ui-border-width: 1px;
-    --ui-radius: 12px;
-
-    --ui-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 43, 214, 0.06);
-
-    /* Header */
-    --hdr-bg: linear-gradient(90deg, #1a0b2b, #0b1a2b);
-    --hdr-border: 1px solid #2a2f46;
-    --hdr-font: 700 11px/1 'Orbitron', system-ui, sans-serif;
-    --hdr-transform: uppercase;
-    --hdr-tracking: 0.08em;
-
-    --tabs-bg: #11162a7d;
-    --tab-gap: 6px;
-    --tab-border: 1px solid #293050;
-    --tab-bg: #141b33;
-    --tab-hover-bg: #19224a;
-
-    --tab-active-bg: #0f142853;
-    --tab-active-border: 1px solid #3a4270;
-    --tab-active-shadow: 0 0 0 1px rgba(255, 43, 214, 0.18), 0 8px 20px rgba(0, 0, 0, 0.35);
-    --tab-accent-h: 2px;
-    --tab-accent-radius: 2px;
-
-    --panel-bg: radial-gradient(1200px 400px at 10% -10%, rgba(255, 43, 214, 0.08), transparent),
-        radial-gradient(1200px 400px at 90% -10%, rgba(0, 255, 255, 0.08), transparent), #0b0e1a40;
-
-    --focus-outline: 2px solid #ff2bd6;
-    --focus-offset: 1px;
-}
-</file>
-
-<file path="src/ui/entities.template.html">
-<template id="entityItemTemplate">
-    <li class="entity-card" data-entity-id="">
-        <article>
-            <header class="entity-header">
-                <strong>
-                    <span data-entity-tag></span>
-                    <span>#<span data-entity-id></span></span>
-                </strong>
-                <small>
-                    <label>
-                        <input type="checkbox" data-field="active" />
-                        active
-                    </label>
-                </small>
-            </header>
-
-            <!-- CTransform (simplified) -->
-            <section class="component" data-component="CTransform">
-                <h4>Transform</h4>
-                <form data-component-form="CTransform">
-                    <div class="row">
-                        <label>x <input type="number" step="0.01" data-field="position.x" /></label>
-                        <label>y <input type="number" step="0.01" data-field="position.y" /></label>
-                    </div>
-                    <div class="row">
-                        <label>vx <input type="number" step="0.01" data-field="velocity.x" /></label>
-                        <label>vy <input type="number" step="0.01" data-field="velocity.y" /></label>
-                    </div>
-                    <div class="row">
-                        <label>sx <input type="number" step="0.01" data-field="scale.x" /></label>
-                        <label>sy <input type="number" step="0.01" data-field="scale.y" /></label>
-                    </div>
-                    <div class="row">
-                        <label>rot° <input type="number" step="0.1" data-field="rotation" /></label>
-                    </div>
-                    <div class="row">
-                        <label>hSpeed <input type="number" step="0.1" data-field="hSpeed" /></label>
-                        <label>vSpeed <input type="number" step="0.1" data-field="vSpeed" /></label>
-                    </div>
-                    <div class="row">
-                        <label><input type="checkbox" data-field="grounded" /> grounded</label>
-                    </div>
-                    <div class="actions">
-                        <button type="submit" data-action="save-component">Save</button>
-                        <button type="reset">Reset</button>
-                    </div>
-                </form>
-            </section>
-
-            <!-- CState (simplified) -->
-            <section class="component" data-component="CState">
-                <h4>State</h4>
-                <form data-component-form="CState">
-                    <div class="row">
-                        <label
-                            >current
-                            <input
-                                type="text"
-                                data-field="current"
-                                placeholder="IDLE / JUMPING / WALKING.LEFT / WALKING.RIGHT"
-                        /></label>
-                    </div>
-                    <div class="row">
-                        <label>previous <input type="text" data-field="previous" /></label>
-                    </div>
-                    <div class="row">
-                        <label><input type="checkbox" data-field="canJump" /> canJump</label>
-                        <label><input type="checkbox" data-field="changeAnimation" /> changeAnimation</label>
-                    </div>
-                    <div class="actions">
-                        <button type="submit" data-action="save-component">Save</button>
-                        <button type="reset">Reset</button>
-                    </div>
-                </form>
-            </section>
-        </article>
-    </li>
-</template>
-</file>
-
-<file path="src/playerStates.js">
-import { ComponentTypes, PlayerStates, ActionTypes, ActionEnums } from './utils/enums';
-import { Entity } from './entityManager/entityManger';
-
-const playerStateCallbacks = new Map();
-const stateSet = new Set();
-
-const jumping = {
-    update: (entity) => {},
-    handleAction: (entity, action) => {
-        let cState = entity.getComponent(ComponentTypes.CState);
-        let isStart = action.type == ActionTypes.START;
-        let ctr = entity.getComponent(ComponentTypes.CTransform);
-
-        switch (action.name) {
-            case ActionEnums.UP:
-                if (isStart) return;
-                console.log('up; ', ctr.vSpeed);
-                ctr.velocity.y = 0;
-                cState.current = PlayerStates.IDLE;
-                break;
-            default:
-                break;
-        }
-    },
-    entry: () => {},
-    exit: () => {},
-};
-
-const idle = {
-    // entry: (e) => {
-    //     const t = e.getComponent(ComponentTypes.CTransform);
-    //     t.velocity.x = 0;
-    // },
-    // exit: (e) => {
-    //     const t = e.getComponent(ComponentTypes.CTransform);
-    //     t.velocity.x = 0;
-    // },
-    handleAction: (e, action) => {
-        if (action.name === ActionEnums.RIGHT && action.type === ActionTypes.START) {
-            setPlayerState(e, PlayerStates.WALKING.RIGHT);
-        }
-        if (action.name === ActionEnums.LEFT && action.type === ActionTypes.START) {
-            setPlayerState(e, PlayerStates.WALKING.LEFT);
-        }
-        if (action.name === ActionEnums.UP && action.type === ActionTypes.START) {
-            const t = e.getComponent(ComponentTypes.CTransform);
-            t.velocity.y = -t.vSpeed;
-            setPlayerState(e, PlayerStates.JUMPING);
-        }
-    },
-    update: (entity) => {},
-};
-
-const walkingRight = {
-    entry: (e) => {
-        const t = e.getComponent(ComponentTypes.CTransform);
-        t.scale.x = Math.abs(t.scale.x);
-        t.velocity.x = t.hSpeed;
-    },
-    exit: (e) => {
-        const t = e.getComponent(ComponentTypes.CTransform);
-        t.velocity.x = 0;
-    },
-    handleAction: (e, action) => {
-        if (action.name === ActionEnums.RIGHT && action.type === ActionTypes.END) {
-            setPlayerState(e, PlayerStates.IDLE);
-        }
-        if (action.name === ActionEnums.LEFT && action.type === ActionTypes.START) {
-            setPlayerState(e, PlayerStates.WALKING.LEFT);
-        }
-        if (action.name === ActionEnums.UP && action.type === ActionTypes.START) {
-            const t = e.getComponent(ComponentTypes.CTransform);
-            t.velocity.y = -t.vSpeed;
-            setPlayerState(e, PlayerStates.JUMPING);
-        }
-    },
-    update: () => {},
-};
-
-const walkingLeft = {
-    entry: (e) => {
-        const t = e.getComponent(ComponentTypes.CTransform);
-        t.scale.x = -1 * Math.abs(t.scale.x);
-        t.velocity.x = -1 * t.hSpeed;
-    },
-    exit: (e) => {
-        const t = e.getComponent(ComponentTypes.CTransform);
-        t.velocity.x = 0;
-    },
-    handleAction: (e, action) => {
-        if (action.name === ActionEnums.LEFT && action.type === ActionTypes.END) {
-            setPlayerState(e, PlayerStates.IDLE);
-        }
-        if (action.name === ActionEnums.RIGHT && action.type === ActionTypes.START) {
-            setPlayerState(e, PlayerStates.WALKING.RIGHT);
-        }
-        if (action.name === ActionEnums.UP && action.type === ActionTypes.START) {
-            const t = e.getComponent(ComponentTypes.CTransform);
-            t.velocity.y = -t.vSpeed;
-            setPlayerState(e, PlayerStates.JUMPING);
-        }
-    },
-    update: () => {},
-};
-
-playerStateCallbacks.set(PlayerStates.JUMPING, jumping);
-playerStateCallbacks.set(PlayerStates.WALKING.RIGHT, walkingRight);
-playerStateCallbacks.set(PlayerStates.WALKING.LEFT, walkingLeft);
-playerStateCallbacks.set(PlayerStates.IDLE, idle);
-
-function setPlayerState(entity, next) {
-    const cState = entity.getComponent(ComponentTypes.CState);
-    if (!cState || cState.current === next) return;
-
-    const from = playerStateCallbacks.get(cState.current);
-    const to = playerStateCallbacks.get(next);
-
-    // exit old
-    from?.exit?.(entity);
-
-    // switch
-    cState.current = next;
-
-    // enter new
-    to?.entry?.(entity);
-}
-
-export default playerStateCallbacks;
-</file>
-
-<file path="css/style.css">
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-    padding: 0;
-    margin: 0;
-}
-body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: khaki;
-}
-
-#logging {
-    width: 100%;
-    height: 100%;
-    background-color: #000;
-    color: #fff;
-    overflow: auto;
-    padding: 10px;
-    font-family: monospace;
-    font-size: 12px;
-}
-
-.button-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-    padding: 20px;
-}
-
-button {
-    padding: 10px 20px;
-    border: none;
-    cursor: pointer;
-    font-size: large;
-    font-weight: 600;
-
-    &#start-btn {
-        background-color: rgb(76, 222, 76);
-        &:hover {
-            background-color: #45a049; /* Dark green */
-        }
-    }
-
-    &#change-test-btn {
-        background-color: rgb(244, 3, 196);
-        &:hover {
-            background-color: #923f78; /* Dark green */
-        }
-    }
-    &#end-btn {
-        background-color: rgb(255, 0, 0);
-        &:hover {
-            background-color: rgb(187, 30, 30);
-        }
-        color: white;
-    }
-}
-
-#canvas {
-    width: 800px;
-    height: 500px;
-
-    margin: 20px;
-
-    /* border: solid 1px black; */
-    background-color: white;
-}
-</file>
-
-<file path="src/action/action.js">
-class Action {
-    name;
-    type;
-    #payload = null;
-
-    constructor(name, type) {
-        this.type = type;
-        this.name = name;
-    }
-
-    getName() {
-        return this.name;
-    }
-
-    getType() {
-        return this.type;
-    }
-
-    set payload(data) {
-        this.#payload = data;
-    }
-
-    get payload() {
-        return this.#payload;
-    }
-}
-
-export { Action };
-</file>
-
-<file path="src/animation/animation.js">
-import { Vector } from 'vecti';
-import { GameEngine } from '../gameEngine/gameEngine';
-
-class Animation {
-    /**
-     * TODO: Refactor animation timing to use real elapsed time (dtVar) instead of tick counts. Will be found in the onEnd callback of the game loop.
-     *
-     * Why:
-     * - Right now animations advance based on "number of update ticks".
-     * - This makes them frame-rate dependent: if the game loop slows (e.g., 120 Hz → 60 Hz),
-     *   animations also slow down, because fewer ticks happen per second.
-     *
-     * Goal:
-     * - Use the variable delta time provided by the game loop (`deltaTime` between frames, in seconds).
-     * - Accumulate dtVar inside Animation until it reaches the duration of one animation frame
-     *   (e.g. 1 / animFPS), then advance the sprite frame.
-     * - This makes animation playback tied to wall-clock time, not tick rate → animations
-     *   run at a consistent speed across machines and during FPS dips.
-     *
-     * Plan:
-     * 1. Pass both fixed dt (dtFixed) and variable dt (dtVar) into gameEngine.update().
-     * 2. Forward dtVar down to Scene.update() and Animation.update().
-     * 3. Inside Animation, add an accumulator field (e.g. this._accum).
-     * 4. On each update, do:
-     *      this._accum += dtVar;
-     *      while (this._accum >= 1 / this.#animFPS) {
-     *          this._accum -= 1 / this.#animFPS;
-     *          this.#frameIndex = (this.#frameIndex + 1) % this.#numFrames;
-     *      }
-     * 5. Keep physics/game logic tied to dtFixed for determinism, but let animations
-     *    and tweening use dtVar for smooth, real-time motion.
-     *
-     * Result:
-     * - Animations remain steady at the intended FPS (e.g., 12 fps) regardless of game loop speed.
-     * - Frame drops won’t cause sprite animations to slow down; they’ll catch up naturally.
-     */
-
-    // TODO: use repeat bool to end or repeat animation
-    #numberOfFrames = 1;
-    #currentFrame = 0;
-    #duration = 8; // frames between frames
-    #frameSize = new Vector(1, 1);
-    #animFPS = 10;
-
-    #name = '';
-    #animationConfig;
-
-    /**
-     * @type {GameEngine}
-     */
-    #gameEngine;
-    #frameIndex = 0;
-    #simTime = 0;
-    #frameTime = 0;
-    /**
-     * Constructs a new Animation with the given name and animation config
-     * @param {string} name - the name of the animation
-     * @param {Object} animationConfig - an object containing the configuration for the animation
-     */
-    constructor(name, animationConfig, gameEngine) {
-        this.#gameEngine = gameEngine;
-        this.#name = name;
-        this.#animationConfig = animationConfig;
-        this.#animFPS = animationConfig.frameRate;
-        this.#numberOfFrames = animationConfig.frames.length;
-        this.#duration = animationConfig.speed;
-        this.#frameTime = 1 / this.#animFPS;
-    }
-
-    // 60ps / 10ps = 6ps
-
-    /**
-     * Updates the animation by incrementing the frame index by one and
-     * adjusting it according to the speed and number of frames.
-     * @param {number} elapsedTime - the time delta in milliseconds
-     */
-    update(elapsedTime) {
-        if (this.#numberOfFrames === 1) return;
-        // TODO: Use the elapsed time variable in the gameLoop.onEnd function to acc
-        this.#simTime += elapsedTime / 1000;
-        while (this.#simTime >= this.#frameTime) {
-            this.#simTime -= this.#frameTime;
-            this.#frameIndex = (this.#frameIndex + 1) % this.#numberOfFrames;
-        }
-    }
-
-    /**
-     * Gets the current frame of the animation.
-     *
-     * @return {{frame: string, sheetId: string}} - an object containing the frame id and sheet id
-     */
-    getCurrentFrame() {
-        return {
-            frame: this.#animationConfig.frames[this.#frameIndex].frame,
-            sheetId: this.#animationConfig.sheetId,
-        };
-    }
-
-    hasEnded() {
-        // TODO: detect when the animation has ended (last frame was played)
-    }
-
-    /**
-     * Returns the name of the animation.
-     *
-     * @return {string} The name of the animation.
-     */
-    get name() {
-        return this.#name;
-    }
-
-    /**
-     * Resets the animation to its initial state, setting the frame index to 0.
-     */
-    reset() {
-        this.#frameIndex = 0;
-        this.#currentFrame = 0;
-    }
-}
-
-export { Animation };
-</file>
-
-<file path="src/asset/assets.js">
-import { loadJSON } from '../utils/file';
-import { Texture } from '../utils/texture';
-
-class Assets {
-    // A map of all textures **loaded** for use in the game.
-    #textureMap = new Map();
-    #animationMap = new Map();
-    #fontMap = new Map();
-
-    // TODO: implement the methods of Assets class
-    // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Using_images
-    /*
-    async function draw() {
-  // Wait for all images to be loaded:
-  await Promise.all(
-    Array.from(document.images).map(
-      (image) =>
-        new Promise((resolve) => image.addEventListener("load", resolve)),
-    ),
-  );
-
-  // const ctx = document.getElementById("canvas").getContext("2d");
-  // call drawImage() as usual
-}
-draw();
-*/
-
-    // TODO: implement the methods of Assets class
-    async loadFromFile(path) {
-        const data = await loadJSON(path);
-        // Get all the images in the config file and the texture to the map
-        // for (const texture of data.assets.textures) {
-        //     this.#textureMap.set(texture.name, new Texture(texture.name, texture.atlas, texture.image));
-        // }
-
-        // // Get all the animations from the config json file
-        // for (const anim of data.assets.textures) {
-        // }
-        // console.log(data.assets.animation);
-
-        // // for (const texture of data.assets.animation)
-
-        // console.log(this.#textureMap);
-    }
-
-    // addTexture(name, path) {}
-    addAnimation(name, animation) {}
-    addFont(name, path) {}
-    getTexture(name) {}
-    getAnimation(name) {}
-    getFont(name) {}
-}
-
-export { Assets };
-</file>
-
-<file path="src/components/components.js">
-import { Vector } from 'vecti';
-import { Interpolations, ComponentTypes, PlayerStates } from '../utils/enums';
-
-class Component {
-    exists = false;
-    constructor() {
-        // console.log(this);
-        this.exists = true;
-    }
-}
-
-class Interpolation extends Component {
-    interpolation = Interpolations.EASEIN_SINE;
-    constructor(interpolation) {
-        super();
-        this.interpolation = interpolation;
-    }
-}
-
-class SpriteDimensions extends Component {
-    dimensions = new Vector(0.0, 0.0);
-    trimmedRect = new Vector(0.0, 0.0);
-    /**
-     * Constructor for SpriteDimensions.
-     * @param {Vector} rectangle - The sprite's initial size.
-     */
-    constructor(dimensions, trimmedRectangle) {
-        super();
-        this.dimensions = dimensions;
-        this.trimmedRect = trimmedRectangle;
-    }
-}
-
-class Transform extends Component {
-    position = new Vector(0.0, 0.0);
-    velocity = new Vector(0.0, 0.0);
-    acceleration = new Vector(0.0, 0.0);
-    prevPos = new Vector(0.0, 0.0);
-    scale = new Vector(1.0, 1.0);
-    angle = 0.0;
-    hSpeed = 0;
-    vSpeed = 0;
-
-    /**
-     * Constructor for Transform.
-     * @param {Vector} position - The initial position of the component.
-     * @param {Vector} velocity - The initial velocity of the component.
-     * @param {Vector} scale - The initial scale of the component.
-     * @param {number} angle - The initial angle of the component.
-     */
-    constructor(position, velocity, scale, angle, hSpeed, vSpeed) {
-        super();
-
-        this.position = position;
-        this.velocity = velocity;
-        this.scale = scale;
-        this.angle = angle;
-        this.hSpeed = hSpeed;
-        this.vSpeed = vSpeed;
-    }
-}
-
-class Lifespan extends Component {
-    duration = 0.0;
-    frameCreated = 0;
-
-    constructor(duration, frame) {
-        super();
-
-        this.duration = duration;
-        this.frameCreated = frame;
-    }
-}
-
-class Input extends Component {
-    up = false;
-    down = false;
-    left = false;
-    right = false;
-    attack = false;
-    isStart = false;
-    isEnd = false;
-}
-
-class BoundingBox extends Component {
-    rectangle = new Vector(0, 0);
-    halfSize = new Vector(0, 0);
-    offset = new Vector(0, 0);
-    ratio = new Vector(0, 0);
-
-    constructor(rectangle, offset) {
-        super();
-        this.rectangle = rectangle;
-        this.halfSize = this.rectangle.divide(2);
-        this.offset = offset;
-    }
-}
-
-class Animation extends Component {
-    animation;
-    repeat = false;
-
-    constructor(animation, repeat) {
-        super();
-        this.animation = animation;
-        this.repeat = repeat;
-    }
-}
-
-class Gravity extends Component {
-    gravity = 0;
-    fallingThreshold;
-    constructor(gravity) {
-        super();
-
-        this.gravity = gravity;
-    }
-}
-
-class State extends Component {
-    /**
-     * The current state of the player
-     *
-     * @type {PlayerStates}
-     *
-     */
-    #current_ = 'null';
-    previous_ = 'null';
-    changeAnimation = false;
-    canJump = true;
-
-    constructor(state) {
-        super();
-        this.#current_ = state;
-        this.previous_ = state;
-    }
-
-    /**
-     * Set the current state of the player.
-     * This will also set the previous state to the current state.
-     * @param {PlayerStates} state - The new state of the player.
-     */
-    set current(state) {
-        this.previous_ = this.#current_;
-        this.#current_ = state;
-    }
-
-    get current() {
-        return this.#current_;
-    }
-}
-
-class Sprite extends Component {
-    sheetId;
-    frame;
-    constructor(sheetId, frame) {
-        super();
-        this.sheetId = sheetId;
-        this.frame = frame;
-    }
-}
-
-/**
- * Creates a new component of the given type.
- *
- * @param {string} componentType The type of component to create. This should be one of the values from the ComponentTypes enum.
- * @param {...*} args The arguments to pass to the component's constructor.
- *
- *
- * @returns {Component} The newly created component.
- *
- * @throws {Error} If the component type is invalid.
- *
- * @example
- * const transform = createComponent(ComponentTypes.CTransform, new Vector(0, 0), new Vector(0, 0), new Vector(1, 1), 0);
- * console.log(transform);
- *
- *
- */
-const createComponent = (componentType, ...args) => {
-    switch (componentType) {
-        case ComponentTypes.CAnimation:
-            return new Animation(...args);
-        case ComponentTypes.CBoundingBox:
-            return new BoundingBox(...args);
-        case ComponentTypes.CGravity:
-            return new Gravity(...args);
-        case ComponentTypes.CInput:
-            return new Input();
-        case ComponentTypes.CInterpolation:
-            return new Interpolation(...args);
-        case ComponentTypes.CLifespan:
-            return new Lifespan(...args);
-        case ComponentTypes.CState:
-            return new State(...args);
-        case ComponentTypes.CTransform:
-            return new Transform(...args);
-        case ComponentTypes.CSpriteDimensions:
-            return new SpriteDimensions(...args);
-        case ComponentTypes.CSprite:
-            return new Sprite(...args);
-    }
-};
-
-export { createComponent };
-</file>
-
-<file path="src/entity/entity.js">
-import enums from '../utils/enums';
-import { createComponent } from '../components/components';
-
-class Entity {
-    #componentMap = new Map();
-    #isActive = true;
-    #entityId = 0;
-    #entityTag = '';
-
-    constructor(id, tag) {
-        this.#entityId = id;
-        this.#entityTag = tag;
-    }
-
-    destroy() {
-        this.#isActive = false;
-    }
-
-    isActive() {
-        return this.#isActive;
-    }
-
-    /*************  ✨ Windsurf Command ⭐  *************/
-    /**
-     * Retrieves the tag associated with this entity.
-     * @returns {string} The tag.
-     */
-    /*******  8279ce70-b1fd-41aa-89c0-e5d3314a6622  *******/
-    getTag() {
-        return this.#entityTag;
-    }
-
-    getId() {
-        return this.#entityId;
-    }
-
-    hasComponent(component) {
-        this.#componentMap.has(component);
-    }
-
-    addComponent(component) {
-        if (this.#componentMap.has(component)) {
-            throw new Error(
-                "A component of that type already exists on this entity. Try altering the entity's component instead."
-            );
-        }
-
-        let newComponent = createComponent(component);
-        this.#componentMap.set(component, newComponent);
-    }
-
-    /**
-     * Retrieves a component of the given type from this entity.
-     * @param {Component} component The type of component to retrieve.
-     * @returns {Component} The component of the given type associated with this entity, or null if no such component exists.
-     */
-    getComponent(component) {
-        return this.#componentMap.get(component);
-    }
-
-    removeComponent(component) {
-        this.#componentMap.delete(component);
-    }
-}
-</file>
-
-<file path="src/entityManager/entityManger.js">
-import { createComponent } from '../components/components';
-
-class Entity {
-    #componentMap = new Map();
-    #isActive = true;
-    #entityId = 0;
-    #entityTag = '';
-
-    constructor(id, tag) {
-        this.#entityId = id;
-        this.#entityTag = tag;
-    }
-
-    destroy() {
-        this.#isActive = false;
-    }
-
-    isActive() {
-        return this.#isActive;
-    }
-
-    /*************  ✨ Windsurf Command ⭐  *************/
-    /*******  8279ce70-b1fd-41aa-89c0-e5d3314a6622  *******/
-    getTag() {
-        return this.#entityTag;
-    }
-
-    hasComponent(component) {
-        this.#componentMap.has(component);
-    }
-
-    addComponent(component, tag) {
-        // if (this.#componentMap.has(component)) {
-        //     throw new Error(
-        //         "A component of that type already exists on this entity. Try altering the entity's component instead."
-        //     );
-        // }
-
-        this.#componentMap.set(tag, component);
-    }
-
-    /**
-     * Retrieves a component from the entity's component map.
-     * @param {string} component the type of component to retrieve
-     * @returns {Object} the component if it exists, otherwise undefined
-     */
-    getComponent(component) {
-        return this.#componentMap.get(component);
-    }
-
-    /**
-     * Retrieves the tag associated with this entity.
-     * @returns {string} The tag associated with this entity.
-     */
-    get tag() {
-        return this.#entityTag;
-    }
-    /**
-     * Retrieves the unique identifier for this entity.
-     * @returns {number} The id of the entity.
-     */
-    get id() {
-        return this.#entityId;
-    }
-
-    removeComponent(component) {
-        this.#componentMap.delete(component);
-    }
-}
-
-class EntityManager {
-    #entityList = new Array();
-    #entityListToAdd = new Array();
-    #entityListMap = new Map();
-    #totalEntities = 0;
-
-    #removeDeadEntities() {}
-
-    /**
-     * Updates the entity manager by adding new entities to the live lists,
-     * removing dead entities from the live lists, and removing empty tag buckets.
-     * @returns {boolean} Whether any changes were made to the entity manager.
-     */
-    update() {
-        let changed = false;
-        if (this.#entityListToAdd.length != 0) changed = true;
-        // 1) Move queued entities into live lists
-        for (const entity of this.#entityListToAdd) {
-            this.#entityList.push(entity);
-
-            const tag = entity.getTag();
-            if (!this.#entityListMap.has(tag)) this.#entityListMap.set(tag, []);
-            this.#entityListMap.get(tag).push(entity);
-        }
-        this.#entityListToAdd.length = 0;
-
-        // 2) Cull dead from the flat list
-        this.#entityList = this.#entityList.filter((e) => e.isActive());
-
-        // 3) Cull dead from each tag bucket (and drop empty buckets)
-        for (const [tag, list] of this.#entityListMap) {
-            const filtered = list.filter((e) => e.isActive());
-            if (filtered.length) {
-                this.#entityListMap.set(tag, filtered);
-            } else {
-                this.#entityListMap.delete(tag);
-            }
-        }
-
-        return changed;
-    }
-
-    addEntity(tag) {
-        // add to flat list
-        let entity = new Entity(this.#totalEntities++, tag);
-        this.#entityListToAdd.push(entity);
-
-        return entity;
-    }
-
-    /**
-     * Retrieves all entities in the entity manager.
-     *
-     * @returns {Entity[]} A list of all entities.
-     */
-    getAllEntities() {
-        return this.#entityList;
-    }
-
-    getEntitiesWithTag(tag) {
-        return this.#entityListMap.get(tag);
-    }
-
-    getEntitiesMap() {
-        return this.#entityListMap;
-    }
-}
-
-class EntityState {}
-
-export { EntityManager, Entity };
-</file>
-
-<file path="src/scene/scene.js">
-import { Action } from '../action/action';
-import { EntityManager } from '../entityManager/entityManger';
-import { GameEngine } from '../gameEngine/gameEngine';
-/**
- * @param {GameEngine} gameEngine
- *
- * @description Base class for scenes in the game
- */
-class Scene extends EventTarget {
-    #paused = false;
-
-    /*
-     * @type {EntityManager}
-     */
-    entityManager = new EntityManager();
-
-    /**
-     * @type {GameEngine}
-     */
-    gameEngine = null;
-    /**
-     * @description Map of action name to Action object
-     * @type {Map<string, Action>}
-     */
-    actionMap = new Map();
-    hasEnded = false;
-    currentFrame = 0;
-    width = 0;
-    height = 0;
-
-    onEnd() {
-        throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
-    }
-    setPaused() {
-        throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
-    }
-
-    /**
-     * Construct a new Scene object.
-     *
-     * @param {GameEngine} gameEngine - the GameEngine to associate with this Scene
-     */
-    constructor(gameEngine) {
-        super();
-        this.gameEngine = gameEngine;
-
-        this.height = gameEngine.height;
-        this.width = gameEngine.width;
-    }
-
-    /**
-     * Handle an action as specified by the action map.
-     *
-     * @param {Action} action - the action to handle
-     */
-    sQueue(action) {
-        throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
-    }
-
-    sRender(alpha) {
-        throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
-    }
-
-    doAction(action) {
-        this.sDoAction(action);
-    }
-
-    simulate(frames) {}
-
-    registerAction(inputKey, actionName) {
-        this.actionMap.set(inputKey, actionName);
-    }
-
-    getWidth() {
-        return this.width;
-    }
-    getHeight() {
-        return this.height;
-    }
-    getCurrentFrame() {
-        return this.currentFrame;
-    }
-    hasEnded() {
-        return this.hasEnded;
-    }
-    getActionMap() {
-        return this.actionMap;
-    }
-    drawLine(point1, point2) {
-        this.game.drawLine(point1, point2);
-    }
-}
-
-export { Scene };
-</file>
-
-<file path="src/ui/buttons/button.js">
-function createButton() {}
-</file>
-
-<file path="src/ui/dock/dock.css">
-/* ---- Dock layout ---- */
-.dock-root {
-    --dock-bg: #0f1115;
-    --dock-surface: #151821;
-    --dock-border: #2a3040;
-    --dock-size-left: 320px; /* initial */
-    --dock-size-right: 360px; /* initial */
-    --dock-size-bottom: 260px; /* if you add bottom later */
-    position: relative;
-    inset: 0;
-    display: grid;
-    height: 100%;
-    grid-template-columns: var(--dock-size-left) 6px 1fr 6px var(--dock-size-right);
-    grid-template-rows: 1fr;
-    background: var(--dock-bg);
-}
-
-/* Zones */
-.dock-left,
-.dock-right,
-.dock-bottom {
-    background: #151821;
-    border-right: 1px solid var(--dock-border);
-    overflow: hidden;
-}
-.dock-right {
-    border-right: none;
-    border-left: 1px solid var(--dock-border);
-}
-
-.dock-center {
-    position: relative;
-    overflow: hidden;
-    background: #0c0e12;
-}
-
-/* Splitters */
-.dock-splitter {
-    background: transparent;
-    position: relative;
-    z-index: 5;
-}
-.dock-splitter:hover {
-    background: rgba(255, 255, 255, 0.03);
-}
-.dock-splitter.vertical {
-    cursor: col-resize;
-}
-.dock-splitter.horizontal {
-    cursor: row-resize;
-}
-
-/* Canvas fills center */
-.dock-center canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-/* Optional header in docks if you want */
-.dock-header {
-    font: 600 12px/1 system-ui, Segoe UI, Roboto, sans-serif;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #8b93a7;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--dock-border);
-    background: linear-gradient(180deg, #181c25 0%, #141826 100%);
-}
-
-/* Use the tabs styles from earlier for content inside docks */
-</file>
-
-<file path="src/ui/dock/dock.js">
-// dock.js
-// Minimal dock system: resizable left/right areas that host Tabs instances.
-
-import { Tabs } from './tabs.js';
-
-export class DockManager extends EventTarget {
-    /**
-     * @param {HTMLElement} root  Container that should fill the screen/parent.
-     * @param {{storageKey?:string, withRight?:boolean}} [opts]
-     */
-    constructor(root, opts = {}) {
-        super();
-        this.root = root;
-        this.storageKey = opts.storageKey ?? 'ui.dock.v1';
-        this.withRight = opts.withRight ?? true;
-
-        this.#buildLayout();
-        this.#restoreSizes();
-        this.#wireSplitters();
-    }
-
-    /** Accessors for the embedded Tabs instances */
-    get leftTabs() {
-        return this._leftTabs;
-    }
-    get rightTabs() {
-        return this._rightTabs;
-    } // may be undefined if withRight=false
-
-    /** Programmatically set the left/right sizes (in px) and persist */
-    setSize(which, px) {
-        const min = 200,
-            max = 700;
-        px = Math.max(min, Math.min(max, Math.round(px)));
-        if (which === 'left') this.root.style.setProperty('--dock-size-left', px + 'px');
-        if (which === 'right') this.root.style.setProperty('--dock-size-right', px + 'px');
-        this.#persistSizes();
-    }
-
-    // ---------- internal ----------
-
-    #buildLayout() {
-        this.root.classList.add('dock-root');
-
-        // Left dock
-        const left = document.createElement('div');
-        left.className = 'dock-left';
-        const splitL = document.createElement('div');
-        splitL.className = 'dock-splitter vertical';
-        splitL.dataset.side = 'left';
-
-        // Center (canvas goes here)
-        const center = document.createElement('div');
-        center.className = 'dock-center';
-
-        // Right dock (optional)
-        const splitR = document.createElement('div');
-        let right = null;
-        if (this.withRight) {
-            splitR.className = 'dock-splitter vertical';
-            splitR.dataset.side = 'right';
-            right = document.createElement('div');
-            right.className = 'dock-right';
-        }
-
-        // Grid slots
-        // columns: left | splitL | center | splitR | right
-        this.root.append(left, splitL, center);
-        if (this.withRight) this.root.append(splitR, right);
-
-        // Create Tabs inside left/right
-        const leftShell = document.createElement('div');
-        leftShell.className = 'dock-shell';
-        left.appendChild(leftShell);
-        this._leftTabs = new Tabs(leftShell, { title: 'Left Dock', storageKey: this.storageKey + '.left' });
-
-        if (this.withRight) {
-            const rightShell = document.createElement('div');
-            rightShell.className = 'dock-shell';
-            right.appendChild(rightShell);
-            this._rightTabs = new Tabs(rightShell, { title: 'Right Dock', storageKey: this.storageKey + '.right' });
-        }
-
-        // Expose center for your canvas
-        this.centerEl = center;
-    }
-
-    #wireSplitters() {
-        const onDown = (e) => {
-            const side = e.currentTarget.dataset.side;
-            const rect = this.root.getBoundingClientRect();
-            const startX = e.clientX;
-            const startLeft = parseFloat(getComputedStyle(this.root).getPropertyValue('--dock-size-left'));
-            const startRight = parseFloat(getComputedStyle(this.root).getPropertyValue('--dock-size-right'));
-
-            const onMove = (ev) => {
-                if (side === 'left') {
-                    const delta = ev.clientX - startX;
-                    this.setSize('left', startLeft + delta);
-                } else if (side === 'right') {
-                    const delta = startX - ev.clientX;
-                    this.setSize('right', startRight + delta);
-                }
-                ev.preventDefault();
-            };
-            const onUp = () => {
-                window.removeEventListener('mousemove', onMove);
-                window.removeEventListener('mouseup', onUp);
-            };
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup', onUp);
-            e.preventDefault();
-        };
-
-        this.root.querySelectorAll('.dock-splitter.vertical').forEach((s) => {
-            s.addEventListener('mousedown', onDown);
-        });
-    }
-
-    #persistSizes() {
-        try {
-            const styles = getComputedStyle(this.root);
-            const left = parseInt(styles.getPropertyValue('--dock-size-left')) || 320;
-            const right = parseInt(styles.getPropertyValue('--dock-size-right')) || 360;
-            localStorage.setItem(this.storageKey + '.sizes', JSON.stringify({ left, right }));
-        } catch {}
-    }
-
-    #restoreSizes() {
-        try {
-            const raw = localStorage.getItem(this.storageKey + '.sizes');
-            if (!raw) return;
-            const { left, right } = JSON.parse(raw);
-            if (left) this.root.style.setProperty('--dock-size-left', left + 'px');
-            if (right) this.root.style.setProperty('--dock-size-right', right + 'px');
-        } catch {}
-    }
-}
-</file>
-
 <file path="src/ui/tabs/tabs-retro.css">
 /* ==== RETRO (Win95/98) TAB THEME ======================================= */
 /* Palette + metrics */
@@ -3058,111 +1150,6 @@ export class DockManager extends EventTarget {
 /* If you show icons/emoji in tab labels, keep them crisp */
 .tab-links .tab-icon {
     image-rendering: pixelated;
-}
-</file>
-
-<file path="src/ui/tabs/tabs.base.css">
-/* tabs.base.css */
-.tab-container {
-    font-family: system-ui, Segoe UI, Roboto, sans-serif;
-    color: var(--ui-text);
-    background: var(--ui-surface);
-    border: var(--ui-border-width, 1px) solid var(--ui-border);
-    border-radius: var(--ui-radius, 8px);
-    box-shadow: var(--ui-shadow, none);
-    overflow: hidden;
-    cursor: grab;
-    min-width: 400px;
-    min-height: 500px;
-    max-width: 480px;
-}
-
-.tab-container.ui-draggable-dragging {
-    cursor: grabbing;
-}
-
-/* header strip / title */
-.tab-container::before {
-    content: attr(data-title);
-    display: block;
-    padding: var(--hdr-pad, 8px 12px);
-    background: var(--hdr-bg, transparent);
-    color: var(--hdr-fg, var(--ui-text));
-    border-bottom: var(--hdr-border, 1px solid var(--ui-border));
-    font: var(--hdr-font, 600 12px/1 system-ui, sans-serif);
-    letter-spacing: var(--hdr-tracking, 0.04em);
-    text-transform: var(--hdr-transform, uppercase);
-}
-
-/* tabs row */
-.tabs {
-    display: flex;
-    gap: var(--tab-gap, 4px);
-    padding: var(--tab-pad, 6px);
-    background: var(--tabs-bg, var(--ui-surface-2, var(--ui-surface)));
-    border-bottom: var(--tabs-border, 1px solid var(--ui-border));
-    overflow-x: auto;
-    /* max-width: 100%; */
-}
-
-/* tab button */
-.tab-links {
-    appearance: none;
-    cursor: pointer;
-    white-space: nowrap;
-    background: var(--tab-bg, transparent);
-    color: var(--tab-fg, var(--ui-muted));
-    border: var(--tab-border, 1px solid transparent);
-    border-radius: var(--tab-radius, 6px 6px 0 0);
-    padding: var(--tab-btn-pad, 8px 12px);
-    font: var(--tab-font, 500 13px/1 system-ui, sans-serif);
-    box-shadow: var(--tab-shadow, none);
-}
-.tab-links:hover {
-    background: var(--tab-hover-bg, rgba(255, 255, 255, 0.05));
-    color: var(--ui-text);
-}
-.tab-links:focus-visible {
-    outline: var(--focus-outline, 2px solid var(--ui-accent));
-    outline-offset: var(--focus-offset, 2px);
-}
-
-.tab-links.active {
-    background: var(--tab-active-bg, var(--ui-surface));
-    color: var(--ui-text);
-    border: var(--tab-active-border, 1px solid var(--ui-border));
-    box-shadow: var(--tab-active-shadow, none);
-    position: relative;
-}
-.tab-links.active::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    height: var(--tab-accent-h, 0);
-    background: var(--ui-accent);
-    border-radius: var(--tab-accent-radius, 0);
-}
-
-/* panels */
-.tab-content {
-    display: none;
-    background: var(--panel-bg, var(--ui-bg, var(--ui-surface)));
-    padding: var(--panel-pad, 16px);
-    max-height: 400px;
-    overflow: auto;
-}
-.tab-content.active {
-    display: block;
-}
-
-/* small bits */
-.tab-title {
-    pointer-events: none;
-}
-.tab-icon {
-    margin-right: 6px;
 }
 </file>
 
@@ -3490,6 +1477,46 @@ export class Tabs extends EventTarget {
 }
 </file>
 
+<file path="src/ui/tabs/theme-light.css">
+[data-theme='lighting'] {
+    --ui-text: #f5f5ff;
+    --ui-accent: #ff2bd6;
+    --ui-surface: #060f368d;
+    --ui-surface-2: #060f368d;
+    --ui-bg: #090b1600;
+    --ui-border: #0d101e;
+    --ui-border-width: 1px;
+    --ui-radius: 12px;
+
+    --ui-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 43, 214, 0.06);
+
+    /* Header */
+    --hdr-bg: linear-gradient(90deg, #1a0b2b, #0b1a2b);
+    --hdr-border: 1px solid #2a2f46;
+    --hdr-font: 700 11px/1 'Orbitron', system-ui, sans-serif;
+    --hdr-transform: uppercase;
+    --hdr-tracking: 0.08em;
+
+    --tabs-bg: #11162a7d;
+    --tab-gap: 6px;
+    --tab-border: 1px solid #293050;
+    --tab-bg: #141b33;
+    --tab-hover-bg: #19224a;
+
+    --tab-active-bg: #0f142853;
+    --tab-active-border: 1px solid #3a4270;
+    --tab-active-shadow: 0 0 0 1px rgba(255, 43, 214, 0.18), 0 8px 20px rgba(0, 0, 0, 0.35);
+    --tab-accent-h: 2px;
+    --tab-accent-radius: 2px;
+
+    --panel-bg: radial-gradient(1200px 400px at 10% -10%, rgba(255, 43, 214, 0.08), transparent),
+        radial-gradient(1200px 400px at 90% -10%, rgba(0, 255, 255, 0.08), transparent), #0b0e1a40;
+
+    --focus-outline: 2px solid #ff2bd6;
+    --focus-offset: 1px;
+}
+</file>
+
 <file path="src/ui/tabs/theme-mac9.css">
 [data-theme='mac9'] {
     --ui-text: #000;
@@ -3602,6 +1629,1210 @@ export class Tabs extends EventTarget {
 
     --panel-pad: 10px;
     --panel-bg: #dcdcdc;
+}
+</file>
+
+<file path="src/ui/entities.template.html">
+<template id="entityItemTemplate">
+    <li class="entity-card" data-entity-id="">
+        <article>
+            <header class="entity-header">
+                <strong>
+                    <span data-entity-tag></span>
+                    <span>#<span data-entity-id></span></span>
+                </strong>
+                <small>
+                    <label>
+                        <input type="checkbox" data-field="active" />
+                        active
+                    </label>
+                </small>
+            </header>
+
+            <!-- CTransform (simplified) -->
+            <section class="component" data-component="CTransform">
+                <h4>Transform</h4>
+                <form data-component-form="CTransform">
+                    <div class="row">
+                        <label>x <input type="number" step="0.01" data-field="position.x" /></label>
+                        <label>y <input type="number" step="0.01" data-field="position.y" /></label>
+                    </div>
+                    <div class="row">
+                        <label>vx <input type="number" step="0.01" data-field="velocity.x" /></label>
+                        <label>vy <input type="number" step="0.01" data-field="velocity.y" /></label>
+                    </div>
+                    <div class="row">
+                        <label>sx <input type="number" step="0.01" data-field="scale.x" /></label>
+                        <label>sy <input type="number" step="0.01" data-field="scale.y" /></label>
+                    </div>
+                    <div class="row">
+                        <label>rot° <input type="number" step="0.1" data-field="rotation" /></label>
+                    </div>
+                    <div class="row">
+                        <label>hSpeed <input type="number" step="0.1" data-field="hSpeed" /></label>
+                        <label>vSpeed <input type="number" step="0.1" data-field="vSpeed" /></label>
+                    </div>
+                    <div class="row">
+                        <label><input type="checkbox" data-field="grounded" /> grounded</label>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" data-action="save-component">Save</button>
+                        <button type="reset">Reset</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- CState (simplified) -->
+            <section class="component" data-component="CState">
+                <h4>State</h4>
+                <form data-component-form="CState">
+                    <div class="row">
+                        <label
+                            >current
+                            <input
+                                type="text"
+                                data-field="current"
+                                placeholder="IDLE / JUMPING / WALKING.LEFT / WALKING.RIGHT"
+                        /></label>
+                    </div>
+                    <div class="row">
+                        <label>previous <input type="text" data-field="previous" /></label>
+                    </div>
+                    <div class="row">
+                        <label><input type="checkbox" data-field="canJump" /> canJump</label>
+                        <label><input type="checkbox" data-field="changeAnimation" /> changeAnimation</label>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" data-action="save-component">Save</button>
+                        <button type="reset">Reset</button>
+                    </div>
+                </form>
+            </section>
+        </article>
+    </li>
+</template>
+</file>
+
+<file path="src/utils/events.js">
+import { CustomEvents } from './enums';
+
+// example of a custom event
+const gameStopped = new CustomEvent(CustomEvents.GAME_STOPPED, {
+    bubbles: true,
+    cancelable: true,
+});
+
+export { gameStopped };
+</file>
+
+<file path="src/utils/texture.js">
+class Texture {
+    // TODO: implement the Texture class
+    #image = new Image();
+    #atlas = {};
+    #name = '';
+
+    constructor(name, atlas, imagePath) {
+        this.#name = name;
+        this.#atlas = atlas;
+        this.#image.src = imagePath;
+    }
+
+    // TODO: finish implementing methods
+    drawImage() {}
+    getSize() {}
+}
+
+export { Texture };
+</file>
+
+<file path="src/counter.js">
+export function setupCounter(element) {
+  let counter = 0
+  const setCounter = (count) => {
+    counter = count
+    element.innerHTML = `count is ${counter}`
+  }
+  element.addEventListener('click', () => setCounter(counter + 1))
+  setCounter(0)
+}
+</file>
+
+<file path="src/editor.js">
+// src/editor.js
+import { DockManager } from './ui/dock/dock.js';
+import './ui/dock/dock.css';
+
+const root = document.getElementById('editor');
+const dock = new DockManager(root, { withRight: true });
+
+// Put your game canvas in the center
+const canvas = document.createElement('canvas');
+canvas.id = 'game-canvas';
+dock.centerEl.appendChild(canvas);
+
+// Make your existing resize routine point at this canvas
+// (use your DPR-aware resize from earlier)
+function resizeCanvas() {
+    const dpr = devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Add LEFT dock panels
+dock.leftTabs.addTab({
+    id: 'sprites',
+    title: 'Sprites',
+    icon: '🖼️',
+    active: true,
+    mount(root) {
+        root.innerHTML = `
+      <div style="padding:8px">
+        <input id="spriteFilter" placeholder="Filter…" />
+        <div id="spriteGrid" style="margin-top:8px; display:grid; grid-template-columns:repeat(auto-fill,72px); gap:8px;"></div>
+      </div>`;
+        // TODO: render sprite thumbs into #spriteGrid
+    },
+});
+
+dock.leftTabs.addTab({
+    id: 'tiles',
+    title: 'Tiles',
+    icon: '🧱',
+    mount(root) {
+        root.innerHTML = `
+      <div style="padding:8px; display:flex; gap:10px;">
+        <canvas id="tilesetCanvas" width="256" height="256" style="border:1px solid #2a3040;border-radius:8px"></canvas>
+        <div>
+          <label>Brush Size</label>
+          <select id="brush"><option>1×1</option><option>2×2</option><option>3×3</option></select>
+          <div style="margin-top:8px"><button id="place">Place</button> <button id="erase">Erase</button></div>
+        </div>
+      </div>`;
+    },
+});
+
+// Add RIGHT dock panels
+dock.rightTabs.addTab({
+    id: 'inspector',
+    title: 'Inspector',
+    icon: '🔍',
+    mount(root) {
+        root.innerHTML = `
+      <div style="padding:10px">
+        <h3 style="margin:0 0 8px;">Entity</h3>
+        <div id="inspectorBody" style="font:12px/1.4 system-ui;">Select something…</div>
+      </div>`;
+    },
+});
+
+dock.rightTabs.addTab({
+    id: 'animations',
+    title: 'Animations',
+    icon: '🎞️',
+    mount(root) {
+        root.innerHTML = `
+      <div style="padding:10px">
+        <button id="btnPlay">Play</button>
+        <button id="btnPause">Pause</button>
+        <div id="animPreview" style="height:160px;border:1px solid #2a3040;margin-top:8px;border-radius:8px;"></div>
+      </div>`;
+    },
+});
+</file>
+
+<file path="src/playerStates.js">
+import { ComponentTypes, PlayerStates, ActionTypes, ActionEnums } from './utils/enums';
+import { Entity } from './entityManager/entityManger';
+
+const playerStateCallbacks = new Map();
+const stateSet = new Set();
+
+const jumping = {
+    update: (entity) => {},
+    handleAction: (entity, action) => {
+        let cState = entity.getComponent(ComponentTypes.CState);
+        let isStart = action.type == ActionTypes.START;
+        let ctr = entity.getComponent(ComponentTypes.CTransform);
+
+        switch (action.name) {
+            case ActionEnums.UP:
+                if (isStart) return;
+                console.log('up; ', ctr.vSpeed);
+                ctr.velocity.y = 0;
+                cState.current = PlayerStates.IDLE;
+                break;
+            default:
+                break;
+        }
+    },
+    entry: () => {},
+    exit: () => {},
+};
+
+const idle = {
+    // entry: (e) => {
+    //     const t = e.getComponent(ComponentTypes.CTransform);
+    //     t.velocity.x = 0;
+    // },
+    // exit: (e) => {
+    //     const t = e.getComponent(ComponentTypes.CTransform);
+    //     t.velocity.x = 0;
+    // },
+    handleAction: (e, action) => {
+        if (action.name === ActionEnums.RIGHT && action.type === ActionTypes.START) {
+            setPlayerState(e, PlayerStates.WALKING.RIGHT);
+        }
+        if (action.name === ActionEnums.LEFT && action.type === ActionTypes.START) {
+            setPlayerState(e, PlayerStates.WALKING.LEFT);
+        }
+        if (action.name === ActionEnums.UP && action.type === ActionTypes.START) {
+            const t = e.getComponent(ComponentTypes.CTransform);
+            t.velocity.y = -t.vSpeed;
+            setPlayerState(e, PlayerStates.JUMPING);
+        }
+    },
+    update: (entity) => {},
+};
+
+const walkingRight = {
+    entry: (e) => {
+        const t = e.getComponent(ComponentTypes.CTransform);
+        t.scale.x = Math.abs(t.scale.x);
+        t.velocity.x = t.hSpeed;
+    },
+    exit: (e) => {
+        const t = e.getComponent(ComponentTypes.CTransform);
+        t.velocity.x = 0;
+    },
+    handleAction: (e, action) => {
+        if (action.name === ActionEnums.RIGHT && action.type === ActionTypes.END) {
+            setPlayerState(e, PlayerStates.IDLE);
+        }
+        if (action.name === ActionEnums.LEFT && action.type === ActionTypes.START) {
+            setPlayerState(e, PlayerStates.WALKING.LEFT);
+        }
+        if (action.name === ActionEnums.UP && action.type === ActionTypes.START) {
+            const t = e.getComponent(ComponentTypes.CTransform);
+            t.velocity.y = -t.vSpeed;
+            setPlayerState(e, PlayerStates.JUMPING);
+        }
+    },
+    update: () => {},
+};
+
+const walkingLeft = {
+    entry: (e) => {
+        const t = e.getComponent(ComponentTypes.CTransform);
+        t.scale.x = -1 * Math.abs(t.scale.x);
+        t.velocity.x = -1 * t.hSpeed;
+    },
+    exit: (e) => {
+        const t = e.getComponent(ComponentTypes.CTransform);
+        t.velocity.x = 0;
+    },
+    handleAction: (e, action) => {
+        if (action.name === ActionEnums.LEFT && action.type === ActionTypes.END) {
+            setPlayerState(e, PlayerStates.IDLE);
+        }
+        if (action.name === ActionEnums.RIGHT && action.type === ActionTypes.START) {
+            setPlayerState(e, PlayerStates.WALKING.RIGHT);
+        }
+        if (action.name === ActionEnums.UP && action.type === ActionTypes.START) {
+            const t = e.getComponent(ComponentTypes.CTransform);
+            t.velocity.y = -t.vSpeed;
+            setPlayerState(e, PlayerStates.JUMPING);
+        }
+    },
+    update: () => {},
+};
+
+playerStateCallbacks.set(PlayerStates.JUMPING, jumping);
+playerStateCallbacks.set(PlayerStates.WALKING.RIGHT, walkingRight);
+playerStateCallbacks.set(PlayerStates.WALKING.LEFT, walkingLeft);
+playerStateCallbacks.set(PlayerStates.IDLE, idle);
+
+function setPlayerState(entity, next) {
+    const cState = entity.getComponent(ComponentTypes.CState);
+    if (!cState || cState.current === next) return;
+
+    const from = playerStateCallbacks.get(cState.current);
+    const to = playerStateCallbacks.get(next);
+
+    // exit old
+    from?.exit?.(entity);
+
+    // switch
+    cState.current = next;
+
+    // enter new
+    to?.entry?.(entity);
+}
+
+export default playerStateCallbacks;
+</file>
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Ignore the repomix files
+repomix-output.xml
+</file>
+
+<file path="css/style.css">
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+}
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: khaki;
+}
+
+#logging {
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    color: #fff;
+    overflow: auto;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    padding: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    font-size: large;
+    font-weight: 600;
+
+    &#start-btn {
+        background-color: rgb(76, 222, 76);
+        &:hover {
+            background-color: #45a049; /* Dark green */
+        }
+    }
+
+    &#change-test-btn {
+        background-color: rgb(244, 3, 196);
+        &:hover {
+            background-color: #923f78; /* Dark green */
+        }
+    }
+    &#end-btn {
+        background-color: rgb(255, 0, 0);
+        &:hover {
+            background-color: rgb(187, 30, 30);
+        }
+        color: white;
+    }
+}
+
+#canvas {
+    width: 800px;
+    height: 500px;
+
+    margin: 20px;
+
+    /* border: solid 1px black; */
+    background-color: white;
+}
+</file>
+
+<file path="src/action/action.js">
+class Action {
+    name;
+    type;
+    #payload = null;
+
+    constructor(name, type) {
+        this.type = type;
+        this.name = name;
+    }
+
+    getName() {
+        return this.name;
+    }
+
+    getType() {
+        return this.type;
+    }
+
+    set payload(data) {
+        this.#payload = data;
+    }
+
+    get payload() {
+        return this.#payload;
+    }
+}
+
+export { Action };
+</file>
+
+<file path="src/animation/animation.js">
+import { Vector } from 'vecti';
+import { GameEngine } from '../gameEngine/gameEngine';
+
+class Animation {
+    /**
+     * TODO: Refactor animation timing to use real elapsed time (dtVar) instead of tick counts. Will be found in the onEnd callback of the game loop.
+     *
+     * Why:
+     * - Right now animations advance based on "number of update ticks".
+     * - This makes them frame-rate dependent: if the game loop slows (e.g., 120 Hz → 60 Hz),
+     *   animations also slow down, because fewer ticks happen per second.
+     *
+     * Goal:
+     * - Use the variable delta time provided by the game loop (`deltaTime` between frames, in seconds).
+     * - Accumulate dtVar inside Animation until it reaches the duration of one animation frame
+     *   (e.g. 1 / animFPS), then advance the sprite frame.
+     * - This makes animation playback tied to wall-clock time, not tick rate → animations
+     *   run at a consistent speed across machines and during FPS dips.
+     *
+     * Plan:
+     * 1. Pass both fixed dt (dtFixed) and variable dt (dtVar) into gameEngine.update().
+     * 2. Forward dtVar down to Scene.update() and Animation.update().
+     * 3. Inside Animation, add an accumulator field (e.g. this._accum).
+     * 4. On each update, do:
+     *      this._accum += dtVar;
+     *      while (this._accum >= 1 / this.#animFPS) {
+     *          this._accum -= 1 / this.#animFPS;
+     *          this.#frameIndex = (this.#frameIndex + 1) % this.#numFrames;
+     *      }
+     * 5. Keep physics/game logic tied to dtFixed for determinism, but let animations
+     *    and tweening use dtVar for smooth, real-time motion.
+     *
+     * Result:
+     * - Animations remain steady at the intended FPS (e.g., 12 fps) regardless of game loop speed.
+     * - Frame drops won’t cause sprite animations to slow down; they’ll catch up naturally.
+     */
+
+    // TODO: use repeat bool to end or repeat animation
+    #numberOfFrames = 1;
+    #currentFrame = 0;
+    #duration = 8; // frames between frames
+    #frameSize = new Vector(1, 1);
+    #animFPS = 10;
+
+    #name = '';
+    #animationConfig;
+
+    /**
+     * @type {GameEngine}
+     */
+    #gameEngine;
+    #frameIndex = 0;
+    #simTime = 0;
+    #frameTime = 0;
+    /**
+     * Constructs a new Animation with the given name and animation config
+     * @param {string} name - the name of the animation
+     * @param {Object} animationConfig - an object containing the configuration for the animation
+     */
+    constructor(name, animationConfig, gameEngine) {
+        this.#gameEngine = gameEngine;
+        this.#name = name;
+        this.#animationConfig = animationConfig;
+        this.#animFPS = animationConfig.frameRate;
+        this.#numberOfFrames = animationConfig.frames.length;
+        this.#duration = animationConfig.speed;
+        this.#frameTime = 1 / this.#animFPS;
+    }
+
+    // 60ps / 10ps = 6ps
+
+    /**
+     * Updates the animation by incrementing the frame index by one and
+     * adjusting it according to the speed and number of frames.
+     * @param {number} elapsedTime - the time delta in milliseconds
+     */
+    update(elapsedTime) {
+        if (this.#numberOfFrames === 1) return;
+        // TODO: Use the elapsed time variable in the gameLoop.onEnd function to acc
+        this.#simTime += elapsedTime / 1000;
+        while (this.#simTime >= this.#frameTime) {
+            this.#simTime -= this.#frameTime;
+            this.#frameIndex = (this.#frameIndex + 1) % this.#numberOfFrames;
+        }
+    }
+
+    /**
+     * Gets the current frame of the animation.
+     *
+     * @return {{frame: string, sheetId: string}} - an object containing the frame id and sheet id
+     */
+    getCurrentFrame() {
+        return {
+            frame: this.#animationConfig.frames[this.#frameIndex].frame,
+            sheetId: this.#animationConfig.sheetId,
+        };
+    }
+
+    hasEnded() {
+        // TODO: detect when the animation has ended (last frame was played)
+    }
+
+    /**
+     * Returns the name of the animation.
+     *
+     * @return {string} The name of the animation.
+     */
+    get name() {
+        return this.#name;
+    }
+
+    /**
+     * Resets the animation to its initial state, setting the frame index to 0.
+     */
+    reset() {
+        this.#frameIndex = 0;
+        this.#currentFrame = 0;
+    }
+}
+
+export { Animation };
+</file>
+
+<file path="src/components/components.js">
+import { Vector } from 'vecti';
+import { Interpolations, ComponentTypes, PlayerStates } from '../utils/enums';
+
+class Component {
+    exists = false;
+    constructor() {
+        // console.log(this);
+        this.exists = true;
+    }
+}
+
+class Interpolation extends Component {
+    interpolation = Interpolations.EASEIN_SINE;
+    constructor(interpolation) {
+        super();
+        this.interpolation = interpolation;
+    }
+}
+
+class SpriteDimensions extends Component {
+    dimensions = new Vector(0.0, 0.0);
+    trimmedRect = new Vector(0.0, 0.0);
+    /**
+     * Constructor for SpriteDimensions.
+     * @param {Vector} rectangle - The sprite's initial size.
+     */
+    constructor(dimensions, trimmedRectangle) {
+        super();
+        this.dimensions = dimensions;
+        this.trimmedRect = trimmedRectangle;
+    }
+}
+
+class Transform extends Component {
+    position_ = new Vector(0.0, 0.0);
+    velocity = new Vector(0.0, 0.0);
+    acceleration = new Vector(0.0, 0.0);
+    prevPos_ = new Vector(0.0, 0.0);
+    scale = new Vector(1.0, 1.0);
+    angle = 0.0;
+    hSpeed = 0;
+    vSpeed = 0;
+
+    /**
+     * Constructor for Transform.
+     * @param {Vector} position - The initial position of the component.
+     * @param {Vector} velocity - The initial velocity of the component.
+     * @param {Vector} scale - The initial scale of the component.
+     * @param {number} angle - The initial angle of the component.
+     */
+    constructor(position, velocity, scale, angle, hSpeed, vSpeed) {
+        super();
+
+        this.position_ = position;
+        this.prevPos_ = position;
+        this.velocity = velocity;
+        this.scale = scale;
+        this.angle = angle;
+        this.hSpeed = hSpeed;
+        this.vSpeed = vSpeed;
+    }
+
+    get position() {
+        return this.position_;
+    }
+
+    get prevPos_() {
+        return this.prevPos_;
+    }
+
+    set position(position) {
+        this.prevPos_ = this.position_;
+        this.position_ = position;
+    }
+}
+
+class Lifespan extends Component {
+    duration = 0.0;
+    frameCreated = 0;
+
+    constructor(duration, frame) {
+        super();
+
+        this.duration = duration;
+        this.frameCreated = frame;
+    }
+}
+
+class Input extends Component {
+    up = false;
+    down = false;
+    left = false;
+    right = false;
+    attack = false;
+    isStart = false;
+    isEnd = false;
+}
+
+class BoundingBox extends Component {
+    /**
+     * Constructor for BoundingBox.
+     * @param {Vector} rectangle - The bounding box's initial size.
+     */
+    rectangle = new Vector(0, 0);
+
+    /**
+     * Constructor for BoundingBox.
+     * @param {Vector} rectangle - The bounding box's initial size.
+     */
+    halfSize = new Vector(0, 0);
+
+    /**
+     * Constructor for BoundingBox.
+     * @param {Vector} rectangle - The bounding box's initial size.
+     */
+    offset = new Vector(0, 0);
+
+    /**
+     * Constructor for BoundingBox.
+     * @param {Vector} rectangle - The bounding box's initial size.
+     */
+    topLeft = null;
+    position = null;
+    size_ = null;
+
+    constructor(rectangle, offset, topLeft, center, size) {
+        super();
+        this.rectangle = rectangle;
+        this.offset = offset;
+        this.halfSize = this.rectangle.divide(2);
+    }
+
+    get size() {
+        return this.size_ || this.rectangle;
+    }
+
+    set size(size) {
+        this.rectangle = size;
+        this.halfSize = size.divide(2);
+        this.size_ = size;
+    }
+}
+
+class Animation extends Component {
+    animation;
+    repeat = false;
+
+    constructor(animation, repeat) {
+        super();
+        this.animation = animation;
+        this.repeat = repeat;
+    }
+}
+
+class Gravity extends Component {
+    gravity = 0;
+    fallingThreshold;
+    constructor(gravity) {
+        super();
+
+        this.gravity = gravity;
+    }
+}
+
+class State extends Component {
+    /**
+     * The current state of the player
+     *
+     * @type {PlayerStates}
+     *
+     */
+    #current_ = 'null';
+    previous_ = 'null';
+    changeAnimation = false;
+    canJump = true;
+
+    constructor(state) {
+        super();
+        this.#current_ = state;
+        this.previous_ = state;
+    }
+
+    /**
+     * Set the current state of the player.
+     * This will also set the previous state to the current state.
+     * @param {PlayerStates} state - The new state of the player.
+     */
+    set current(state) {
+        this.previous_ = this.#current_;
+        this.#current_ = state;
+    }
+
+    get current() {
+        return this.#current_;
+    }
+}
+
+class Sprite extends Component {
+    sheetId;
+    frame;
+    constructor(sheetId, frame) {
+        super();
+        this.sheetId = sheetId;
+        this.frame = frame;
+    }
+}
+
+/**
+ * Creates a new component of the given type.
+ *
+ * @param {string} componentType The type of component to create. This should be one of the values from the ComponentTypes enum.
+ * @param {...*} args The arguments to pass to the component's constructor.
+ *
+ *
+ * @returns {Component} The newly created component.
+ *
+ * @throws {Error} If the component type is invalid.
+ *
+ * @example
+ * const transform = createComponent(ComponentTypes.CTransform, new Vector(0, 0), new Vector(0, 0), new Vector(1, 1), 0);
+ * console.log(transform);
+ *
+ *
+ */
+const createComponent = (componentType, ...args) => {
+    switch (componentType) {
+        case ComponentTypes.CAnimation:
+            return new Animation(...args);
+        case ComponentTypes.CBoundingBox:
+            return new BoundingBox(...args);
+        case ComponentTypes.CGravity:
+            return new Gravity(...args);
+        case ComponentTypes.CInput:
+            return new Input();
+        case ComponentTypes.CInterpolation:
+            return new Interpolation(...args);
+        case ComponentTypes.CLifespan:
+            return new Lifespan(...args);
+        case ComponentTypes.CState:
+            return new State(...args);
+        case ComponentTypes.CTransform:
+            return new Transform(...args);
+        case ComponentTypes.CSpriteDimensions:
+            return new SpriteDimensions(...args);
+        case ComponentTypes.CSprite:
+            return new Sprite(...args);
+    }
+};
+
+export { createComponent };
+</file>
+
+<file path="src/entityManager/entityManger.js">
+import { createComponent } from '../components/components';
+
+class Entity {
+    #componentMap = new Map();
+    #isActive = true;
+    #entityId = 0;
+    #entityTag = '';
+
+    constructor(id, tag) {
+        this.#entityId = id;
+        this.#entityTag = tag;
+    }
+
+    destroy() {
+        this.#isActive = false;
+    }
+
+    isActive() {
+        return this.#isActive;
+    }
+
+    /*************  ✨ Windsurf Command ⭐  *************/
+    /*******  8279ce70-b1fd-41aa-89c0-e5d3314a6622  *******/
+    getTag() {
+        return this.#entityTag;
+    }
+
+    hasComponent(component) {
+        this.#componentMap.has(component);
+    }
+
+    addComponent(component, tag) {
+        // if (this.#componentMap.has(component)) {
+        //     throw new Error(
+        //         "A component of that type already exists on this entity. Try altering the entity's component instead."
+        //     );
+        // }
+
+        this.#componentMap.set(tag, component);
+    }
+
+    /**
+     * Retrieves a component from the entity's component map.
+     * @param {string} component the type of component to retrieve
+     * @returns {Object} the component if it exists, otherwise undefined
+     */
+    getComponent(component) {
+        return this.#componentMap.get(component);
+    }
+
+    /**
+     * Retrieves the tag associated with this entity.
+     * @returns {string} The tag associated with this entity.
+     */
+    get tag() {
+        return this.#entityTag;
+    }
+    /**
+     * Retrieves the unique identifier for this entity.
+     * @returns {number} The id of the entity.
+     */
+    get id() {
+        return this.#entityId;
+    }
+
+    removeComponent(component) {
+        this.#componentMap.delete(component);
+    }
+}
+
+class EntityManager {
+    #entityList = new Array();
+    #entityListToAdd = new Array();
+    #entityListMap = new Map();
+    #totalEntities = 0;
+
+    #removeDeadEntities() {}
+
+    /**
+     * Updates the entity manager by adding new entities to the live lists,
+     * removing dead entities from the live lists, and removing empty tag buckets.
+     * @returns {boolean} Whether any changes were made to the entity manager.
+     */
+    update() {
+        let changed = false;
+        if (this.#entityListToAdd.length != 0) changed = true;
+        // 1) Move queued entities into live lists
+        for (const entity of this.#entityListToAdd) {
+            this.#entityList.push(entity);
+
+            const tag = entity.getTag();
+            if (!this.#entityListMap.has(tag)) this.#entityListMap.set(tag, []);
+            this.#entityListMap.get(tag).push(entity);
+        }
+        this.#entityListToAdd.length = 0;
+
+        // 2) Cull dead from the flat list
+        this.#entityList = this.#entityList.filter((e) => e.isActive());
+
+        // 3) Cull dead from each tag bucket (and drop empty buckets)
+        for (const [tag, list] of this.#entityListMap) {
+            const filtered = list.filter((e) => e.isActive());
+            if (filtered.length) {
+                this.#entityListMap.set(tag, filtered);
+            } else {
+                this.#entityListMap.delete(tag);
+            }
+        }
+
+        return changed;
+    }
+
+    addEntity(tag) {
+        // add to flat list
+        let entity = new Entity(this.#totalEntities++, tag);
+        this.#entityListToAdd.push(entity);
+
+        return entity;
+    }
+
+    /**
+     * Retrieves all entities in the entity manager.
+     *
+     * @returns {Entity[]} A list of all entities.
+     */
+    getAllEntities() {
+        return this.#entityList;
+    }
+
+    getEntitiesWithTag(tag) {
+        return this.#entityListMap.get(tag);
+    }
+
+    getEntitiesMap() {
+        return this.#entityListMap;
+    }
+}
+
+class EntityState {}
+
+export { EntityManager, Entity };
+</file>
+
+<file path="src/scene/scene.js">
+import { Action } from '../action/action';
+import { EntityManager } from '../entityManager/entityManger';
+import { GameEngine } from '../gameEngine/gameEngine';
+/**
+ * @param {GameEngine} gameEngine
+ *
+ * @description Base class for scenes in the game
+ */
+class Scene extends EventTarget {
+    #paused = false;
+
+    /*
+     * @type {EntityManager}
+     */
+    entityManager = new EntityManager();
+
+    /**
+     * @type {GameEngine}
+     */
+    gameEngine = null;
+    /**
+     * @description Map of action name to Action object
+     * @type {Map<string, Action>}
+     */
+    actionMap = new Map();
+    hasEnded = false;
+    currentFrame = 0;
+    width = 0;
+    height = 0;
+
+    onEnd() {
+        throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
+    }
+    setPaused() {
+        throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
+    }
+
+    /**
+     * Construct a new Scene object.
+     *
+     * @param {GameEngine} gameEngine - the GameEngine to associate with this Scene
+     */
+    constructor(gameEngine) {
+        super();
+        this.gameEngine = gameEngine;
+
+        this.height = gameEngine.height;
+        this.width = gameEngine.width;
+    }
+
+    /**
+     * Handle an action as specified by the action map.
+     *
+     * @param {Action} action - the action to handle
+     */
+    sQueue(action) {
+        throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
+    }
+
+    sRender(alpha) {
+        throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
+    }
+
+    doAction(action) {
+        this.sDoAction(action);
+    }
+
+    simulate(frames) {}
+
+    registerAction(inputKey, actionName) {
+        this.actionMap.set(inputKey, actionName);
+    }
+
+    getWidth() {
+        return this.width;
+    }
+    getHeight() {
+        return this.height;
+    }
+    getCurrentFrame() {
+        return this.currentFrame;
+    }
+    hasEnded() {
+        return this.hasEnded;
+    }
+    getActionMap() {
+        return this.actionMap;
+    }
+    drawLine(point1, point2) {
+        this.game.drawLine(point1, point2);
+    }
+}
+
+export { Scene };
+</file>
+
+<file path="src/ui/tabs/tabs.base.css">
+/* tabs.base.css */
+.tab-container {
+    font-family: system-ui, Segoe UI, Roboto, sans-serif;
+    color: var(--ui-text);
+    background: var(--ui-surface);
+    border: var(--ui-border-width, 1px) solid var(--ui-border);
+    border-radius: var(--ui-radius, 8px);
+    box-shadow: var(--ui-shadow, none);
+    overflow: hidden;
+    cursor: grab;
+    min-width: 400px;
+    min-height: 500px;
+    max-width: 480px;
+}
+
+.tab-container.ui-draggable-dragging {
+    cursor: grabbing;
+}
+
+/* header strip / title */
+.tab-container::before {
+    content: attr(data-title);
+    display: block;
+    padding: var(--hdr-pad, 8px 12px);
+    background: var(--hdr-bg, transparent);
+    color: var(--hdr-fg, var(--ui-text));
+    border-bottom: var(--hdr-border, 1px solid var(--ui-border));
+    font: var(--hdr-font, 600 12px/1 system-ui, sans-serif);
+    letter-spacing: var(--hdr-tracking, 0.04em);
+    text-transform: var(--hdr-transform, uppercase);
+}
+
+/* tabs row */
+.tabs {
+    display: flex;
+    gap: var(--tab-gap, 4px);
+    padding: var(--tab-pad, 6px);
+    background: var(--tabs-bg, var(--ui-surface-2, var(--ui-surface)));
+    border-bottom: var(--tabs-border, 1px solid var(--ui-border));
+    overflow-x: auto;
+    /* max-width: 100%; */
+}
+
+/* tab button */
+.tab-links {
+    appearance: none;
+    cursor: pointer;
+    white-space: nowrap;
+    background: var(--tab-bg, transparent);
+    color: var(--tab-fg, var(--ui-muted));
+    border: var(--tab-border, 1px solid transparent);
+    border-radius: var(--tab-radius, 6px 6px 0 0);
+    padding: var(--tab-btn-pad, 8px 12px);
+    font: var(--tab-font, 500 13px/1 system-ui, sans-serif);
+    box-shadow: var(--tab-shadow, none);
+}
+.tab-links:hover {
+    background: var(--tab-hover-bg, rgba(255, 255, 255, 0.05));
+    color: var(--ui-text);
+}
+.tab-links:focus-visible {
+    outline: var(--focus-outline, 2px solid var(--ui-accent));
+    outline-offset: var(--focus-offset, 2px);
+}
+
+.tab-links.active {
+    background: var(--tab-active-bg, var(--ui-surface));
+    color: var(--ui-text);
+    border: var(--tab-active-border, 1px solid var(--ui-border));
+    box-shadow: var(--tab-active-shadow, none);
+    position: relative;
+}
+.tab-links.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: var(--tab-accent-h, 0);
+    background: var(--ui-accent);
+    border-radius: var(--tab-accent-radius, 0);
+}
+
+/* panels */
+.tab-content {
+    display: none;
+    background: var(--panel-bg, var(--ui-bg, var(--ui-surface)));
+    padding: var(--panel-pad, 16px);
+    max-height: 400px;
+    overflow: auto;
+}
+.tab-content.active {
+    display: block;
+}
+
+/* small bits */
+.tab-title {
+    pointer-events: none;
+}
+.tab-icon {
+    margin-right: 6px;
 }
 </file>
 
@@ -3933,18 +3164,6 @@ export {
 };
 </file>
 
-<file path="src/utils/events.js">
-import { CustomEvents } from './enums';
-
-// example of a custom event
-const gameStopped = new CustomEvent(CustomEvents.GAME_STOPPED, {
-    bubbles: true,
-    cancelable: true,
-});
-
-export { gameStopped };
-</file>
-
 <file path="src/utils/file.js">
 /**
  * Loads a JSON file from the given URL asynchronously.
@@ -4246,6 +3465,7 @@ function getScaledSpriteSize(tr, scale, policy = 'uniformX', targetBox) {
  *   drawSize: Vector,                  // scaled size of trimmed rect
  *   logicalSizeScaled: Vector,         // scaled size of logical/original rect
  *   trimmedTopLeft: Vector,            // top-left to draw the trimmed rect in world space
+ * trimmedCenter: Vector,
  *   kx: number, ky: number
  * }}
  */
@@ -4270,13 +3490,17 @@ function getScaledSpriteLayout(
     const hasRealOffset = trimOffset.x !== 0 || trimOffset.y !== 0;
     const logicalCenter = new Vector(logicalPos.x + logicalSizeScaled.x / 2, logicalPos.y + logicalSizeScaled.y / 2);
 
+    const trimmedCenter = hasRealOffset
+        ? new Vector(logicalPos.x - trimOffset.x * kx, logicalPos.y + trimOffset.y * ky)
+        : new Vector(logicalPos.x - logicalSizeScaled.x / 2, logicalPos.y - logicalSizeScaled.y / 2);
+
     const trimmedTopLeft = hasRealOffset
         ? new Vector(logicalPos.x - trimOffset.x * kx, logicalPos.y + trimOffset.y * ky)
         : new Vector(
               logicalPos.x - (logicalSizeScaled.x - drawSize.x) / 2,
               logicalPos.y - (logicalSizeScaled.y - drawSize.y) / 2
           );
-    return { drawSize, logicalSizeScaled, trimmedTopLeft, kx, ky };
+    return { drawSize, logicalSizeScaled, trimmedTopLeft, trimmedCenter, kx, ky };
 }
 export { getScaledSpriteSize, getScaledSpriteLayout };
 </file>
@@ -4484,127 +3708,6 @@ function printSpriteCacheStats(cache) {
 export { printSpriteCacheStats };
 </file>
 
-<file path="src/utils/texture.js">
-class Texture {
-    // TODO: implement the Texture class
-    #image = new Image();
-    #atlas = {};
-    #name = '';
-
-    constructor(name, atlas, imagePath) {
-        this.#name = name;
-        this.#atlas = atlas;
-        this.#image.src = imagePath;
-    }
-
-    // TODO: finish implementing methods
-    drawImage() {}
-    getSize() {}
-}
-
-export { Texture };
-</file>
-
-<file path="src/counter.js">
-export function setupCounter(element) {
-  let counter = 0
-  const setCounter = (count) => {
-    counter = count
-    element.innerHTML = `count is ${counter}`
-  }
-  element.addEventListener('click', () => setCounter(counter + 1))
-  setCounter(0)
-}
-</file>
-
-<file path="src/editor.js">
-// src/editor.js
-import { DockManager } from './ui/dock/dock.js';
-import './ui/dock/dock.css';
-
-const root = document.getElementById('editor');
-const dock = new DockManager(root, { withRight: true });
-
-// Put your game canvas in the center
-const canvas = document.createElement('canvas');
-canvas.id = 'game-canvas';
-dock.centerEl.appendChild(canvas);
-
-// Make your existing resize routine point at this canvas
-// (use your DPR-aware resize from earlier)
-function resizeCanvas() {
-    const dpr = devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = Math.max(1, Math.round(rect.width * dpr));
-    canvas.height = Math.max(1, Math.round(rect.height * dpr));
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-
-// Add LEFT dock panels
-dock.leftTabs.addTab({
-    id: 'sprites',
-    title: 'Sprites',
-    icon: '🖼️',
-    active: true,
-    mount(root) {
-        root.innerHTML = `
-      <div style="padding:8px">
-        <input id="spriteFilter" placeholder="Filter…" />
-        <div id="spriteGrid" style="margin-top:8px; display:grid; grid-template-columns:repeat(auto-fill,72px); gap:8px;"></div>
-      </div>`;
-        // TODO: render sprite thumbs into #spriteGrid
-    },
-});
-
-dock.leftTabs.addTab({
-    id: 'tiles',
-    title: 'Tiles',
-    icon: '🧱',
-    mount(root) {
-        root.innerHTML = `
-      <div style="padding:8px; display:flex; gap:10px;">
-        <canvas id="tilesetCanvas" width="256" height="256" style="border:1px solid #2a3040;border-radius:8px"></canvas>
-        <div>
-          <label>Brush Size</label>
-          <select id="brush"><option>1×1</option><option>2×2</option><option>3×3</option></select>
-          <div style="margin-top:8px"><button id="place">Place</button> <button id="erase">Erase</button></div>
-        </div>
-      </div>`;
-    },
-});
-
-// Add RIGHT dock panels
-dock.rightTabs.addTab({
-    id: 'inspector',
-    title: 'Inspector',
-    icon: '🔍',
-    mount(root) {
-        root.innerHTML = `
-      <div style="padding:10px">
-        <h3 style="margin:0 0 8px;">Entity</h3>
-        <div id="inspectorBody" style="font:12px/1.4 system-ui;">Select something…</div>
-      </div>`;
-    },
-});
-
-dock.rightTabs.addTab({
-    id: 'animations',
-    title: 'Animations',
-    icon: '🎞️',
-    mount(root) {
-        root.innerHTML = `
-      <div style="padding:10px">
-        <button id="btnPlay">Play</button>
-        <button id="btnPause">Pause</button>
-        <div id="animPreview" style="height:160px;border:1px solid #2a3040;margin-top:8px;border-radius:8px;"></div>
-      </div>`;
-    },
-});
-</file>
-
 <file path="src/main.js">
 import GameLoop from '@tenoch_code/tlaloopi';
 import { GameEngine } from './gameEngine/gameEngine';
@@ -4642,7 +3745,7 @@ $(async function () {
 async function startGame() {
     let gameLoop = new GameLoop(
         {
-            fps: 60,
+            fps: 120,
         },
         gameEngine.fixedUpdate.bind(gameEngine),
         gameEngine.render.bind(gameEngine),
@@ -4679,33 +3782,6 @@ async function startGame() {
         entityManager: gameEngine.getSceneEntityManager(),
     });
 }
-</file>
-
-<file path=".gitignore">
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 </file>
 
 <file path="index.html">
@@ -4841,26 +3917,27 @@ class GameEngine extends EventTarget {
         this.#assets = await resolveConfiguration(this.#configPath);
         this.spriteCache = new SpriteCacheGPU(128 * 1024 * 1024);
 
-        // resizeCanvasForDPR(this.#canvasCTX.canvas, this.#canvasCTX);
+        ``;
+        {
+            // Wait for all images to load before proceeding
+            await waitForSpriteSheets(this.#assets);
 
-        // Wait for all images to load before proceeding
-        await waitForSpriteSheets(this.#assets);
+            // Prewarm the sprite cache
+            for (let sheet of this.#assets.spriteSheets.values()) {
+                let sheetImage = sheet.image;
+                let frames = sheet.frames.map((frame) => {
+                    const r = frame.frame;
+                    return { sx: r.x, sy: r.y, sw: r.w, sh: r.h };
+                });
 
-        for (let sheet of this.#assets.spriteSheets.values()) {
-            let sheetImage = sheet.image;
-            let frames = sheet.frames.map((frame) => {
-                const r = frame.frame;
-                return { sx: r.x, sy: r.y, sw: r.w, sh: r.h };
-            });
+                // Prewarm both orientations
+                await this.spriteCache.prewarm(sheetImage, frames, 'none');
+                await this.spriteCache.prewarm(sheetImage, frames, 'flipX');
+            }
 
-            // Prewarm both orientations
-            await this.spriteCache.prewarm(sheetImage, frames, 'none');
-            await this.spriteCache.prewarm(sheetImage, frames, 'flipX');
+            console.log('assets loaded', this.#assets);
         }
 
-        console.log('assets loaded', this.#assets);
-
-        // this.#canvasCTX.drawImage(this.#assets.spriteSheets.get('knight').image, 0, 0);
         this.changeScene(SceneNames.Play, new Play_Scene(this));
         initUserInput(this);
         console.log('sprite cache prewarmed', this.spriteCache.map, this.spriteCache.inflight);
@@ -4973,7 +4050,7 @@ class GameEngine extends EventTarget {
 
         // const sx = Math.abs(scale.x);
         // let scaledBox = getScaledSpriteSize(tr, scale, ScalePolicies.UNIFORM_Y, null);
-        let { drawSize, logicalSizeScaled, trimmedTopLeft, kx, ky } = getScaledSpriteLayout(
+        let { drawSize, logicalSizeScaled, trimmedTopLeft, trimmedCenter, kx, ky } = getScaledSpriteLayout(
             tr,
             new Vector(frame.w, frame.h),
             scale,
@@ -4990,7 +4067,8 @@ class GameEngine extends EventTarget {
             frame.h,
             scale.x >= 0 ? 'none' : 'flipX'
         );
-        this.#canvasCTX.drawImage(bmp, trimmedTopLeft.x, trimmedTopLeft.y, logicalSizeScaled.x, logicalSizeScaled.y);
+
+        this.#canvasCTX.drawImage(bmp, trimmedCenter.x, trimmedCenter.y, logicalSizeScaled.x, logicalSizeScaled.y);
     }
 
     /**
@@ -5539,8 +4617,8 @@ class Play_Scene extends Scene {
                 [ComponentTypes.CState]: [PlayerStates.IDLE],
             },
             'PLAYER',
-            3,
-            4
+            0,
+            0
         );
 
         console.log('player ', this.#player);
@@ -5586,8 +4664,12 @@ class Play_Scene extends Scene {
         for (let entity of this.entityManager.getAllEntities()) {
             this.#sMovement(entity, dt);
             if (entity.getComponent(ComponentTypes.CAnimation)) this.#sAnimation(entity);
-
             this.sActions();
+
+            // update the position of the bounding box
+            entity.getComponent(ComponentTypes.CBoundingBox).position = entity.getComponent(
+                ComponentTypes.CTransform
+            ).position;
         }
 
         let changed = this.entityManager.update();
@@ -5616,12 +4698,9 @@ class Play_Scene extends Scene {
 
         for (let entity of this.entityManager.getAllEntities()) {
             let transform = entity.getComponent(ComponentTypes.CTransform);
+            let bBox = entity.getComponent(ComponentTypes.CBoundingBox);
 
             // show the bounding box
-            if (this.#drawCollisions) {
-                let bBoxRect = this.#centeredBoundingRect(entity);
-                this.gameEngine.drawRect(bBoxRect.topLeft, bBoxRect.size, 'rgba(205, 29, 41, 1)');
-            }
 
             // show the sprite
             if (this.drawTexture && entity.getComponent(ComponentTypes.CAnimation)) {
@@ -5629,8 +4708,8 @@ class Play_Scene extends Scene {
                 if (!transform.scale) {
                     transform.scale = new Vector(1, 1);
                 }
+
                 await this.gameEngine.drawSprite(sheetId, frame, transform.position, transform.scale);
-                // await this.gameEngine.drawSprite(sheetId, frame, transform.position, new Vector(-1, 1));
             } else if (this.drawTexture) {
                 let cSprite = entity.getComponent(ComponentTypes.CSprite);
                 if (!transform.scale) {
@@ -5641,8 +4720,8 @@ class Play_Scene extends Scene {
 
             // show the center of the bounding box
             if (this.#drawCollisions) {
-                let bBoxRect = this.#centeredBoundingRect(entity);
-                this.gameEngine.drawCircleFilled(bBoxRect.center, 2, 'rgba(89, 255, 252, 1)');
+                this.gameEngine.drawRect(this.#centerToTopLeft(bBox), bBox.size, 'rgba(205, 29, 41, 1)');
+                this.gameEngine.drawCircleFilled(bBox.position, 2, 'rgba(89, 255, 252, 1)');
             }
         }
 
@@ -5658,7 +4737,13 @@ class Play_Scene extends Scene {
         }
     }
 
-    sCollision(entity) {}
+    sCollision(entity) {
+        let bBox = entity.getComponent(ComponentTypes.CBoundingBox);
+
+        for (let other of this.entityManager.getAllEntities()) {
+            this.#isOverlapping(entity, other);
+        }
+    }
 
     sActions() {
         // The player's current state
@@ -5700,10 +4785,10 @@ class Play_Scene extends Scene {
 
     sApplyGravity() {}
 
-    // #onEnd() {
-    //     console.log('end');
-    // }
-    // #changePlayerStateTo(state) {}
+    onEnd() {
+        console.log('end');
+    }
+    changePlayerStateTo(state) {}
 
     setPaused(isPaused) {
         console.log('setPaused', isPaused);
@@ -5711,7 +4796,7 @@ class Play_Scene extends Scene {
     }
 
     /**
-     * Spawns an entity at the given grid coordinates with the given components.
+     * Spawns an entity with no animation at the given grid coordinates with the given components.
      * @param {Component[]} components - A map of component type to component arguments.
      * @param {string} type - The type of entity to spawn.
      * @param {number} gridX - The x coordinate in the grid.
@@ -5757,12 +4842,10 @@ class Play_Scene extends Scene {
     }
 
     /****************************************************************************
-     * GETTERS AND SETTERS
-     ***************************************************************************/
-
-    /****************************************************************************
      * HELPER FUNCTIONS
      ***************************************************************************/
+
+    #isOverlapping() {}
     /**
      *
      * @param {number} gridX the x coordinate in the grid
@@ -5773,6 +4856,18 @@ class Play_Scene extends Scene {
         let worldX = gridX * this.#mapConfig.tileSize.x;
         let worldY = gridY * this.#mapConfig.tileSize.y;
         return new Vector(worldX, worldY);
+    }
+
+    /**
+     *
+     * @param {number} gridX the x coordinate in the grid
+     * @param {number} gridY the y coordinate in the grid
+     * @returns
+     */
+    #gridToWorldCentered(gridX, gridY) {
+        let worldX = gridX * this.#mapConfig.tileSize.x;
+        let worldY = gridY * this.#mapConfig.tileSize.y;
+        return new Vector(worldX + this.#mapConfig.tileSize.x / 2, worldY + this.#mapConfig.tileSize.x / 2);
     }
 
     #getTileUnderMouse() {
@@ -5813,28 +4908,32 @@ class Play_Scene extends Scene {
         return new Vector(gridX, gridY);
     }
 
-    #centeredBoundingRect(entity) {
+    #scaleBoundingRect(entity) {
         let transform = entity.getComponent(ComponentTypes.CTransform);
         // / Get the bounding box
         let cBoundingBox = entity.getComponent(ComponentTypes.CBoundingBox);
         let bBoxRect = cBoundingBox.rectangle;
 
         // Scale the bounding box
-        let scaledBox = getScaledSpriteSize(bBoxRect, transform.scale, ScalePolicies.UNIFORM_Y, null);
-        let halfSize = scaledBox.divide(2);
+        let scaledRect = getScaledSpriteSize(bBoxRect, transform.scale, ScalePolicies.UNIFORM_Y, null);
+        let halfSize = scaledRect.divide(2);
 
         // Find the center and top left of the sprite
-        let center;
-        let topLeft = new Vector(
-            transform.position.x - halfSize.x + scaledBox.x / 2,
-            transform.position.y - halfSize.y + scaledBox.y / 2
+        let center = new Vector(
+            transform.position.x - halfSize.x + scaledRect.x / 2,
+            transform.position.y - halfSize.y + scaledRect.y / 2
         );
 
         // The collision box is offset from the sprite
-        topLeft = topLeft.add(cBoundingBox.offset);
+        // topLeft = topLeft.add(cBoundingBox.offset);
 
-        center = topLeft.add(halfSize);
-        return { size: scaledBox, topLeft, center };
+        // center = topLeft.add(halfSize);
+        return { scaledRect, position: center };
+    }
+
+    #centerToTopLeft(bBox) {
+        let halfSize = bBox.halfSize;
+        return bBox.position.subtract(halfSize);
     }
 
     #renderGridPattern(ctx) {
@@ -5920,28 +5019,21 @@ class Play_Scene extends Scene {
     }
 
     #ensureGridPattern() {
-        const tsX = this.#mapConfig.tileSize.x | 0;
-        const tsY = this.#mapConfig.tileSize.y | 0;
-        const dpr = window.devicePixelRatio || 1;
+        const tsX = this.#mapConfig.tileSize.x;
+        const tsY = this.#mapConfig.tileSize.y;
 
         if (tsX < 1 || tsY < 1) {
             this.#gridPattern = null;
             return;
         }
 
-        if (
-            this.#gridPattern &&
-            this.#gridPatternTile.x === tsX &&
-            this.#gridPatternTile.y === tsY &&
-            this.#gridPatternDPR === dpr
-        )
-            return;
+        if (this.#gridPattern && this.#gridPatternTile.x === tsX && this.#gridPatternTile.y === tsY) return;
 
         this.#gridPattern = null;
         this.#gridPatternCanvas = null;
 
-        const pxW = Math.max(1, Math.round(tsX * dpr));
-        const pxH = Math.max(1, Math.round(tsY * dpr));
+        const pxW = Math.max(1, Math.round(tsX));
+        const pxH = Math.max(1, Math.round(tsY));
 
         const makeCanvas = (w, h) => {
             if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
@@ -5969,12 +5061,12 @@ class Play_Scene extends Scene {
         let pattern = this.gameEngine.ctx.createPattern(off, 'repeat');
 
         // If supported, neutralize DPR so each cell is tsX×tsY in user space
-        if (pattern && 'setTransform' in pattern) {
-            const m = new DOMMatrix();
-            m.a = 1 / dpr; // scaleX
-            m.d = 1 / dpr; // scaleY
-            pattern.setTransform(m);
-        }
+        // if (pattern && 'setTransform' in pattern) {
+        //     const m = new DOMMatrix();
+        //     m.a = 1 ; // scaleX
+        //     m.d = 1 ; // scaleY
+        //     pattern.setTransform(m);
+        // }
 
         if (!pattern) {
             const dom = document.createElement('canvas');
@@ -5989,7 +5081,7 @@ class Play_Scene extends Scene {
 
         this.#gridPattern = pattern;
         this.#gridPatternTile = { x: tsX, y: tsY };
-        this.#gridPatternDPR = dpr;
+        // this.#gridPatternDPR ;
     }
 
     #spawnEntity(components = {}, type, gridX = 0, gridY = 0) {
@@ -5999,8 +5091,14 @@ class Play_Scene extends Scene {
             entity.addComponent(createComponent(componentType, ...args), componentType);
         }
 
-        let worldCoords = this.#gridToWorld(gridX, gridY);
+        let worldCoords = this.#gridToWorldCentered(gridX, gridY);
         entity.getComponent(ComponentTypes.CTransform).position = worldCoords;
+
+        let scaledBBox = this.#scaleBoundingRect(entity);
+
+        let bBox = entity.getComponent(ComponentTypes.CBoundingBox);
+        bBox.position = worldCoords;
+        bBox.size = scaledBBox.scaledRect;
         console.log('spawn entity');
         console.log(components);
         // console.log(entity);

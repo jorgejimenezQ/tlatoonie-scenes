@@ -240,8 +240,8 @@ class Play_Scene extends Scene {
                 [ComponentTypes.CState]: [PlayerStates.IDLE],
             },
             'PLAYER',
-            3,
-            4
+            0,
+            0
         );
 
         console.log('player ', this.#player);
@@ -290,9 +290,9 @@ class Play_Scene extends Scene {
             this.sActions();
 
             // update the position of the bounding box
-            // entity.getComponent(ComponentTypes.CBoundingBox).center = entity.getComponent(
-            //     ComponentTypes.CTransform
-            // ).position;
+            entity.getComponent(ComponentTypes.CBoundingBox).position = entity.getComponent(
+                ComponentTypes.CTransform
+            ).position;
         }
 
         let changed = this.entityManager.update();
@@ -331,8 +331,8 @@ class Play_Scene extends Scene {
                 if (!transform.scale) {
                     transform.scale = new Vector(1, 1);
                 }
+
                 await this.gameEngine.drawSprite(sheetId, frame, transform.position, transform.scale);
-                // await this.gameEngine.drawSprite(sheetId, frame, transform.position, new Vector(-1, 1));
             } else if (this.drawTexture) {
                 let cSprite = entity.getComponent(ComponentTypes.CSprite);
                 if (!transform.scale) {
@@ -343,7 +343,7 @@ class Play_Scene extends Scene {
 
             // show the center of the bounding box
             if (this.#drawCollisions) {
-                this.gameEngine.drawRect(bBox.position, bBox.size, 'rgba(205, 29, 41, 1)');
+                this.gameEngine.drawRect(this.#centerToTopLeft(bBox), bBox.size, 'rgba(205, 29, 41, 1)');
                 this.gameEngine.drawCircleFilled(bBox.position, 2, 'rgba(89, 255, 252, 1)');
             }
         }
@@ -361,8 +361,10 @@ class Play_Scene extends Scene {
     }
 
     sCollision(entity) {
+        let bBox = entity.getComponent(ComponentTypes.CBoundingBox);
+
         for (let other of this.entityManager.getAllEntities()) {
-            this.hasCollided(entity, other);
+            this.#isOverlapping(entity, other);
         }
     }
 
@@ -406,10 +408,10 @@ class Play_Scene extends Scene {
 
     sApplyGravity() {}
 
-    // #onEnd() {
-    //     console.log('end');
-    // }
-    // #changePlayerStateTo(state) {}
+    onEnd() {
+        console.log('end');
+    }
+    changePlayerStateTo(state) {}
 
     setPaused(isPaused) {
         console.log('setPaused', isPaused);
@@ -417,7 +419,7 @@ class Play_Scene extends Scene {
     }
 
     /**
-     * Spawns an entity at the given grid coordinates with the given components.
+     * Spawns an entity with no animation at the given grid coordinates with the given components.
      * @param {Component[]} components - A map of component type to component arguments.
      * @param {string} type - The type of entity to spawn.
      * @param {number} gridX - The x coordinate in the grid.
@@ -463,12 +465,10 @@ class Play_Scene extends Scene {
     }
 
     /****************************************************************************
-     * GETTERS AND SETTERS
-     ***************************************************************************/
-
-    /****************************************************************************
      * HELPER FUNCTIONS
      ***************************************************************************/
+
+    #isOverlapping() {}
     /**
      *
      * @param {number} gridX the x coordinate in the grid
@@ -479,6 +479,18 @@ class Play_Scene extends Scene {
         let worldX = gridX * this.#mapConfig.tileSize.x;
         let worldY = gridY * this.#mapConfig.tileSize.y;
         return new Vector(worldX, worldY);
+    }
+
+    /**
+     *
+     * @param {number} gridX the x coordinate in the grid
+     * @param {number} gridY the y coordinate in the grid
+     * @returns
+     */
+    #gridToWorldCentered(gridX, gridY) {
+        let worldX = gridX * this.#mapConfig.tileSize.x;
+        let worldY = gridY * this.#mapConfig.tileSize.y;
+        return new Vector(worldX + this.#mapConfig.tileSize.x / 2, worldY + this.#mapConfig.tileSize.x / 2);
     }
 
     #getTileUnderMouse() {
@@ -542,33 +554,9 @@ class Play_Scene extends Scene {
         return { scaledRect, position: center };
     }
 
-    #centerToTopLeft(entity) {
-        let cBoundingBox = entity.getComponent(ComponentTypes.CBoundingBox);
-        let transform = entity.getComponent(ComponentTypes.CTransform);
-    }
-
-    #centeredBoundingRect(entity) {
-        let transform = entity.getComponent(ComponentTypes.CTransform);
-        // / Get the bounding box
-        let cBoundingBox = entity.getComponent(ComponentTypes.CBoundingBox);
-        let bBoxRect = cBoundingBox.rectangle;
-
-        // Scale the bounding box
-        let scaledBox = getScaledSpriteSize(bBoxRect, transform.scale, ScalePolicies.UNIFORM_Y, null);
-        let halfSize = scaledBox.divide(2);
-
-        // Find the center and top left of the sprite
-        let center;
-        let topLeft = new Vector(
-            transform.position.x - halfSize.x + scaledBox.x / 2,
-            transform.position.y - halfSize.y + scaledBox.y / 2
-        );
-
-        // The collision box is offset from the sprite
-        topLeft = topLeft.add(cBoundingBox.offset);
-
-        center = topLeft.add(halfSize);
-        return { size: scaledBox, topLeft, center };
+    #centerToTopLeft(bBox) {
+        let halfSize = bBox.halfSize;
+        return bBox.position.subtract(halfSize);
     }
 
     #renderGridPattern(ctx) {
@@ -654,28 +642,21 @@ class Play_Scene extends Scene {
     }
 
     #ensureGridPattern() {
-        const tsX = this.#mapConfig.tileSize.x | 0;
-        const tsY = this.#mapConfig.tileSize.y | 0;
-        const dpr = window.devicePixelRatio || 1;
+        const tsX = this.#mapConfig.tileSize.x;
+        const tsY = this.#mapConfig.tileSize.y;
 
         if (tsX < 1 || tsY < 1) {
             this.#gridPattern = null;
             return;
         }
 
-        if (
-            this.#gridPattern &&
-            this.#gridPatternTile.x === tsX &&
-            this.#gridPatternTile.y === tsY &&
-            this.#gridPatternDPR === dpr
-        )
-            return;
+        if (this.#gridPattern && this.#gridPatternTile.x === tsX && this.#gridPatternTile.y === tsY) return;
 
         this.#gridPattern = null;
         this.#gridPatternCanvas = null;
 
-        const pxW = Math.max(1, Math.round(tsX * dpr));
-        const pxH = Math.max(1, Math.round(tsY * dpr));
+        const pxW = Math.max(1, Math.round(tsX));
+        const pxH = Math.max(1, Math.round(tsY));
 
         const makeCanvas = (w, h) => {
             if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
@@ -703,12 +684,12 @@ class Play_Scene extends Scene {
         let pattern = this.gameEngine.ctx.createPattern(off, 'repeat');
 
         // If supported, neutralize DPR so each cell is tsX×tsY in user space
-        if (pattern && 'setTransform' in pattern) {
-            const m = new DOMMatrix();
-            m.a = 1 / dpr; // scaleX
-            m.d = 1 / dpr; // scaleY
-            pattern.setTransform(m);
-        }
+        // if (pattern && 'setTransform' in pattern) {
+        //     const m = new DOMMatrix();
+        //     m.a = 1 ; // scaleX
+        //     m.d = 1 ; // scaleY
+        //     pattern.setTransform(m);
+        // }
 
         if (!pattern) {
             const dom = document.createElement('canvas');
@@ -723,7 +704,7 @@ class Play_Scene extends Scene {
 
         this.#gridPattern = pattern;
         this.#gridPatternTile = { x: tsX, y: tsY };
-        this.#gridPatternDPR = dpr;
+        // this.#gridPatternDPR ;
     }
 
     #spawnEntity(components = {}, type, gridX = 0, gridY = 0) {
@@ -733,7 +714,7 @@ class Play_Scene extends Scene {
             entity.addComponent(createComponent(componentType, ...args), componentType);
         }
 
-        let worldCoords = this.#gridToWorld(gridX, gridY);
+        let worldCoords = this.#gridToWorldCentered(gridX, gridY);
         entity.getComponent(ComponentTypes.CTransform).position = worldCoords;
 
         let scaledBBox = this.#scaleBoundingRect(entity);

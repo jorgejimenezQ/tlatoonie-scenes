@@ -32,10 +32,10 @@ class SpriteDimensions extends Component {
 }
 
 class Transform extends Component {
-    position = new Vector(0.0, 0.0);
+    position_ = new Vector(0.0, 0.0);
     velocity = new Vector(0.0, 0.0);
     acceleration = new Vector(0.0, 0.0);
-    prevPos = new Vector(0.0, 0.0);
+    prevPos_ = new Vector(0.0, 0.0);
     scale = new Vector(1.0, 1.0);
     angle = 0.0;
     hSpeed = 0;
@@ -51,12 +51,26 @@ class Transform extends Component {
     constructor(position, velocity, scale, angle, hSpeed, vSpeed) {
         super();
 
-        this.position = position;
+        this.position_ = position;
+        this.prevPos_ = position;
         this.velocity = velocity;
         this.scale = scale;
         this.angle = angle;
         this.hSpeed = hSpeed;
         this.vSpeed = vSpeed;
+    }
+
+    get position() {
+        return this.position_;
+    }
+
+    get prevPos_() {
+        return this.prevPos_;
+    }
+
+    set position(position) {
+        this.prevPos_ = this.position_;
+        this.position_ = position;
     }
 }
 
@@ -123,6 +137,7 @@ class BoundingBox extends Component {
     set size(size) {
         this.rectangle = size;
         this.halfSize = size.divide(2);
+        this.size_ = size;
     }
 }
 

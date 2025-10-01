@@ -6,7 +6,10 @@ import { createTabs } from './ui/tabs/createTabs';
 
 const debug = true;
 let ctx = document.getElementById('canvas').getContext('2d');
-let gameEngine = new GameEngine('../assets/config.json', ctx, debug);
+// let path = '${import.meta.env.BASE_URL}assets/config.json';
+let envUrl = import.meta.env.BASE_URL;
+console.log(envUrl);
+let gameEngine = new GameEngine(envUrl + 'assets/config.json', ctx, debug);
 
 function resizeCanvas(canvas, ctx) {
     const dpr = window.devicePixelRatio || 1;
@@ -71,3 +74,5 @@ async function startGame() {
         entityManager: gameEngine.getSceneEntityManager(),
     });
 }
+
+// TODO: @Add error handling and logging

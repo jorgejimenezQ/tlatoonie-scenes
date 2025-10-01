@@ -70,26 +70,31 @@ class GameEngine extends EventTarget {
         this.#assets = await resolveConfiguration(this.#configPath);
         this.spriteCache = new SpriteCacheGPU(128 * 1024 * 1024);
 
-        // resizeCanvasForDPR(this.#canvasCTX.canvas, this.#canvasCTX);
+        ``;
+        try {
+            // Wait for all images to load before proceeding
+            await waitForSpriteSheets(this.#assets);
 
-        // Wait for all images to load before proceeding
-        await waitForSpriteSheets(this.#assets);
+            // Prewarm the sprite cache
+            for (let sheet of this.#assets.spriteSheets.values()) {
+                let sheetImage = sheet.image;
+                let frames = sheet.frames.map((frame) => {
+                    const r = frame.frame;
+                    return { sx: r.x, sy: r.y, sw: r.w, sh: r.h };
+                });
 
-        for (let sheet of this.#assets.spriteSheets.values()) {
-            let sheetImage = sheet.image;
-            let frames = sheet.frames.map((frame) => {
-                const r = frame.frame;
-                return { sx: r.x, sy: r.y, sw: r.w, sh: r.h };
-            });
+                // Prewarm both orientations
+                await this.spriteCache.prewarm(sheetImage, frames, 'none');
+                await this.spriteCache.prewarm(sheetImage, frames, 'flipX');
+            }
 
-            // Prewarm both orientations
-            await this.spriteCache.prewarm(sheetImage, frames, 'none');
-            await this.spriteCache.prewarm(sheetImage, frames, 'flipX');
+            console.log('assets loaded', this.#assets);
+        } catch (err) {
+            console.error(err);
+            this.stop();
+            this.dispatchEvent(new CustomEvent(CustomEvents.GAME_STOPPED));
         }
 
-        console.log('assets loaded', this.#assets);
-
-        // this.#canvasCTX.drawImage(this.#assets.spriteSheets.get('knight').image, 0, 0);
         this.changeScene(SceneNames.Play, new Play_Scene(this));
         initUserInput(this);
         console.log('sprite cache prewarmed', this.spriteCache.map, this.spriteCache.inflight);
@@ -220,7 +225,6 @@ class GameEngine extends EventTarget {
             scale.x >= 0 ? 'none' : 'flipX'
         );
 
-        // this.#canvasCTX.drawImage(bmp, trimmedTopLeft.x, trimmedTopLeft.y, logicalSizeScaled.x, logicalSizeScaled.y);
         this.#canvasCTX.drawImage(bmp, trimmedCenter.x, trimmedCenter.y, logicalSizeScaled.x, logicalSizeScaled.y);
     }
 

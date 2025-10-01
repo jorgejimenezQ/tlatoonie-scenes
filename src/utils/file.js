@@ -10,11 +10,11 @@
 async function loadJSON(url) {
     try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error('HTTP error! Status: ${response.status}');
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
         return data;
     } catch (err) {
-        console.error('Error loading JSON: ', err);
+        console.error('(loadJSON)Error loading JSON: ', err);
     }
 }
 
@@ -56,16 +56,19 @@ async function resolveConfiguration(configJsonPath) {
             // fonts: fontMap,
         };
 
-        for (const e of data.assets.spriteSheets) {
-            console.log(e);
-            // get the actual atlas from the path
-            const atlas = await loadJSON('../../assets' + e.atlasPath); // await works here
+        let assetsPath = configJsonPath.split('/');
+        assetsPath.pop();
+        assetsPath = assetsPath.join('/');
 
+        for (const e of data.assets.spriteSheets) {
+            // get the actual atlas from the path
+
+            const atlas = await loadJSON(assetsPath + e.atlasPath); // await works here
             // delete unnecessary properties
             delete atlas.meta;
 
             let image = new Image();
-            image.src = '../../assets' + e.imagePath;
+            image.src = assetsPath + e.imagePath;
 
             // create an object with each frame of the sprite sheet for faster access
             var frameMap = new Map();
@@ -80,7 +83,7 @@ async function resolveConfiguration(configJsonPath) {
             // add atlas and the image path to the config object
             assets.spriteSheets.set(e.id, {
                 ...atlas,
-                imagePath: e.imagePath,
+                imagePath: assetsPath + e.imagePath,
                 frameMap: frameMap,
                 image,
                 trimmedRect: e.trimmedRect || null,
@@ -93,7 +96,7 @@ async function resolveConfiguration(configJsonPath) {
         for (const e of data.assets.animations) {
             animSheets.push(e.sheetId);
             // get the json obj from the animation config
-            const animConfig = await loadJSON('../../assets' + e.animationPath);
+            const animConfig = await loadJSON(assetsPath + e.animationPath);
             for (let animation of animConfig.anims) {
                 // console.log(animation);
                 assets.animations.set(animation.key, {
@@ -112,7 +115,7 @@ async function resolveConfiguration(configJsonPath) {
         // console.log(animSheets);
         return assets;
     } catch (err) {
-        console.error(err);
+        console.error('(function => resolveConfiguration): ', err);
     }
 }
 
