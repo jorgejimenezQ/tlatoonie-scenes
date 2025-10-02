@@ -96,6 +96,100 @@ class Input extends Component {
     isEnd = false;
 }
 
+class Flags extends Component {
+    /**
+     * Constructor for CFlags.
+     * @param {number} [mask=0] - The initial mask value.
+     */
+    constructor(mask = 0) {
+        this.mask = mask;
+    }
+
+    /**
+     * Adds a flag to the current mask.
+     * @param {number} flag - The flag to add.
+     * @returns {Flags} - This object.
+     */
+    add(flag) {
+        this.mask |= flag;
+        return this;
+    }
+
+    /**
+     * Removes a flag from the current mask.
+     * @param {number} flag - The flag to remove.
+     * @returns {Flags} - This object.
+     */
+    remove(flag) {
+        this.mask &= ~flag;
+        return this;
+    }
+
+    /**
+     * Toggles a flag in the current mask.
+     * If the flag is present in the mask, it will be removed. If it is not present, it will be added.
+     * @param {number} flag - The flag to toggle.
+     * @returns {Flags} - This object.
+     */
+    toggle(flag) {
+        this.mask ^= flag;
+        return this;
+    }
+
+    /**
+     * Checks if a flag is present in the current mask.
+     * @param {number} flag - The flag to check.
+     * @returns {boolean} - True if the flag is present, false otherwise.
+     */
+    has(flag) {
+        return (this.mask & flag) !== 0;
+    }
+}
+
+class Traits extends Component {
+    constructor(initial = []) {
+        this.set = new Set(initial);
+    }
+
+    /**
+     * Adds a trait to the set.
+     * @param {string} t - The trait to add.
+     * @returns {Traits} - This object.
+     */
+    add(t) {
+        this.set.add(t);
+        return this;
+    }
+
+    /**
+     * Removes a trait from the set.
+     * @param {string} t - The trait to remove.
+     * @returns {Traits} - This object.
+     */
+    remove(t) {
+        this.set.delete(t);
+        return this;
+    }
+
+    /**
+     * Checks if the given trait is present in the set.
+     * @param {string} t - The trait to check.
+     * @returns {boolean} - True if the trait is present, false otherwise.
+     */
+    has(t) {
+        return this.set.has(t);
+    }
+
+    /**
+     * Returns a JSON representation of the Traits object.
+     *
+     * @returns {Array<string>} - An array of strings, each representing a trait in the set.
+     */
+    toJSON() {
+        return [...this.set];
+    }
+}
+
 class BoundingBox extends Component {
     /**
      * Constructor for BoundingBox.
@@ -244,7 +338,25 @@ const createComponent = (componentType, ...args) => {
             return new SpriteDimensions(...args);
         case ComponentTypes.CSprite:
             return new Sprite(...args);
+        case ComponentTypes.CFlags:
+            return new Flags(...args);
+        case ComponentTypes.CTraits:
+            return new Traits(...args);
     }
 };
 
-export { createComponent };
+export {
+    createComponent,
+    Animation,
+    BoundingBox,
+    Gravity,
+    Input,
+    Interpolation,
+    Lifespan,
+    State,
+    Transform,
+    SpriteDimensions,
+    Sprite,
+    Flags,
+    Traits,
+};

@@ -39,9 +39,33 @@ function createTabs(tab, gameEngine, payload) {
                     const tr = entity.getComponent(ComponentTypes.CTransform);
                     const st = entity.getComponent(ComponentTypes.CState);
 
-                    let stOptions = '';
-                    for (let option of Object.values(PlayerStates)) {
-                        stOptions += `<option value="${option}">${option}</option>`;
+                    let elState = undefined;
+                    if (st) {
+                        let stOptions = '';
+                        for (let option of Object.values(PlayerStates)) {
+                            stOptions += `<option value="${option}">${option}</option>`;
+                        }
+                        elState = `
+                        <!-- CState (simplified) -->
+                        <section class="component" data-component="CState">
+                            <h4>State</h4>
+                            <form data-component-form="CState">
+                                <div class="row">
+                                    <label>current
+                                    <select data-field="current">
+                                    ${stOptions}
+                                    </select>
+                                    </label>
+                                </div>
+                                <div class="row">
+                                    <label>previous <input type="text" data-field="previous" value="${st.previous} /> </label>
+                                </div>
+                                <div class="row">
+                                    <label><input type="checkbox" data-field="canJump" checked="${st.canJump}" /> canJump</label>
+                                </div>
+                            </form>
+                        </section>
+                    `;
                     }
 
                     let elEntity = `<li class="entity-card" data-entity-id="">
@@ -94,29 +118,8 @@ function createTabs(tab, gameEngine, payload) {
                             </form>
                         </section>
 
-                        <!-- CState (simplified) -->
-                        <section class="component" data-component="CState">
-                            <h4>State</h4>
-                            <form data-component-form="CState">
-                                <div class="row">
-                                    <label>current
-                                    <select data-field="current">
-                                    ${stOptions}
-                                    </select>
-                                    </label>
-                                </div>
-                                <div class="row">
-                                    <label>previous <input type="text" data-field="previous" value="${
-                                        st.previous
-                                    } /> </label>
-                                </div>
-                                <div class="row">
-                                    <label><input type="checkbox" data-field="canJump" checked="${
-                                        st.canJump
-                                    }" /> canJump</label>
-                                </div>
-                            </form>
-                        </section>
+                        ${st ? elState : ''}
+
                         <section>
                                 <div class="actions">
                                     <button type="submit" data-action="save-component">Save</button>

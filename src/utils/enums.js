@@ -4,19 +4,19 @@
  * @readonly
  */
 const ComponentTypes = Object.freeze({
-    CAnimation: 'ANIMATION',
-    CBoundingBox: 'BOUNDING-BOX',
-    CCollision: 'COLLISION',
-    CGravity: 'GRAVITY',
-    CInput: 'INPUT',
-    CInterpolation: 'INTERPOLATION',
-    CLifespan: 'LIFESPAN',
-    CScore: 'SCORE',
-    CShape: 'SHAPE',
-    CState: 'STATE',
-    CTransform: 'TRANSFORM',
-    CSpriteDimensions: 'SPRITE-DIMENSIONS',
-    CSprite: 'SPRITE',
+    CAnimation: 'COMPONENT_TYPE_ANIMATION',
+    CBoundingBox: 'COMPONENT_TYPE_BOUNDING-BOX',
+    CGravity: 'COMPONENT_TYPE_GRAVITY',
+    CInput: 'COMPONENT_TYPE_INPUT',
+    CInterpolation: 'COMPONENT_TYPE_INTERPOLATION',
+    CLifespan: 'COMPONENT_TYPE_LIFESPAN',
+    CScore: 'COMPONENT_TYPE_SCORE',
+    CShape: 'COMPONENT_TYPE_SHAPE',
+    CState: 'COMPONENT_TYPE_STATE',
+    CTransform: 'COMPONENT_TYPE_TRANSFORM',
+    CSpriteDimensions: 'COMPONENT_TYPE_SPRITE-DIMENSIONS',
+    CSprite: 'COMPONENT_TYPE_SPRITE',
+    CFlags: 'COMPONENT_TYPE_FLAGS',
 });
 
 /**
@@ -27,19 +27,19 @@ const ComponentTypes = Object.freeze({
  * @readonly
  */
 const PlayerStates = Object.freeze({
-    JUMPING: 'JUMPING',
+    JUMPING: 'PLAYER_STATE_JUMPING',
     WALKING: {
-        LEFT: 'WALKING:LEFT',
-        RIGHT: 'WALKING:RIGHT',
+        LEFT: 'PLAYER_STATE_WALKING:LEFT',
+        RIGHT: 'PLAYER_STATE_WALKING:RIGHT',
     },
-    RUNNING: 'RUNNING',
-    FALLING: 'FALLING',
-    TAKING_DAMAGE: 'TAKING_DAMAGE',
-    CAN_ATTACK: 'CAN_ATTACK',
-    IDLE: 'IDLE',
+    RUNNING: 'PLAYER_STATE_RUNNING',
+    FALLING: 'PLAYER_STATE_FALLING',
+    TAKING_DAMAGE: 'PLAYER_STATE_TAKING_DAMAGE',
+    CAN_ATTACK: 'PLAYER_STATE_CAN_ATTACK',
+    IDLE: 'PLAYER_STATE_IDLE',
     ATTACKING: {
-        ONE: 'ATTACKING:ONE',
-        TWO: 'ATTACKING:TWO',
+        ONE: 'PLAYER_STATE_ATTACKING:ONE',
+        TWO: 'PLAYER_STATE_ATTACKING:TWO',
     },
 });
 
@@ -51,9 +51,10 @@ const PlayerStates = Object.freeze({
  * @readonly
  */
 const EntityTypes = Object.freeze({
-    PLAYER: 'PLAYER',
-    TILE: 'TILE',
-    GROUND: 'GROUND',
+    PLAYER: 'ENTITY_TYPE_PLAYER',
+    NPC: 'ENTITY_TYPE_NPC',
+    TILE: 'ENTITY_TYPE_TILE',
+    GROUND: 'ENTITY_TYPE_GROUND',
 });
 
 /**
@@ -63,12 +64,12 @@ const EntityTypes = Object.freeze({
  * @readonly
  */
 const ScalePolicies = Object.freeze({
-    FREE: 'FREE',
-    UNIFORM_X: 'UNIFORM_X',
-    UNIFORM_Y: 'UNIFORM_Y',
-    FIT: 'FIT',
-    COVER: 'COVER',
-    NONE: 'NONE',
+    FREE: 'SCALE_POLICIES_FREE',
+    UNIFORM_X: 'SCALE_POLICIES_UNIFORM_X',
+    UNIFORM_Y: 'SCALE_POLICIES_UNIFORM_Y',
+    FIT: 'SCALE_POLICIES_FIT',
+    COVER: 'SCALE_POLICIES_COVER',
+    NONE: 'SCALE_POLICIES_NONE',
 });
 
 /**
@@ -77,14 +78,14 @@ const ScalePolicies = Object.freeze({
  * @readonly
  */
 const Interpolations = Object.freeze({
-    EASEIN_EXPO: 'EASEIN_EXPO',
-    EASEIN_SINE: 'EASEIN_SINE',
-    EASEINOUT_EXPO: 'EASEINOUT_EXPO',
-    EASEINOUT_SINE: 'EASEINOUT_SINE',
-    EASEINOUT_ELASTIC: 'EASEINOUT_ELASTIC',
-    EASEIN_ELASTIC: 'EASEIN_ELASTIC',
-    EASEOUT_ELASTIC: 'EASEOUT_ELASTIC',
-    EASEOUT_SINE: 'EASEOUT_SINE',
+    EASEIN_EXPO: 'INTERPOLATION_EASEIN_EXPO',
+    EASEIN_SINE: 'INTERPOLATION_EASEIN_SINE',
+    EASEINOUT_EXPO: 'INTERPOLATION_EASEINOUT_EXPO',
+    EASEINOUT_SINE: 'INTERPOLATION_EASEINOUT_SINE',
+    EASEINOUT_ELASTIC: 'INTERPOLATION_EASEINOUT_ELASTIC',
+    EASEIN_ELASTIC: 'INTERPOLATION_EASEIN_ELASTIC',
+    EASEOUT_ELASTIC: 'INTERPOLATION_EASEOUT_ELASTIC',
+    EASEOUT_SINE: 'INTERPOLATION_EASEOUT_SINE',
 });
 
 /**
@@ -93,8 +94,8 @@ const Interpolations = Object.freeze({
  * @readonly
  */
 const SceneNames = Object.freeze({
-    MENU: 'MENU',
-    PLAY: 'PLAY',
+    MENU: 'SCENE_NAME_MENU',
+    PLAY: 'SCENE_NAME_PLAY',
 });
 
 /**
@@ -103,26 +104,26 @@ const SceneNames = Object.freeze({
  * @readonly
  */
 const CustomEvents = Object.freeze({
-    GAME_STOPPED: 'GAME_STOPPED',
-    GAME_RESUMED: 'GAME_RESUMED',
-    GAME_ENDED: 'GAME_ENDED',
-    GAME_STARTED: 'GAME_STARTED',
-    MOUSE_DOWN: 'MOUSE_DOWN',
-    MOUSE_UP: 'MOUSE_UP',
-    KEY_DOWN: 'KEY_DOWN',
-    KEY_UP: 'KEY_UP',
-    ACTION_START: 'ACTION_START',
-    ACTION_END: 'ACTION_END',
-    POINTER_DOWN: 'POINTER_DOWN',
-    POINTER_UP: 'POINTER_UP',
-    POINTER_MOVE: 'POINTER_MOVE',
-    WINDOW_RESIZED: 'WINDOW_RESIZED',
+    GAME_STOPPED: 'CUSTOM_EVENT_GAME_STOPPED',
+    GAME_RESUMED: 'CUSTOM_EVENT_GAME_RESUMED',
+    GAME_ENDED: 'CUSTOM_EVENT_GAME_ENDED',
+    GAME_STARTED: 'CUSTOM_EVENT_GAME_STARTED',
+    MOUSE_DOWN: 'CUSTOM_EVENT_MOUSE_DOWN',
+    MOUSE_UP: 'CUSTOM_EVENT_MOUSE_UP',
+    KEY_DOWN: 'CUSTOM_EVENT_KEY_DOWN',
+    KEY_UP: 'CUSTOM_EVENT_KEY_UP',
+    ACTION_START: 'CUSTOM_EVENT_ACTION_START',
+    ACTION_END: 'CUSTOM_EVENT_ACTION_END',
+    POINTER_DOWN: 'CUSTOM_EVENT_POINTER_DOWN',
+    POINTER_UP: 'CUSTOM_EVENT_POINTER_UP',
+    POINTER_MOVE: 'CUSTOM_EVENT_POINTER_MOVE',
+    WINDOW_RESIZED: 'CUSTOM_EVENT_WINDOW_RESIZED',
     SPRITE: {
-        SELECT: 'SPRITE:SELECT',
-        DELETE: 'SPRITE:DELETE',
+        SELECT: 'CUSTOM_EVENT_SPRITE:SELECT',
+        DELETE: 'CUSTOM_EVENT_SPRITE:DELETE',
     },
     ENTITIES: {
-        UPDATED: 'ENTITIES:UPDATED',
+        UPDATED: 'CUSTOM_EVENT_ENTITIES:UPDATED',
     },
 });
 
@@ -132,22 +133,54 @@ const CustomEvents = Object.freeze({
  * @readonly
  */
 const ActionEnums = Object.freeze({
-    PAUSE: 'PAUSE',
-    QUIT: 'QUIT',
-    TOGGLE_TEXTURE: 'TOGGLE_TEXTURE',
-    TOGGLE_COLLISION: 'TOGGLE_COLLISION',
-    TOGGLE_GRID: 'TOGGLE_GRID',
-    JUMP: 'JUMP',
-    RIGHT: 'RIGHT',
-    LEFT: 'LEFT',
-    UP: 'UP',
-    DOWN: 'DOWN',
-    CLICK: 'CLICK',
-    PRESS: 'PRESS',
-    RELEASE: 'RELEASE',
-    GRAB: 'GRAB',
-    RELEASE_GRAB: 'RELEASE_GRAB',
-    POINTER_POSITION: 'POINTER_POSITION',
+    PAUSE: 'ACTION_ENUM_PAUSE',
+    QUIT: 'ACTION_ENUM_QUIT',
+    TOGGLE_TEXTURE: 'ACTION_ENUM_TOGGLE_TEXTURE',
+    TOGGLE_COLLISION: 'ACTION_ENUM_TOGGLE_COLLISION',
+    TOGGLE_GRID: 'ACTION_ENUM_TOGGLE_GRID',
+    JUMP: 'ACTION_ENUM_JUMP',
+    RIGHT: 'ACTION_ENUM_RIGHT',
+    LEFT: 'ACTION_ENUM_LEFT',
+    UP: 'ACTION_ENUM_UP',
+    DOWN: 'ACTION_ENUM_DOWN',
+    CLICK: 'ACTION_ENUM_CLICK',
+    PRESS: 'ACTION_ENUM_PRESS',
+    RELEASE: 'ACTION_ENUM_RELEASE',
+    GRAB: 'ACTION_ENUM_GRAB',
+    RELEASE_GRAB: 'ACTION_ENUM_RELEASE_GRAB',
+    POINTER_POSITION: 'ACTION_ENUM_POINTER_POSITION',
+});
+
+/**
+ * Enum for entity flags.
+ * @enum {string}
+ * @readonly
+ */
+const EntityFlags = Object.freeze({
+    STATIC: 1 << 0, // doesn't move (e.g., walls)
+    DECORATION: 1 << 1, // visual only
+    COLLIDES: 1 << 2, // participates in collision tests
+    TRIGGER: 1 << 3, // overlaps but no physical response
+    INTERACTIVE: 1 << 4, // can be clicked/used
+    AI: 1 << 5, // has AI logic
+    PLAYER: 1 << 6, // player-owned/controlled
+    ENEMY: 1 << 7, // enemy faction
+});
+
+/**
+ * Human readable flags/traits
+ * @enum {string}
+ * @readonly
+ */
+const EntityTraits = Object.freeze({
+    STATIC: 'ENTITY_TRAIT_STATIC', // doesn't move (e.g., walls)
+    DECORATION: 'ENTITY_TRAIT_DECORATION', // visual only
+    COLLIDES: 'ENTITY_TRAIT_COLLIDES', // participates in collision tests
+    TRIGGER: 'ENTITY_TRAIT_TRIGGER', // overlaps but no physical response
+    INTERACTIVE: 'ENTITY_TRAIT_INTERACTIVE', // can be clicked/used
+    AI: 'ENTITY_TRAIT_AI', // has AI logic
+    PLAYER: 'ENTITY_TRAIT_PLAYER', // player-owned/controlled
+    ENEMY: 'ENTITY_TRAIT_ENEMY', // enemy faction
 });
 
 /**
@@ -155,7 +188,7 @@ const ActionEnums = Object.freeze({
  * @enum {string}
  * @readonly
  */
-const ActionKeys = Object.freeze({
+const KeyCodes = Object.freeze({
     // Letters (lowercase)
     a: 'a',
     b: 'b',
@@ -306,10 +339,16 @@ const ActionKeys = Object.freeze({
  * @readonly
  */
 const ActionTypes = Object.freeze({
-    START: 'START',
-    END: 'END',
-    MOUSE: 'MOUSE',
+    START: 'ACTION_TYPE_START',
+    END: 'ACTION_TYPE_END',
+    MOUSE: 'ACTION_TYPE_MOUSE',
 });
+
+/**
+ * @enum {string}
+ * @readonly
+ */
+const ActionKeys = Object.freeze({ ...KeyCodes });
 
 export {
     Interpolations,
@@ -318,8 +357,11 @@ export {
     CustomEvents,
     ActionEnums,
     ActionKeys,
+    KeyCodes,
     ActionTypes,
     ScalePolicies,
     EntityTypes,
     PlayerStates,
+    EntityFlags,
+    EntityTraits,
 };

@@ -26,17 +26,11 @@ class Entity {
     }
 
     hasComponent(component) {
-        this.#componentMap.has(component);
+        return this.#componentMap.has(component);
     }
 
     addComponent(component, tag) {
-        // if (this.#componentMap.has(component)) {
-        //     throw new Error(
-        //         "A component of that type already exists on this entity. Try altering the entity's component instead."
-        //     );
-        // }
-
-        this.#componentMap.set(tag, component);
+        return this.#componentMap.set(tag, component);
     }
 
     /**

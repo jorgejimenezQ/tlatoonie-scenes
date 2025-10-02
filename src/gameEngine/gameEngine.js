@@ -1,9 +1,17 @@
 import { resolveConfiguration, waitForSpriteSheets } from '../utils/file';
-import { ActionKeys, ActionTypes, CustomEvents, SceneNames, ScalePolicies, EntityTypes } from '../utils/enums';
+import {
+    ActionKeys,
+    ActionTypes,
+    CustomEvents,
+    SceneNames,
+    ScalePolicies,
+    EntityTypes,
+    KeyCodes,
+} from '../utils/enums';
 import { Play_Scene } from '../scene/play_scene';
 import { Scene } from '../scene/scene';
 import { Vector } from 'vecti';
-import { initUserInput } from '../utils/userInput';
+import InputHandler from '../utils/userInput';
 import { Action } from '../action/action';
 import { printSpriteCacheStats, SpriteCacheGPU } from '../utils/spriteCacheGPU';
 import { getScaledSpriteLayout, getScaledSpriteSize } from '../utils/sprite';
@@ -50,6 +58,7 @@ class GameEngine extends EventTarget {
      * }
      */
     #spriteSelected = null;
+    #input;
 
     /**
      * Creates a new GameEngine instance
@@ -63,6 +72,7 @@ class GameEngine extends EventTarget {
         this.#configPath = path;
         this.#canvasCTX = ctx;
         this.#DEBUG = debug;
+        this.#input = new InputHandler(this);
     }
 
     async init() {
@@ -96,7 +106,6 @@ class GameEngine extends EventTarget {
         }
 
         this.changeScene(SceneNames.Play, new Play_Scene(this));
-        initUserInput(this);
         console.log('sprite cache prewarmed', this.spriteCache.map, this.spriteCache.inflight);
         printSpriteCacheStats(this.spriteCache);
 
@@ -129,6 +138,9 @@ class GameEngine extends EventTarget {
         // If the game was turned off stop the loop
         // TODO: FOLLOW-UP handle reset and game end better
         if (!this.isRunning()) return;
+
+        if (this.#input.isKeyPressed(KeyCodes.shift) && this.#input.isKeyPressed(KeyCodes.backspace))
+            this.#spriteSelected = null;
 
         // call the update for the current scene
         // TODO: uncomment once we have an inherited Scene
@@ -491,7 +503,7 @@ class GameEngine extends EventTarget {
             scene.sDoActionImm(action);
 
             // **** event:sprite select
-            if (this.#spriteSelected) {
+            if (this.#DEBUG && this.#spriteSelected) {
                 console.log('placing sprite');
                 console.info(this.#spriteSelected);
                 scene.placeSpriteEntityGrid(
@@ -500,9 +512,11 @@ class GameEngine extends EventTarget {
                     e.detail.y,
                     this.#spriteSelected.sheetId,
                     this.#spriteSelected.frame,
-                    false
+
+                    false,
+                    true
                 );
-                this.#spriteSelected = null;
+                // if (!this.#input.isKeyPressed(KeyCodes.alt)) this.#spriteSelected = null;
             }
         });
 
@@ -520,9 +534,7 @@ class GameEngine extends EventTarget {
                 this.#spriteSelected = {
                     sheetId: e.detail.sheetId,
                     frame: e.detail.frame.frameName,
-                    // position: new Vector(e.detail.x, e.detail.y),
                 };
-                console.log('sprite selected', this.#spriteSelected);
             });
         }
     }

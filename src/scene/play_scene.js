@@ -7,14 +7,16 @@ import {
     ActionTypes,
     ComponentTypes,
     CustomEvents,
+    EntityFlags,
     EntityTypes,
     PlayerStates,
     ScalePolicies,
 } from '../utils/enums';
-import { createComponent } from '../components/components';
+import { BoundingBox, createComponent, Flags, Transform } from '../components/components';
 import { Animation } from '../animation/animation';
 import { getScaledSpriteSize } from '../utils/sprite';
 import playerStateCallbacks from '../playerStates';
+import { CollisionSystem } from '../systems/collision';
 
 /**
  * TODO: Refactor entity configs out into JSON files
@@ -169,6 +171,8 @@ class Play_Scene extends Scene {
     #gridPatternDPR = 0; // so we can rebuild when DPR changes
     #gridMajorEvery = 1; // draw a stronger line every N cells
 
+    collisions = new CollisionSystem();
+
     constructor(gameEngine) {
         super(gameEngine);
 
@@ -286,13 +290,17 @@ class Play_Scene extends Scene {
 
         for (let entity of this.entityManager.getAllEntities()) {
             this.#sMovement(entity, dt);
-            if (entity.getComponent(ComponentTypes.CAnimation)) this.#sAnimation(entity);
+            if (entity.hasComponent(ComponentTypes.CAnimation)) this.#sAnimation(entity);
             this.sActions();
 
             // update the position of the bounding box
             entity.getComponent(ComponentTypes.CBoundingBox).position = entity.getComponent(
                 ComponentTypes.CTransform
             ).position;
+
+            if (entity.hasComponent(ComponentTypes.CTransform)) {
+                this.sCollision(entity);
+            }
         }
 
         let changed = this.entityManager.update();
@@ -361,10 +369,17 @@ class Play_Scene extends Scene {
     }
 
     sCollision(entity) {
-        let bBox = entity.getComponent(ComponentTypes.CBoundingBox);
+        let tr = entity.getComponent(ComponentTypes.CTransform);
 
         for (let other of this.entityManager.getAllEntities()) {
-            this.#isOverlapping(entity, other);
+            if (entity.tag === other.tag) continue;
+            if (!other.getComponent(ComponentTypes.CBoundingBox)) continue;
+
+            let { isCollision, overlapVector } = this.collisions.calculateOverlap(entity, other);
+            if (isCollision) console.log('COLLIDED!!!', overlapVector);
+            if (isCollision) {
+                tr.position.x += overlapVector.x;
+            }
         }
     }
 
@@ -421,11 +436,17 @@ class Play_Scene extends Scene {
     /**
      * Spawns an entity with no animation at the given grid coordinates with the given components.
      * @param {Component[]} components - A map of component type to component arguments.
-     * @param {string} type - The type of entity to spawn.
+     * @param {EntityTypes} type - The type of entity to spawn.
      * @param {number} gridX - The x coordinate in the grid.
      * @param {number} gridY - The y coordinate in the grid.
+     * @param {EntityFlags} flags - The flags for the entity.
+     * @param {string} sheetId - The id of the sprite sheet to use.
+     * @param {string} frame - The id of the frame to use.
+     * @param {boolean} isStatic - Whether the entity is static.
+     * @returns {Entity} The entity that was spawned.
+     *
      */
-    placeSpriteEntityGrid(type, x = 0, y = 0, sheetId, frame) {
+    placeSpriteEntityGrid(type, x = 0, y = 0, flags = [], sheetId, frame, isStatic = false) {
         let dims = this.gameEngine.getSpriteDimensions(sheetId);
         dims = new Vector(dims.w, dims.h);
         let trimmedRect = this.gameEngine.getSpriteTrimmedRect(sheetId);
@@ -436,13 +457,26 @@ class Play_Scene extends Scene {
         let scale = new Vector(this.#mapConfig.tileSize.x / dims.x, this.#mapConfig.tileSize.y / dims.y);
         let pos = new Vector(x, y);
         let gridPos = this.#worldToGrid(new Vector(x, y));
+
         let components = {
             [ComponentTypes.CSprite]: [sheetId, frame],
             [ComponentTypes.CSpriteDimensions]: [dims, trimmedRect],
             [ComponentTypes.CTransform]: [pos, new Vector(0, 0), scale, 0],
             [ComponentTypes.CBoundingBox]: [hasTrimmedRect ? trimmedRect : dims, new Vector(0, 0)],
+            [ComponentTypes.CFlags]: [],
         };
-        this.#spawnEntity(components, type, gridPos.x, gridPos.y);
+
+        let entity = this.#spawnEntity(components, type, gridPos.x, gridPos.y);
+
+        if (flags.length > 0) {
+            /** @type {Flags} */
+            let cf = entity.getComponent(ComponentTypes.CFlags);
+            for (let i = 0; flags.length; i++) {
+                cf.add(flags[i]);
+            }
+        }
+
+        console.log(entity);
     }
 
     /**
@@ -532,8 +566,10 @@ class Play_Scene extends Scene {
     }
 
     #scaleBoundingRect(entity) {
+        /** @type { Transform } */
         let transform = entity.getComponent(ComponentTypes.CTransform);
         // / Get the bounding box
+        /** @type { BoundingBox } */
         let cBoundingBox = entity.getComponent(ComponentTypes.CBoundingBox);
         let bBoxRect = cBoundingBox.rectangle;
 
@@ -722,6 +758,7 @@ class Play_Scene extends Scene {
         let bBox = entity.getComponent(ComponentTypes.CBoundingBox);
         bBox.position = worldCoords;
         bBox.size = scaledBBox.scaledRect;
+
         console.log('spawn entity');
         console.log(components);
         // console.log(entity);
