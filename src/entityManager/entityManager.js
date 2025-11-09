@@ -19,8 +19,6 @@ class Entity {
         return this.#isActive;
     }
 
-    /*************  ✨ Windsurf Command ⭐  *************/
-    /*******  8279ce70-b1fd-41aa-89c0-e5d3314a6622  *******/
     getTag() {
         return this.#entityTag;
     }
@@ -55,6 +53,10 @@ class Entity {
      */
     get id() {
         return this.#entityId;
+    }
+
+    getComponents() {
+        return this.#componentMap;
     }
 
     removeComponent(component) {

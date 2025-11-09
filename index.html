@@ -18,33 +18,43 @@
 
     <body>
         <div id="logging">
-            <h1>Logging</h1>
-            <ul>
-                <li>
-                    FPS(ms):
-                    <div id="fps"></div>
-                </li>
-                <li>
-                    Fixed Delta(ms):
-                    <div id="fixed"></div>
-                </li>
-                <li>
-                    Elapsed Time(ms):
-                    <div id="elapsed"></div>
-                </li>
-                <li>
-                    Simulated Time(ms):
-                    <div id="simTime"></div>
-                </li>
-                <li>
-                    Number of Ticks(ms):
-                    <div id="ticks"></div>
-                </li>
-            </ul>
+            <div class="stats">
+                <h1>Logging</h1>
+                <menu>
+                    <li>
+                        FPS(seconds):
+                        <div id="fps"></div>
+                    </li>
+                    <li>
+                        Fixed Delta(seconds):
+                        <div id="fixed"></div>
+                    </li>
+                    <li>
+                        Elapsed Time(seconds):
+                        <div id="elapsed"></div>
+                    </li>
+                    <li>
+                        Simulated Time(seconds):
+                        <div id="simTime"></div>
+                    </li>
+                    <li>
+                        Number of Ticks(seconds):
+                        <div id="ticks"></div>
+                    </li>
+                </menu>
+            </div>
+            <div class="controls">
+                <menu>
+                    <li><button id="print-scene" class="small-btn">print scene json</button></li>
+                </menu>
+            </div>
         </div>
 
         <canvas id="canvas"> Your browser does not support the canvas element. </canvas>
-
+        <div class="game-debug">
+            <h1></h1>
+            <menu></menu>
+        </div>
         <div id="tab-theme-root" data-theme="mac9">
             <div class="tab-container" id="tab-container" data-title="Panels"></div>
         </div>

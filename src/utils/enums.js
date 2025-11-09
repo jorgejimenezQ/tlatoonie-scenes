@@ -4,8 +4,10 @@
  * @readonly
  */
 const ComponentTypes = Object.freeze({
+    CActions: 'COMPONENT_TYPE_ACTIONS',
     CAnimation: 'COMPONENT_TYPE_ANIMATION',
-    CBoundingBox: 'COMPONENT_TYPE_BOUNDING-BOX',
+    CAttacks: 'COMPONENT_TYPE_ATTACK',
+    CBoundingBox: 'COMPONENT_TYPE_BOUNDING_BOX',
     CGravity: 'COMPONENT_TYPE_GRAVITY',
     CInput: 'COMPONENT_TYPE_INPUT',
     CInterpolation: 'COMPONENT_TYPE_INTERPOLATION',
@@ -14,9 +16,13 @@ const ComponentTypes = Object.freeze({
     CShape: 'COMPONENT_TYPE_SHAPE',
     CState: 'COMPONENT_TYPE_STATE',
     CTransform: 'COMPONENT_TYPE_TRANSFORM',
-    CSpriteDimensions: 'COMPONENT_TYPE_SPRITE-DIMENSIONS',
+    CSpriteDimensions: 'COMPONENT_TYPE_SPRITE_DIMENSIONS',
+    /** @description The sprite component */
     CSprite: 'COMPONENT_TYPE_SPRITE',
+    /** @description Used to store entity flags @see {EntityFlags}  */
     CFlags: 'COMPONENT_TYPE_FLAGS',
+    CTraits: 'COMPONENT_TYPE_TRAITS',
+    CCollision: 'COMPONENT_TYPE_Collision',
 });
 
 /**
@@ -26,21 +32,35 @@ const ComponentTypes = Object.freeze({
  * @see {@link }
  * @readonly
  */
-const PlayerStates = Object.freeze({
-    JUMPING: 'PLAYER_STATE_JUMPING',
-    WALKING: {
-        LEFT: 'PLAYER_STATE_WALKING:LEFT',
-        RIGHT: 'PLAYER_STATE_WALKING:RIGHT',
-    },
-    RUNNING: 'PLAYER_STATE_RUNNING',
-    FALLING: 'PLAYER_STATE_FALLING',
-    TAKING_DAMAGE: 'PLAYER_STATE_TAKING_DAMAGE',
-    CAN_ATTACK: 'PLAYER_STATE_CAN_ATTACK',
-    IDLE: 'PLAYER_STATE_IDLE',
-    ATTACKING: {
-        ONE: 'PLAYER_STATE_ATTACKING:ONE',
-        TWO: 'PLAYER_STATE_ATTACKING:TWO',
-    },
+const EntityStates = Object.freeze({
+    JUMPING: 'ENTITY_STATE_JUMPING',
+    ON_GROUND: 'ENTITY_STATE_ON_GROUND',
+    WALKING_LEFT: 'ENTITY_STATE_WALKING:LEFT',
+    WALKING_RIGHT: 'ENTITY_STATE_WALKING:RIGHT',
+    WALKING: 'ENTITY_STATE_WALKING',
+    RUNNING: 'ENTITY_STATE_RUNNING',
+    HURT: 'ENTITY_STATE_HURT',
+    DEFEND: 'ENTITY_STATE_DEFEND',
+    FALLING: 'ENTITY_STATE_FALLING',
+    TAKING_DAMAGE: 'ENTITY_STATE_TAKING_DAMAGE',
+    IDLE: 'ENTITY_STATE_IDLE',
+    IDLE_LEFT: 'ENTITY_STATE_IDLE_LEFT',
+    IDLE_RIGHT: 'ENTITY_STATE_IDLE_RIGHT',
+    ATTACKING_ONE: 'ENTITY_STATE_ATTACKING:ONE',
+    ATTACKING_TWO: 'ENTITY_STATE_ATTACKING:TWO',
+    ATTACKING: 'ENTITY_STATE_ATTACKING',
+});
+
+/**
+ * The player attacks
+ *
+ * @enum {string}
+ * @see {@link }
+ * @readonly
+ */
+const PlayerAttacks = Object.freeze({
+    ATTACK_ONE: 'PLAYER_ATTACK_ONE',
+    ATTACK_TWO: 'PLAYER_ATTACK_TWO',
 });
 
 /**
@@ -89,13 +109,26 @@ const Interpolations = Object.freeze({
 });
 
 /**
+ * Enum for the ui tab ids
+ * @enum {string}
+ * @readonly
+ */
+const TabsEnum = Object.freeze({
+    ID: {
+        SPRITES: 'TABS:ID_SPRITES',
+        ENTITIES: 'TABS:ID_ENTITIES',
+    },
+});
+
+/**
  * Enum for scene names.
  * @enum {string}
  * @readonly
  */
-const SceneNames = Object.freeze({
+const SceneTags = Object.freeze({
     MENU: 'SCENE_NAME_MENU',
     PLAY: 'SCENE_NAME_PLAY',
+    SIMPLE: 'SIMPLE',
 });
 
 /**
@@ -103,7 +136,7 @@ const SceneNames = Object.freeze({
  * @enum {string}
  * @readonly
  */
-const CustomEvents = Object.freeze({
+const CustomEventEnums = Object.freeze({
     GAME_STOPPED: 'CUSTOM_EVENT_GAME_STOPPED',
     GAME_RESUMED: 'CUSTOM_EVENT_GAME_RESUMED',
     GAME_ENDED: 'CUSTOM_EVENT_GAME_ENDED',
@@ -121,9 +154,13 @@ const CustomEvents = Object.freeze({
     SPRITE: {
         SELECT: 'CUSTOM_EVENT_SPRITE:SELECT',
         DELETE: 'CUSTOM_EVENT_SPRITE:DELETE',
+        CLEAR_SELECTION: 'CUSTOM_EVENT_SPRITE:CLEAR_SELECTION',
     },
     ENTITIES: {
         UPDATED: 'CUSTOM_EVENT_ENTITIES:UPDATED',
+    },
+    TAB: {
+        SELECTED: 'CUSTOM_EVENT_TAB:SELECTED',
     },
 });
 
@@ -138,7 +175,6 @@ const ActionEnums = Object.freeze({
     TOGGLE_TEXTURE: 'ACTION_ENUM_TOGGLE_TEXTURE',
     TOGGLE_COLLISION: 'ACTION_ENUM_TOGGLE_COLLISION',
     TOGGLE_GRID: 'ACTION_ENUM_TOGGLE_GRID',
-    JUMP: 'ACTION_ENUM_JUMP',
     RIGHT: 'ACTION_ENUM_RIGHT',
     LEFT: 'ACTION_ENUM_LEFT',
     UP: 'ACTION_ENUM_UP',
@@ -149,11 +185,15 @@ const ActionEnums = Object.freeze({
     GRAB: 'ACTION_ENUM_GRAB',
     RELEASE_GRAB: 'ACTION_ENUM_RELEASE_GRAB',
     POINTER_POSITION: 'ACTION_ENUM_POINTER_POSITION',
+    JUMP: 'ACTION_ENUM_JUMP',
+    FALL: 'ACTION_ENUM_FALL',
+    ON_GROUND: 'ACTION_ENUM_ON_GROUND',
+    ATTACK: 'ACTION_ENUM_ATTACK',
 });
 
 /**
  * Enum for entity flags.
- * @enum {string}
+ * @enum {number}
  * @readonly
  */
 const EntityFlags = Object.freeze({
@@ -165,6 +205,9 @@ const EntityFlags = Object.freeze({
     AI: 1 << 5, // has AI logic
     PLAYER: 1 << 6, // player-owned/controlled
     ENEMY: 1 << 7, // enemy faction
+    ANIMATED: 1 << 8, // the entity has animation/s
+    CAN_DIE: 1 << 9, // can die and be deleted from the game
+    CAN_FALL: 1 << 10, // the entity can fall
 });
 
 /**
@@ -181,6 +224,8 @@ const EntityTraits = Object.freeze({
     AI: 'ENTITY_TRAIT_AI', // has AI logic
     PLAYER: 'ENTITY_TRAIT_PLAYER', // player-owned/controlled
     ENEMY: 'ENTITY_TRAIT_ENEMY', // enemy faction
+    ANIMATED: 'ENTITY_TRAIT_ANIMATED', // has animation/s
+    CAN_DIE: 'ENTITY_TRAIT_CAN_DIE', // can die and be deleted from the game
 });
 
 /**
@@ -338,7 +383,7 @@ const KeyCodes = Object.freeze({
  * @enum {string}
  * @readonly
  */
-const ActionTypes = Object.freeze({
+const ActionLifeCycle = Object.freeze({
     START: 'ACTION_TYPE_START',
     END: 'ACTION_TYPE_END',
     MOUSE: 'ACTION_TYPE_MOUSE',
@@ -348,20 +393,22 @@ const ActionTypes = Object.freeze({
  * @enum {string}
  * @readonly
  */
-const ActionKeys = Object.freeze({ ...KeyCodes });
+const ActionKeys = Object.freeze({ ...KeyCodes, MISC_MANUAL: 'MISC_MANUAL_KEY_ACTION' });
 
 export {
     Interpolations,
     ComponentTypes,
-    SceneNames,
-    CustomEvents,
+    SceneTags,
+    CustomEventEnums,
     ActionEnums,
     ActionKeys,
     KeyCodes,
-    ActionTypes,
+    ActionLifeCycle,
     ScalePolicies,
     EntityTypes,
-    PlayerStates,
+    EntityStates,
     EntityFlags,
     EntityTraits,
+    TabsEnum,
+    PlayerAttacks,
 };

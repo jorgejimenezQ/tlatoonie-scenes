@@ -1,83 +1,40 @@
 import { Scene } from './scene';
 import { Vector } from 'vecti';
-import { EntityManager, Entity } from '../entityManager/entityManger';
+import { EntityManager, Entity } from '../entityManager/entityManager';
 import {
     ActionEnums,
     ActionKeys,
-    ActionTypes,
+    ActionLifeCycle,
     ComponentTypes,
-    CustomEvents,
+    CustomEventEnums,
     EntityFlags,
     EntityTypes,
-    PlayerStates,
+    PlayerAttacks,
+    EntityStates,
     ScalePolicies,
+    SceneTags,
 } from '../utils/enums';
-import { BoundingBox, createComponent, Flags, Transform } from '../components/components';
+import {
+    createComponent,
+    Transform as CTransformType,
+    Flags as CFlagsType,
+    Collision as CCollisionType,
+    State as CStateType,
+    Gravity as CGravityType,
+    Traits as CTraitsType,
+    AnimationContainer,
+    Attacks as CAttacksType,
+    AnimationStackEntry,
+    Actions as CActionsType,
+    Component,
+} from '../components/components';
 import { Animation } from '../animation/animation';
 import { getScaledSpriteSize } from '../utils/sprite';
-import playerStateCallbacks from '../playerStates';
+import { initPlayerFSM } from './playerStates';
 import { CollisionSystem } from '../systems/collision';
+import { Action } from '../action/action';
+import { Attack } from '../attack/Attack';
 
-/**
- * TODO: Refactor entity configs out into JSON files
- *
- * GOAL
- * - Move hardcoded entity setup (player, tiles, NPCs, etc.) into data-driven JSON.
- * - Keep code generic: read JSON → build components → spawn entities.
- *
- * FILE LAYOUT (proposed)
- * - /assets/config.json                      → root index (lists packs/files, version)
- * - /assets/entities/player.json             → a single entity archetype
- * - /assets/entities/tile.json               → tile archetype(s)
- * - /assets/entities/*.json                  → other archetypes
- * - /assets/animations/*.json                → animation clips (or inside entity)
- * - /assets/spritesheets/*.json              → atlas metadata (if not already)
- *
- * JSON SCHEMA (entity) – v1
- * {
- *   "version": 1,
- *   "entityType": "PLAYER",                // maps to EntityTypes.*
- *   "tag": "PLAYER",
- *   "spawn": { "grid": [1,1] },            // or "world": [x,y]
- *   "components": {
- *     "CTransform": {
- *       "position": { "x": 0, "y": 0 },   // CENTER in world space (source of truth)
- *       "velocity": { "x": 5, "y": 3 },
- *       "scale":    { "x": 1, "y": 1 },
- *       "angle": 0
- *     },
- *     "CSprite": {
- *       "sheetId": "knight",               // must exist in assets.spriteSheets
- *       "frame":   "idle_000"
- *     },
- *     "CSpriteDimensions": {
- *       "logical": { "x": 64, "y": 64 },   // original (incl. padding)
- *       "trimmed": { "x": 16, "y": 16 }    // opaque area; optional, infer from atlas if missing
- *     },
- *     "CBoundingBox": {
- *       "rectangle": { "x": 15, "y": 34 }, // unscaled logical bbox
- *       "offset":    { "x": 0,  "y": 0 }   // logical units; scaled at runtime
- *     },
- *     "CAnimation": {
- *       "clip": "idle",                    // default clip name
- *       "clips": ["idle","walk","jump"],   // optional preloaded pool for this entity
- *       "fps": 12,                         // default if clip lacks fps
- *       "loop": true
- *     },
- *     "CInput": {},
- *     "CState": { "current": "IDLE" },
- *     "CPhysics": {
- *       "horizontalSpeed": 5,
- *       "jumpSpeed": 15,
- *       "maxSpeed": 20,
- *       "gravity": 1
- *     }
- *   }
- * }
- *
- */
-
-//Player *1 1 64 64* 5 15 20 1 Buster
 /**
  * Play_Scene
  *
@@ -85,7 +42,7 @@ import { CollisionSystem } from '../systems/collision';
  *
  *
  */
-class Play_Scene extends Scene {
+class PlayScene extends Scene {
     /*
      * TODO (anchors): Use CENTER as the single source of truth in CTransform.
      *
@@ -103,16 +60,16 @@ class Play_Scene extends Scene {
 
     //TODO: refactor configs out into json files (entity)
     #playerConfig = {
-        gridPos: new Vector(1, 1),
-        boundingBox: new Vector(15, 34),
+        gridPos: new Vector(1, 5),
+        boundingBox: new Vector(8, 34),
         boundingBoxOffset: new Vector(0, 0),
         horizontalSpeed: 200,
         verticalSpeed: 200,
         jumpSpeed: 15,
         maxSpeed: 20,
-        gravity: 1,
+        gravity: 0.001,
         spriteRectangle: new Vector(16, 16),
-        animation: PlayerStates.IDLE,
+        animation: EntityStates.IDLE,
         sprite: 'knight',
         initialPosition: new Vector(0, 0),
         initialVelocity: new Vector(5, 3),
@@ -139,8 +96,6 @@ class Play_Scene extends Scene {
             // initialScale: new Vector(26, 34),
         },
     };
-
-    #actionsQueue = [];
 
     #playerAnimationMap = new Map();
 
@@ -174,9 +129,10 @@ class Play_Scene extends Scene {
     collisions = new CollisionSystem();
 
     constructor(gameEngine) {
-        super(gameEngine);
+        super(gameEngine, SceneTags.PLAY);
 
         this.registerAction(ActionKeys.p, ActionEnums.PAUSE);
+        this.registerAction(ActionKeys.l, ActionEnums.ATTACK);
         this.registerAction(ActionKeys.escape, ActionEnums.QUIT);
         this.registerAction(ActionKeys.num_0, ActionEnums.TOGGLE_TEXTURE);
         this.registerAction(ActionKeys.num_1, ActionEnums.TOGGLE_COLLISION);
@@ -185,7 +141,7 @@ class Play_Scene extends Scene {
         this.registerAction(ActionKeys.a, ActionEnums.LEFT);
         this.registerAction(ActionKeys.d, ActionEnums.RIGHT);
         this.registerAction(ActionKeys.s, ActionEnums.DOWN);
-        this.registerAction(ActionKeys.w, ActionEnums.UP);
+        this.registerAction(ActionKeys.w, ActionEnums.JUMP);
         this.registerAction(ActionKeys.pointerDown, ActionEnums.CLICK);
         this.registerAction(ActionKeys.pointerMove, ActionEnums.POINTER_POSITION);
 
@@ -195,17 +151,20 @@ class Play_Scene extends Scene {
         );
 
         // create a ready animation for each
+        console.groupCollapsed('-------------------------------------\nAnimation pool');
         console.log('create an animation pool for the player to re-use');
         for (let anim of gameEngine.getAnimations().keys()) {
             this.#playerAnimationMap.set(anim, new Animation(anim, gameEngine.getAnimation(anim), gameEngine));
         }
 
         console.log(this.#playerAnimationMap);
+        console.groupEnd();
+
+        this.entityManager = new EntityManager();
         this.#loadLevel();
     }
 
     #loadLevel() {
-        this.entityManager = new EntityManager();
         // TODO: Use configuration files to create the components and entities
 
         // sprite dimensions
@@ -223,14 +182,20 @@ class Play_Scene extends Scene {
         let hSpeed = this.#playerConfig.horizontalSpeed;
         let vSpeed = this.#playerConfig.verticalSpeed;
 
-        // animation
-        let animFrame = this.#playerStateToAnimation(this.#playerConfig.animation);
-        const animation = this.#playerAnimationMap.get(animFrame);
+        let attacks = [];
+        for (const [name, animation] of this.gameEngine.levelConfig.playerConfig.attacks) {
+            attacks.push(new Attack(name, animation.animationId));
+        }
+
+        console.log(attacks);
+        /** @type {Animation} */
+        const animation = this.#playerAnimationMap.get(this.#stateToAnimation(this.#playerConfig.animation));
         console.log('The initial animation', animation);
 
         this.#player = this.#spawnEntity(
             {
-                [ComponentTypes.CAnimation]: [animation, false],
+                [ComponentTypes.CActions]: [],
+                [ComponentTypes.CAnimation]: [animation.repeats],
                 [ComponentTypes.CSpriteDimensions]: [
                     new Vector(spriteDimensions.w, spriteDimensions.h),
                     new Vector(trimmedRect.width, trimmedRect.height),
@@ -240,15 +205,40 @@ class Play_Scene extends Scene {
                     new Vector(trimmedRect.width, trimmedRect.height),
                     this.#playerConfig.boundingBoxOffset,
                 ],
-                [ComponentTypes.CInput]: [],
-                [ComponentTypes.CState]: [PlayerStates.IDLE],
+                [ComponentTypes.CState]: [EntityStates.IDLE],
+                [ComponentTypes.CFlags]: [
+                    EntityFlags.PLAYER |
+                        EntityFlags.INTERACTIVE |
+                        EntityFlags.COLLIDES |
+                        EntityFlags.ANIMATED |
+                        EntityFlags.CAN_FALL,
+                ],
+                [ComponentTypes.CCollision]: [],
+                [ComponentTypes.CGravity]: [new Vector(0, 600)],
+                [ComponentTypes.CAttacks]: [PlayerAttacks.ATTACK_ONE],
             },
-            'PLAYER',
-            0,
-            0
+            EntityTypes.PLAYER,
+            this.#playerConfig.gridPos.x,
+            this.#playerConfig.gridPos.y
         );
 
-        console.log('player ', this.#player);
+        /** @type {CStateType} */
+        const cst = this.#player.getComponent(ComponentTypes.CState);
+        /** @type {CAttacksType} */
+        const cAttacks = this.#player.getComponent(ComponentTypes.CAttacks);
+        /** @type {CGravityType} */
+        const cg = this.#player.getComponent(ComponentTypes.CGravity);
+
+        attacks.forEach((e) => cAttacks.addAttack(e));
+        cg.timeBeforeFalling = 0.5;
+
+        /** @type {AnimationContainer} */
+        const cAnim = this.#player.getComponent(ComponentTypes.CAnimation);
+        // Add a pointer to an animation pool
+        cAnim.animationPool = this.#playerAnimationMap;
+        cAnim.pushAnimation(animation);
+
+        initPlayerFSM(cst);
     }
 
     /**
@@ -266,93 +256,161 @@ class Play_Scene extends Scene {
      *********************************************************************/
     /* Move the entity based on its current state */
     #sMovement(entity, dt) {
-        let ctr = entity.getComponent(ComponentTypes.CTransform);
-        // Reset the current velocity and set based on the entity's current state
-        ctr.position = ctr.position.add(ctr.velocity.multiply(dt));
+        /** @type {CTransformType} */
+        const ctr = entity.getComponent(ComponentTypes.CTransform);
+
+        ctr.velocity = ctr.velocity.add(ctr.acceleration); // Acceleration => Velocity
+        ctr.position = ctr.position.add(ctr.velocity.multiply(dt)); // Velocity => Position
+        ctr.acceleration = ctr.acceleration.multiply(0); // Clear per-Frame forces
     }
+
+    /**
+     *
+     * @param {Entity} entity The entity we are applying the force on.
+     * @param {Vector} force The force we are applying to the entity.
+     */
+    #sApplyForce(dt, entity, force) {
+        /** @type {CTransformType} */
+        let ctr = entity.getComponent(ComponentTypes.CTransform);
+        ctr.acceleration = ctr.acceleration.add(force);
+        ctr.acceleration = ctr.acceleration.multiply(dt);
+    }
+
     #sLifespan(entity) {}
     #sAnimation(entity) {
         // TODO: handle non repeating animations and state changes
+        /** @type {CStateType} */
         const cst = entity.getComponent(ComponentTypes.CState);
-        const ctr = entity.getComponent(ComponentTypes.CTransform);
+        /** @type {AnimationContainer} */
         const ca = entity.getComponent(ComponentTypes.CAnimation);
-        let animFrame;
-        animFrame = this.#playerStateToAnimation(cst.current);
-        if (ca.animation.name !== animFrame) {
-            ca.animation = this.#playerAnimationMap.get(animFrame);
-            ca.animation.reset();
+        /** @type {AnimationStackEntry} */
+        let current = ca.peekAnimation();
+
+        // Ensure there is a base animation.
+        if (!current) {
+            const key = this.#stateToAnimation(cst.current);
+            const base = ca.animationPool.get(key);
+            ca.pushAnimation(base);
+            current = ca.peekAnimation();
+        }
+
+        if (current.hasEnded()) {
+            cst.current = cst.previous;
+        }
+
+        const nextAnim = ca.animationPool.get(this.#stateToAnimation(cst.current));
+        current = ca.peekAnimation();
+        if (current.name !== nextAnim.name) {
+            ca.pushAnimation(nextAnim, cst.previous);
         }
     }
 
     fixedUpdate(dt) {
         if (this.paused) return;
-        this.#simTime += dt;
 
         for (let entity of this.entityManager.getAllEntities()) {
-            this.#sMovement(entity, dt);
-            if (entity.hasComponent(ComponentTypes.CAnimation)) this.#sAnimation(entity);
-            this.sActions();
+            /** @type {CFlagsType} */
+            const cf = entity.getComponent(ComponentTypes.CFlags);
+            if (cf.has(EntityFlags.DECORATION)) continue;
+            /** @type {CStateType} */
+            const cs = entity.getComponent(ComponentTypes.CState);
+            /** @type { BoundingBox} */
+            const bBox = entity.getComponent(ComponentTypes.CBoundingBox);
+            /** @type { CTransformType } */
+            const tr = entity.getComponent(ComponentTypes.CTransform);
 
-            // update the position of the bounding box
-            entity.getComponent(ComponentTypes.CBoundingBox).position = entity.getComponent(
-                ComponentTypes.CTransform
-            ).position;
+            // Update the animation for the entity
+            if (cf.has(EntityFlags.ANIMATED)) this.#sAnimation(entity);
 
-            if (entity.hasComponent(ComponentTypes.CTransform)) {
+            // Run the actions
+            // TODO: Actions for non-player entities.
+            if (cf.has(EntityFlags.PLAYER)) this.sActions(entity);
+
+            if (cs.current == EntityStates.JUMPING && cf.has(EntityFlags.CAN_FALL)) {
+                /** @type {CGravityType} */
+                const cg = entity.getComponent(ComponentTypes.CGravity);
+                /** @type {CActionsType} */
+                const ca = entity.getComponent(ComponentTypes.CActions);
+                this.#sApplyForce(dt, entity, cg.gravity);
+                // Has the entity reached the apex from velocity, bring it down
+                if (tr.velocity.y >= 0) {
+                    console.log('******************************************************************************');
+                    // this.actionEnqueue(new Action(ActionEnums.FALL, ActionLifeCycle.START));
+                }
+            }
+
+            // Run collision tests
+            if (!cf.has(EntityFlags.STATIC) && cf.has(EntityFlags.COLLIDES)) {
+                this.#sMovement(entity, dt);
                 this.sCollision(entity);
+
+                // update the position of the bounding box
+                bBox.position = tr.position;
             }
         }
 
         let changed = this.entityManager.update();
-        if (changed)
+        if (changed) {
             this.gameEngine.dispatchEvent(
-                new CustomEvent(CustomEvents.ENTITIES.UPDATED, {
+                new CustomEvent(CustomEventEnums.ENTITIES.UPDATED, {
                     detail: {
                         count: this.entityManager.getAllEntities().length,
                         entities: this.entityManager.getAllEntities(),
                     },
                 })
             );
+        }
     }
 
     onFrameEnd(elapsedTime, numUpdateSteps) {
         for (let entity of this.entityManager.getAllEntities()) {
-            if (entity.getComponent(ComponentTypes.CAnimation))
-                entity.getComponent(ComponentTypes.CAnimation).animation.update(elapsedTime);
+            /** @type {CFlagsType} */
+            const cf = entity.getComponent(ComponentTypes.CFlags);
+            if (cf.has(EntityFlags.ANIMATED)) {
+                /** @type {AnimationContainer} */
+                const ca = entity.getComponent(ComponentTypes.CAnimation);
+                ca.peekAnimation().update(elapsedTime);
+            }
         }
     }
 
     async sRender(alpha) {
         if (this.paused) return;
-
         if (this.#drawGrid) this.#renderGridPattern(this.gameEngine.ctx);
 
         for (let entity of this.entityManager.getAllEntities()) {
-            let transform = entity.getComponent(ComponentTypes.CTransform);
+            /** @type {CTransformType} */
+            let tr = entity.getComponent(ComponentTypes.CTransform);
+            /** @type {CFlagsType} */
             let bBox = entity.getComponent(ComponentTypes.CBoundingBox);
-
-            // show the bounding box
 
             // show the sprite
             if (this.drawTexture && entity.getComponent(ComponentTypes.CAnimation)) {
-                let { sheetId, frame } = entity.getComponent(ComponentTypes.CAnimation).animation.getCurrentFrame();
-                if (!transform.scale) {
-                    transform.scale = new Vector(1, 1);
+                /** @type {AnimationContainer} */
+                const ca = entity.getComponent(ComponentTypes.CAnimation);
+                let { sheetId, frame } = ca.peekAnimation().getCurrentFrame();
+                if (!tr.scale) {
+                    tr.scale = new Vector(1, 1);
                 }
 
-                await this.gameEngine.drawSprite(sheetId, frame, transform.position, transform.scale);
+                // TODO: Rendering stalls risk. sRender awaits drawSprite inside the frame loop, serializing draws and inviting jank. Batch draws or ensure drawSprite is synchronous after assets are loaded.
+                await this.gameEngine.drawSprite(sheetId, frame, tr.position, tr.scale);
             } else if (this.drawTexture) {
                 let cSprite = entity.getComponent(ComponentTypes.CSprite);
-                if (!transform.scale) {
-                    transform.scale = new Vector(1, 1);
+                if (!tr.scale) {
+                    tr.scale = new Vector(1, 1);
                 }
-                await this.gameEngine.drawSprite(cSprite.sheetId, cSprite.frame, transform.position, transform.scale);
+                await this.gameEngine.drawSprite(cSprite.sheetId, cSprite.frame, tr.position, tr.scale);
             }
 
             // show the center of the bounding box
             if (this.#drawCollisions) {
-                this.gameEngine.drawRect(this.#centerToTopLeft(bBox), bBox.size, 'rgba(205, 29, 41, 1)');
-                this.gameEngine.drawCircleFilled(bBox.position, 2, 'rgba(89, 255, 252, 1)');
+                // draw based on entity position
+                let rectCentered = Vector.of([tr.position.x, tr.position.y]);
+                rectCentered = rectCentered.subtract(bBox.halfSize);
+                this.gameEngine.drawRect(rectCentered, bBox.size, 'rgba(205, 29, 41, 1)');
+                this.gameEngine.drawCircleFilled(tr.position, 2, 'rgba(89, 255, 252, 1)');
+                // draw based on entity's bounding box position
             }
         }
 
@@ -366,34 +424,94 @@ class Play_Scene extends Scene {
                 'rgba(243, 157, 95, 0.57)'
             );
         }
+
+        // this.gameEngine.drawCircleFilled(this.#gridToWorld(1, 4), 4, 'rgba(255, 0, 217, 1)');
+        // this.gameEngine.drawCircleFilled(this.#gridToWorldCentered(1, 4), 4, 'rgba(255, 0, 217, 1)');
     }
 
+    /**
+     * Check for collisions between the given entity and all other entities.
+     * If a collision is found, the entity's position will be adjusted to avoid the collision.
+     * @param {Entity} entity - The entity to check for collisions.
+     */
     sCollision(entity) {
-        let tr = entity.getComponent(ComponentTypes.CTransform);
+        /** @type {CTransformType} */
+        const tr = entity.getComponent(ComponentTypes.CTransform);
+        /** @type {CCollisionType} */
+        const cc = entity.getComponent(ComponentTypes.CCollision);
+        /** @type {BoundingBox} */
+        const bb = entity.getComponent(ComponentTypes.CBoundingBox);
 
+        const prevOverlap = { ...cc.prevOverlap };
         for (let other of this.entityManager.getAllEntities()) {
-            if (entity.tag === other.tag) continue;
+            // Guards
+            if (entity.id === other.id) continue;
+            if (!other.getComponent(ComponentTypes.CFlags).has(EntityFlags.COLLIDES)) continue;
             if (!other.getComponent(ComponentTypes.CBoundingBox)) continue;
+            /** @type {CTransformType} */
+            const otherTr = other.getComponent(ComponentTypes.CTransform);
+            const result = this.collisions.calculateOverlap(entity, other);
+            // "Cache" results
+            cc.prevOverlap = { ...result };
+            cc.prevOverlap.other = other;
+            /** @type {CActionsType} */
+            const ca = entity.getComponent(ComponentTypes.CActions);
 
-            let { isCollision, overlapVector } = this.collisions.calculateOverlap(entity, other);
-            if (isCollision) console.log('COLLIDED!!!', overlapVector);
-            if (isCollision) {
-                tr.position.x += overlapVector.x;
+            if (!result.overlapping) continue;
+
+            // 🤖
+            // 1) separate along MTV
+            tr.position.x += result.mtv.x;
+            tr.position.y += result.mtv.y;
+
+            // 2) kill velocity on the resolved axis (prevents jitter)
+            if (result.axis === 'x') {
+                tr.velocity.x = 0;
+            } else if (tr.position.y > otherTr.position.y) {
+                console.log('hit top');
+                ca.enqueue(new Action(ActionEnums.FALL, ActionLifeCycle.START));
+            } else {
+                tr.velocity.y = 0;
+                ca.enqueue(new Action(ActionEnums.ON_GROUND, ActionLifeCycle.START));
             }
+
+            // 3) keep bbox center in sync
+            bb.position.x = tr.position.x;
+            bb.position.y = tr.position.y;
         }
     }
 
-    sActions() {
-        // The player's current state
-        let cState = this.#player.getComponent(ComponentTypes.CState);
-        let state_ = playerStateCallbacks.get(cState.current);
+    /**
+     * Process all queued actions.
+     * Actions are processed in the order they were received, and are processed until the queue is empty.
+     * This function is responsible for updating the player's state based on the actions it receives.
+     */
+    sActions(entity) {
+        /** @type {CActionsType} */
+        const actionsQ = entity.getComponent(ComponentTypes.CActions);
 
-        let action = this.actionsDequeue();
+        // Nothing to do.
+        if (actionsQ.isEmpty()) return;
+
+        // The player's current state
+        /** @type {CStateType} */
+        let cState = entity.getComponent(ComponentTypes.CState);
+        let state_ = cState.stateCallbackMap.get(cState.current);
+
+        let action = actionsQ.dequeue();
         while (action) {
-            state_ = playerStateCallbacks.get(cState.current);
+            state_ = cState.stateCallbackMap.get(cState.current);
             state_.handleAction(this.#player, action);
-            action = this.actionsDequeue();
+            action = actionsQ.dequeue();
         }
+    }
+
+    addAction(action) {
+        /**
+         * @type {CActionsType}
+         */
+        const cActions = this.#player.getComponent(ComponentTypes.CActions);
+        cActions.enqueue(action);
     }
 
     /**
@@ -403,7 +521,7 @@ class Play_Scene extends Scene {
      *
      * @param {Action} action - The action to process.
      */
-    sDoActionImm(action) {
+    doActionImm(action) {
         switch (action.name) {
             case ActionEnums.POINTER_POSITION:
                 this.#pointerX = action.payload.x;
@@ -414,7 +532,7 @@ class Play_Scene extends Scene {
                 this.#pointerY = action.payload.y;
                 // get grid coords
                 const coords = this.#getTileUnderMouse();
-                console.log(coords, { x: this.#pointerX, y: this.#pointerY });
+                // console.log(coords, { x: this.#pointerX, y: this.#pointerY });
                 break;
             default:
                 break;
@@ -446,7 +564,7 @@ class Play_Scene extends Scene {
      * @returns {Entity} The entity that was spawned.
      *
      */
-    placeSpriteEntityGrid(type, x = 0, y = 0, flags = [], sheetId, frame, isStatic = false) {
+    placeSpriteEntityGrid(type, x = 0, y = 0, flags = [], traits = [], sheetId, frame) {
         let dims = this.gameEngine.getSpriteDimensions(sheetId);
         dims = new Vector(dims.w, dims.h);
         let trimmedRect = this.gameEngine.getSpriteTrimmedRect(sheetId);
@@ -464,38 +582,38 @@ class Play_Scene extends Scene {
             [ComponentTypes.CTransform]: [pos, new Vector(0, 0), scale, 0],
             [ComponentTypes.CBoundingBox]: [hasTrimmedRect ? trimmedRect : dims, new Vector(0, 0)],
             [ComponentTypes.CFlags]: [],
+            [ComponentTypes.CTraits]: [],
+            [ComponentTypes.CState]: [EntityStates.IDLE],
         };
 
         let entity = this.#spawnEntity(components, type, gridPos.x, gridPos.y);
 
         if (flags.length > 0) {
-            /** @type {Flags} */
+            /** @type { CFlagsType} */
             let cf = entity.getComponent(ComponentTypes.CFlags);
-            for (let i = 0; flags.length; i++) {
+            for (let i = 0; i < flags.length; i++) {
                 cf.add(flags[i]);
             }
         }
 
-        console.log(entity);
+        if (traits.length > 0) {
+            /** @type {CTraitsType} */
+            let cTraits = entity.getComponent(ComponentTypes.CTraits);
+            for (let i = 0; i < traits.length; i++) {
+                cTraits.add(traits[i]);
+            }
+        }
     }
 
     /**
-     * Adds an action to the end of the action queue.
-     * @param {Action} action - The action to add to the queue.
+     * Gets the tile coordinates of the given entity.
+     * @param {Entity} e - The entity to get the tile coordinates of.
+     * @returns {Vector} The tile coordinates of the entity.
      */
-    actionEnqueue(action) {
-        this.#actionsQueue.push(action);
-    }
-
-    /**
-     * Removes and returns the first action from the action queue.
-     * If the queue is empty, returns null.
-     * @returns {Action|null} The first action from the queue, or null if the queue is empty.
-     */
-    actionsDequeue() {
-        let action = this.#actionsQueue.shift();
-        if (action) return action;
-        return null;
+    getEntityTile(e) {
+        /** @type {CTransformType} */
+        const tr = e.getComponent(ComponentTypes.CTransform);
+        return this.#worldToGrid(tr.position);
     }
 
     /****************************************************************************
@@ -507,7 +625,7 @@ class Play_Scene extends Scene {
      *
      * @param {number} gridX the x coordinate in the grid
      * @param {number} gridY the y coordinate in the grid
-     * @returns
+     * @returns {Vector} The in game world coordinated for the grid
      */
     #gridToWorld(gridX, gridY) {
         let worldX = gridX * this.#mapConfig.tileSize.x;
@@ -524,7 +642,7 @@ class Play_Scene extends Scene {
     #gridToWorldCentered(gridX, gridY) {
         let worldX = gridX * this.#mapConfig.tileSize.x;
         let worldY = gridY * this.#mapConfig.tileSize.y;
-        return new Vector(worldX + this.#mapConfig.tileSize.x / 2, worldY + this.#mapConfig.tileSize.x / 2);
+        return new Vector(worldX + this.#mapConfig.tileSize.x / 2, worldY + this.#mapConfig.tileSize.y / 2);
     }
 
     #getTileUnderMouse() {
@@ -546,6 +664,7 @@ class Play_Scene extends Scene {
         return this.#worldToGrid(new Vector(this.#pointerX, this.#pointerY));
     }
 
+    /** @param {Vector} worldPos */
     #worldToGrid(worldPos) {
         let gridX, gridY;
         if (worldPos.x > 0) {
@@ -566,7 +685,7 @@ class Play_Scene extends Scene {
     }
 
     #scaleBoundingRect(entity) {
-        /** @type { Transform } */
+        /** @type { CTraitsType } */
         let transform = entity.getComponent(ComponentTypes.CTransform);
         // / Get the bounding box
         /** @type { BoundingBox } */
@@ -719,14 +838,6 @@ class Play_Scene extends Scene {
 
         let pattern = this.gameEngine.ctx.createPattern(off, 'repeat');
 
-        // If supported, neutralize DPR so each cell is tsX×tsY in user space
-        // if (pattern && 'setTransform' in pattern) {
-        //     const m = new DOMMatrix();
-        //     m.a = 1 ; // scaleX
-        //     m.d = 1 ; // scaleY
-        //     pattern.setTransform(m);
-        // }
-
         if (!pattern) {
             const dom = document.createElement('canvas');
             dom.width = pxW;
@@ -744,6 +855,7 @@ class Play_Scene extends Scene {
     }
 
     #spawnEntity(components = {}, type, gridX = 0, gridY = 0) {
+        /** @type {Entity} */
         let entity = this.entityManager.addEntity(type);
 
         for (let [componentType, args] of Object.entries(components)) {
@@ -759,28 +871,28 @@ class Play_Scene extends Scene {
         bBox.position = worldCoords;
         bBox.size = scaledBBox.scaledRect;
 
-        console.log('spawn entity');
-        console.log(components);
+        // console.log('spawn entity');
+        // console.log(components);
         // console.log(entity);
         return entity;
     }
 
-    #playerStateToAnimation(stateEnum) {
+    #stateToAnimation(stateEnum) {
         switch (stateEnum) {
-            case PlayerStates.WALKING.RIGHT:
-                return 'walk';
-            case PlayerStates.WALKING.LEFT:
-                return 'walk';
-            case PlayerStates.JUMPING:
-                return 'jump';
-            case PlayerStates.ATTACKING.ONE:
-                return 'attack_1';
-            case PlayerStates.ATTACKING.TWO:
-                return 'attack_2';
-            case PlayerStates.IDLE:
-                return 'idle';
+            case EntityStates.WALKING_RIGHT:
+            case EntityStates.WALKING_LEFT:
+                return EntityStates.WALKING;
+            case EntityStates.JUMPING:
+            case EntityStates.FALLING:
+                return EntityStates.JUMPING;
+            case EntityStates.IDLE:
+            case EntityStates.IDLE_LEFT:
+            case EntityStates.ON_GROUND:
+                return EntityStates.IDLE;
+            default:
+                return stateEnum;
         }
     }
 }
 
-export { Play_Scene };
+export { PlayScene };

@@ -36,7 +36,6 @@
 
 /* Card (the <li> root in the template) */
 .entity-card {
-    list-style: none;
     background: var(--card);
     color: var(--text);
     border: 1px solid var(--border);
@@ -44,6 +43,12 @@
     box-shadow: var(--shadow);
     padding: 14px;
     margin: 10px 0;
+
+    cursor: default;
+}
+
+details {
+    cursor: pointer;
 }
 
 /* Header */
@@ -224,6 +229,12 @@ input[type='checkbox'] {
 
 .actions button:active {
     transform: translateY(1px);
+}
+
+.actions {
+    li {
+        list-style: none;
+    }
 }
 
 /* Utility: tighten vertical rhythm between components */

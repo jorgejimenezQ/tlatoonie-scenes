@@ -182,7 +182,7 @@ function printSpriteCacheStats(cache) {
     let total = 0;
     for (const v of byMode.values()) total += v.bytes;
 
-    console.group('SpriteCache Stats');
+    console.groupCollapsed('SpriteCache Stats');
     console.info('Total:', human(total), `(entries: ${cache.map.size})`);
     console.group('By mode');
     for (const [mode, v] of byMode.entries()) {

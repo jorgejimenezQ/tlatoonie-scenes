@@ -2,6 +2,7 @@
     "anims": [
         {
             "key": "hurt",
+            "state": "ENTITY_STATE_HURT",
             "type": "frames",
             "repeat": -1,
             "frameRate": 8,
@@ -26,9 +27,10 @@
         },
         {
             "key": "jump",
+            "state": "ENTITY_STATE_JUMPING",
             "type": "frames",
-            "repeat": -1,
-            "frameRate": 1,
+            "repeat": 1,
+            "frameRate": 6,
             "frames": [
                 {
                     "key": "knight",
@@ -54,6 +56,7 @@
         },
         {
             "key": "defend",
+            "state": "ENTITY_STATE_DEFEND",
             "type": "frames",
             "repeat": -1,
             "frameRate": 8,
@@ -86,6 +89,7 @@
         },
         {
             "key": "attack_2",
+            "state": "ENTITY_STATE_ATTACKING:TWO",
             "type": "frames",
             "repeat": -1,
             "frameRate": 8,
@@ -114,6 +118,7 @@
         },
         {
             "key": "attack_1",
+            "state": "ENTITY_STATE_ATTACKING:ONE",
             "type": "frames",
             "repeat": -1,
             "frameRate": 8,
@@ -146,8 +151,9 @@
         },
         {
             "key": "walk",
+            "state": "ENTITY_STATE_WALKING",
             "type": "frames",
-            "repeat": -1,
+            "repeat": 1,
             "frameRate": 10,
             "frames": [
                 {
@@ -186,8 +192,9 @@
         },
         {
             "key": "idle",
+            "state": "ENTITY_STATE_IDLE",
             "type": "frames",
-            "repeat": -1,
+            "repeat": 1,
             "frameRate": 10,
             "frames": [
                 {

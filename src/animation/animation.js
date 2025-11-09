@@ -2,39 +2,7 @@ import { Vector } from 'vecti';
 import { GameEngine } from '../gameEngine/gameEngine';
 
 class Animation {
-    /**
-     * TODO: Refactor animation timing to use real elapsed time (dtVar) instead of tick counts. Will be found in the onEnd callback of the game loop.
-     *
-     * Why:
-     * - Right now animations advance based on "number of update ticks".
-     * - This makes them frame-rate dependent: if the game loop slows (e.g., 120 Hz → 60 Hz),
-     *   animations also slow down, because fewer ticks happen per second.
-     *
-     * Goal:
-     * - Use the variable delta time provided by the game loop (`deltaTime` between frames, in seconds).
-     * - Accumulate dtVar inside Animation until it reaches the duration of one animation frame
-     *   (e.g. 1 / animFPS), then advance the sprite frame.
-     * - This makes animation playback tied to wall-clock time, not tick rate → animations
-     *   run at a consistent speed across machines and during FPS dips.
-     *
-     * Plan:
-     * 1. Pass both fixed dt (dtFixed) and variable dt (dtVar) into gameEngine.update().
-     * 2. Forward dtVar down to Scene.update() and Animation.update().
-     * 3. Inside Animation, add an accumulator field (e.g. this._accum).
-     * 4. On each update, do:
-     *      this._accum += dtVar;
-     *      while (this._accum >= 1 / this.#animFPS) {
-     *          this._accum -= 1 / this.#animFPS;
-     *          this.#frameIndex = (this.#frameIndex + 1) % this.#numFrames;
-     *      }
-     * 5. Keep physics/game logic tied to dtFixed for determinism, but let animations
-     *    and tweening use dtVar for smooth, real-time motion.
-     *
-     * Result:
-     * - Animations remain steady at the intended FPS (e.g., 12 fps) regardless of game loop speed.
-     * - Frame drops won’t cause sprite animations to slow down; they’ll catch up naturally.
-     */
-
+    // TODO: Tie the animation duration to a different factor (e.g., jumping, attacks, etc)
     // TODO: use repeat bool to end or repeat animation
     #numberOfFrames = 1;
     #currentFrame = 0;
@@ -52,6 +20,8 @@ class Animation {
     #frameIndex = 0;
     #simTime = 0;
     #frameTime = 0;
+    #animationCompleted = false;
+    onCompleteState = null;
     /**
      * Constructs a new Animation with the given name and animation config
      * @param {string} name - the name of the animation
@@ -65,6 +35,8 @@ class Animation {
         this.#numberOfFrames = animationConfig.frames.length;
         this.#duration = animationConfig.speed;
         this.#frameTime = 1 / this.#animFPS;
+
+        console.log(animationConfig);
     }
 
     // 60ps / 10ps = 6ps
@@ -75,11 +47,24 @@ class Animation {
      * @param {number} elapsedTime - the time delta in milliseconds
      */
     update(elapsedTime) {
-        if (this.#numberOfFrames === 1) return;
         // TODO: Use the elapsed time variable in the gameLoop.onEnd function to acc
+        if (this.#numberOfFrames === 1) return;
+        // Guard in case another update is called once the animation is over.
+        if (this.#animationCompleted) {
+            console.error('INFO: An animation that has a non-repeat is called!');
+            return;
+        }
+
         this.#simTime += elapsedTime / 1000;
         while (this.#simTime >= this.#frameTime) {
             this.#simTime -= this.#frameTime;
+
+            // If the animation does not repeat and it has exhausted all frames, we signal it is over.
+            if (!this.repeats && this.#frameIndex + 2 > this.#numberOfFrames) {
+                this.#animationCompleted = true;
+                continue;
+            }
+
             this.#frameIndex = (this.#frameIndex + 1) % this.#numberOfFrames;
         }
     }
@@ -97,7 +82,7 @@ class Animation {
     }
 
     hasEnded() {
-        // TODO: detect when the animation has ended (last frame was played)
+        return this.#animationCompleted;
     }
 
     /**
@@ -109,12 +94,26 @@ class Animation {
         return this.#name;
     }
 
+    get animationConfig() {
+        return this.#animationConfig;
+    }
+
+    get repeats() {
+        return this.#animationConfig.repeat == 1;
+    }
+
+    stop() {
+        this.#animationCompleted = true;
+        return this;
+    }
     /**
      * Resets the animation to its initial state, setting the frame index to 0.
      */
     reset() {
         this.#frameIndex = 0;
         this.#currentFrame = 0;
+        this.#animationCompleted = false;
+        return this;
     }
 }
 

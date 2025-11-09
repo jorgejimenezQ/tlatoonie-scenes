@@ -16,6 +16,10 @@ class Action {
         return this.type;
     }
 
+    get lifeCycle() {
+        return this.type;
+    }
+
     set payload(data) {
         this.#payload = data;
     }

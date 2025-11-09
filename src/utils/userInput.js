@@ -1,11 +1,14 @@
 import { ActionEnums, KeyCodes } from './enums';
 import { Action } from '../action/action';
 import { GameEngine } from '../gameEngine/gameEngine';
-import { CustomEvents } from './enums';
+import { CustomEventEnums } from './enums';
 import { Scene } from '../scene/scene';
 
 class InputHandler extends EventTarget {
+    /** @type {GameEngine} */
     #game;
+
+    /** @type {Map<KeyCodes, boolean>} */
     #keysPressed = new Map();
 
     /**
@@ -19,7 +22,6 @@ class InputHandler extends EventTarget {
 
         // game should extend EventTarget
         this.#game = game;
-
         this.initUserInput();
     }
 
@@ -47,23 +49,24 @@ class InputHandler extends EventTarget {
      * The canvas element is expected to be the main game canvas.
      */
     initUserInput() {
+        /** @type {HTMLCanvasElement} */
         const canvas = document.getElementById('canvas');
 
         window.addEventListener('keydown', (e) => {
-            e.preventDefault();
+            // e.preventDefault();
             this.#keysPressed.set(e.key, true);
 
             this.#game.dispatchEvent(
-                new CustomEvent(CustomEvents.ACTION_START, { detail: { key: e.key, repeat: e.repeat } })
+                new CustomEvent(CustomEventEnums.ACTION_START, { detail: { key: e.key, repeat: e.repeat } })
             );
         });
 
         window.addEventListener('keyup', (e) => {
-            e.preventDefault();
+            // e.preventDefault();
             this.#keysPressed.delete(e.key);
 
             this.#game.dispatchEvent(
-                new CustomEvent(CustomEvents.ACTION_END, { detail: { key: e.key, repeat: e.repeat } })
+                new CustomEvent(CustomEventEnums.ACTION_END, { detail: { key: e.key, repeat: e.repeat } })
             );
         });
 
@@ -72,21 +75,21 @@ class InputHandler extends EventTarget {
             e.preventDefault();
             const { x, y } = this.#getMouseInCanvas(e, canvas);
 
-            this.#game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_DOWN, { detail: { x, y } }));
+            this.#game.dispatchEvent(new CustomEvent(CustomEventEnums.POINTER_DOWN, { detail: { x, y } }));
         });
 
         canvas.addEventListener('pointerup', (e) => {
             e.preventDefault();
             const { x, y } = this.#getMouseInCanvas(e, canvas);
 
-            this.#game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_UP, { detail: { x, y } }));
+            this.#game.dispatchEvent(new CustomEvent(CustomEventEnums.POINTER_UP, { detail: { x, y } }));
         });
 
         canvas.addEventListener('pointermove', (e) => {
             e.preventDefault();
             const { x, y } = this.#getMouseInCanvas(e, canvas);
 
-            this.#game.dispatchEvent(new CustomEvent(CustomEvents.POINTER_MOVE, { detail: { x, y } }));
+            this.#game.dispatchEvent(new CustomEvent(CustomEventEnums.POINTER_MOVE, { detail: { x, y } }));
         });
     }
 

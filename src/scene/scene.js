@@ -1,6 +1,7 @@
 import { Action } from '../action/action';
-import { EntityManager } from '../entityManager/entityManger';
+import { EntityManager } from '../entityManager/entityManager';
 import { GameEngine } from '../gameEngine/gameEngine';
+import { SceneTags } from '../utils/enums';
 /**
  * @param {GameEngine} gameEngine
  *
@@ -9,14 +10,10 @@ import { GameEngine } from '../gameEngine/gameEngine';
 class Scene extends EventTarget {
     #paused = false;
 
-    /*
-     * @type {EntityManager}
-     */
+    /** @type {EntityManager} */
     entityManager = new EntityManager();
 
-    /**
-     * @type {GameEngine}
-     */
+    /** @type {GameEngine} */
     gameEngine = null;
     /**
      * @description Map of action name to Action object
@@ -27,6 +24,7 @@ class Scene extends EventTarget {
     currentFrame = 0;
     width = 0;
     height = 0;
+    tag = SceneTags.SIMPLE;
 
     onEnd() {
         throw new Error('Function not implemented. Child classes must implement onEnd and setPaused');
@@ -40,12 +38,13 @@ class Scene extends EventTarget {
      *
      * @param {GameEngine} gameEngine - the GameEngine to associate with this Scene
      */
-    constructor(gameEngine) {
+    constructor(gameEngine, tag) {
         super();
         this.gameEngine = gameEngine;
 
         this.height = gameEngine.height;
         this.width = gameEngine.width;
+        this.tag = tag;
     }
 
     /**

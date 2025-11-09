@@ -1,7 +1,6 @@
-import { Tabs } from './tabs';
-import { ComponentTypes, CustomEvents, PlayerStates } from '../../utils/enums';
+import { ComponentTypes, CustomEventEnums, EntityStates, TabsEnum } from '../../utils/enums';
 import { GameEngine } from '../../gameEngine/gameEngine';
-import { EntityManager } from '../../entityManager/entityManger';
+import { EntityManager } from '../../entityManager/entityManager';
 
 /**
  * Creates the default tabs for the editor.
@@ -18,7 +17,7 @@ import { EntityManager } from '../../entityManager/entityManger';
  */
 function createTabs(tab, gameEngine, payload) {
     tab.addTab({
-        id: 'entities',
+        id: TabsEnum.ID.ENTITIES,
         title: 'Entities',
         icon: '️🧸',
         tooltip: 'Browse & Edit Entities',
@@ -33,109 +32,10 @@ function createTabs(tab, gameEngine, payload) {
                 <!-- Filled dynamically -->
             </ul>`;
 
-            const onUpdate = ({ detail }) => {
-                detail.entities.forEach((entity) => {
-                    console.log(entity);
-                    const tr = entity.getComponent(ComponentTypes.CTransform);
-                    const st = entity.getComponent(ComponentTypes.CState);
-
-                    let elState = undefined;
-                    if (st) {
-                        let stOptions = '';
-                        for (let option of Object.values(PlayerStates)) {
-                            stOptions += `<option value="${option}">${option}</option>`;
-                        }
-                        elState = `
-                        <!-- CState (simplified) -->
-                        <section class="component" data-component="CState">
-                            <h4>State</h4>
-                            <form data-component-form="CState">
-                                <div class="row">
-                                    <label>current
-                                    <select data-field="current">
-                                    ${stOptions}
-                                    </select>
-                                    </label>
-                                </div>
-                                <div class="row">
-                                    <label>previous <input type="text" data-field="previous" value="${st.previous} /> </label>
-                                </div>
-                                <div class="row">
-                                    <label><input type="checkbox" data-field="canJump" checked="${st.canJump}" /> canJump</label>
-                                </div>
-                            </form>
-                        </section>
-                    `;
-                    }
-
-                    let elEntity = `<li class="entity-card" data-entity-id="">
-                    <article>
-                        <header class='entity-header'>
-                            <strong>
-                                <span data-entity-tag>${entity.tag}</span>
-                                <span>(entity id#<span data-entity-id> ${entity.id})</span></span>
-                            </strong>
-                            <small>
-                                <label>
-                                    <input type="checkbox" data-field="active" checked="${entity.isActive()}" />
-                                </label>
-                            </small>
-                        </header>
-
-                        <!-- CTransform (simplified) -->
-                        <section class="component" data-component="CTransform">
-                            <h4>Transform</h4>
-                            <form data-component-form="CTransform">
-                                <div class="row">
-                                        <label>x <input class="hidden" type="number" step="0.01" data-field="position.x" value="${
-                                            tr.position.x
-                                        }" /></label>
-                                        <label>y <input class="hidden" type="number" step="0.01" data-field="position.y" value="${
-                                            tr.position.y
-                                        }" /></label>
-                                        <label>vx <input class="hidden" type="number" step="0.01" data-field="velocity.x" value="${
-                                            tr.velocity.x
-                                        }" /></label>
-                                        <label>vy <input class="hidden" type="number" step="0.01" data-field="velocity.y" value="${
-                                            tr.velocity.y
-                                        }" /></label>
-                                </div>
-                                <div class="row">
-                                    <label>sx <input class="hidden" type="number" step="0.01" data-field="scale.x" value="${
-                                        tr.scale.x
-                                    }" /></label>
-                                    <label>sy <input class="hidden" type="number" step="0.01" data-field="scale.y" value="${
-                                        tr.scale.y
-                                    }" /></label>
-                                    <label>rot° <input class="hidden" type="number" step="0.1" data-field="rotation" value="${
-                                        tr.angle
-                                    }"  /></label>
-                                    <label>grounded<input class="hidden" type="checkbox" data-field="grounded" checked="${
-                                        tr.grounded
-                                    }" /> </label>
-                                </div>
-                            </div>
-                            </form>
-                        </section>
-
-                        ${st ? elState : ''}
-
-                        <section>
-                                <div class="actions">
-                                    <button type="submit" data-action="save-component">Save</button>
-                                    <button type="submit" data-action="refresh-component">Refresh</button>
-                                    <button type="submit" data-action="delete-component"><i class="iconoir-xmark-circle-solid text-red icon-large"></i></button>
-                        </section>
-                    </article>
-                    </li>`;
-
-                    $('#entityList').append(elEntity);
-                });
-            };
-
-            gameEngine.addEventListener(CustomEvents.ENTITIES.UPDATED, onUpdate);
+            gameEngine.addEventListener(CustomEventEnums.ENTITIES.UPDATED, onEntitiesUpdate);
         },
     });
+
     // Sprites panel
     tab.addTab({
         id: 'sprites',
@@ -149,6 +49,7 @@ function createTabs(tab, gameEngine, payload) {
             root.innerHTML = `
         <div class="panel-row">
             <div><label>Filter</label><input id="spriteFilter" placeholder="name"></div>
+            <div><button id="clearSelection" class ="small-btn red-btn rounded-btn">Clear Selection 🗑️ </button></div>
             <div id="spriteGrid" style="display:grid;grid-template-columns:repeat(auto-fill,72px);margin-top:10px;"></div>
         </div>`;
 
@@ -191,7 +92,6 @@ function createTabs(tab, gameEngine, payload) {
 
             const elSpriteGrid = $('#spriteGrid');
             const blobs = await loadSprites();
-            console.log(blobs);
             for (let blob of blobs) {
                 const box = document.createElement('div');
                 box.style.width = '100%';
@@ -215,12 +115,10 @@ function createTabs(tab, gameEngine, payload) {
                 box.appendChild(img);
                 elSpriteGrid.append(box);
 
-                // console.log('event', { sheetId: blob.key, sheet: blob.sheet });
                 box.addEventListener('click', (e) => {
-                    gameEngine.width;
-                    // console.log('event', { sheetId: blob.key, sheet: blob.sheet, frame: blob.frame });
+                    $('body').css('cursor', 'url(' + blob.url + '), auto');
                     gameEngine.dispatchEvent(
-                        new CustomEvent(CustomEvents.SPRITE.SELECT, {
+                        new CustomEvent(CustomEventEnums.SPRITE.SELECT, {
                             detail: {
                                 sheetId: blob.sheetId,
                                 sheet: blob.sheet,
@@ -230,6 +128,11 @@ function createTabs(tab, gameEngine, payload) {
                     );
                 });
             }
+
+            $('#clearSelection').on('click', () => {
+                $('body').css('cursor', 'default');
+                gameEngine.dispatchEvent(new CustomEvent(CustomEventEnums.SPRITE.CLEAR_SELECTION));
+            });
         },
         onShow(root) {
             /* refresh if needed */
@@ -291,7 +194,114 @@ function createTabs(tab, gameEngine, payload) {
     // Listen to tab lifecycle if you need cross-module behavior
     tab.addEventListener('tab:select', (e) => {
         // e.detail.id -> 'sprites' | 'animations' | 'tiles'
+        gameEngine.dispatchEvent(new CustomEvent(CustomEventEnums.TAB.SELECTED, { detail: e.detail }));
     });
+
+    tab.addEventListener(CustomEventEnums.ENTITIES.UPDATED, onEntitiesUpdate);
+    tab.addEventListener(CustomEventEnums.ENTITIES.UPDATED, () => console.log('updated'));
 }
+
+const onEntitiesUpdate = ({ detail }) => {
+    const elList = $('<div></div>');
+    detail.entities.forEach((entity) => {
+        const tr = entity.getComponent(ComponentTypes.CTransform);
+        const st = entity.getComponent(ComponentTypes.CState);
+
+        let elState = undefined;
+        if (st) {
+            let stOptions = '';
+            for (let option of Object.values(EntityStates)) {
+                stOptions += `<option value="${option}">${option}</option>`;
+            }
+            elState = `
+                        <!-- CState (simplified) -->
+                        <details class="component" data-component="CState">
+                            <h4>State</h4>
+                            <form data-component-form="CState">
+                                <div class="row">
+                                    <label>current
+                                    <select data-field="current">
+                                    ${stOptions}
+                                    </select>
+                                    </label>
+                                </div>
+                                <div class="row">
+                                    <label>previous <input type="text" data-field="previous" value="${st.previous} /> </label>
+                                </div>
+                                <div class="row">
+                                    <label><input type="checkbox" data-field="canJump" checked="${st.canJump}" /> canJump</label>
+                                </div>
+                            </form>
+                        </details>
+                    `;
+        }
+
+        let elEntity = `
+        <li class="entity-card" data-entity-id="${entity.id}">
+                    <article>
+                        <header class='entity-header'>
+                            <strong>
+                                <span data-entity-tag>${entity.tag}</span>
+                                <span>(entity id#<span data-entity-id> ${entity.id})</span></span>
+                            </strong>
+                            <small>
+                                <label>
+                                    <input type="checkbox" data-field="active" checked="${entity.isActive()}" />
+                                </label>
+                            </small>
+                        </header>
+
+                        <!-- CTransform (simplified) -->
+                        <details class="component" data-component="CTransform">
+                            <h4>Transform</h4>
+                            <form data-component-form="CTransform">
+                                <div class="row">
+                                        <label>x <input class="hidden" type="number" step="0.01" data-field="position.x" value="${
+                                            tr.position.x
+                                        }" /></label>
+                                        <label>y <input class="hidden" type="number" step="0.01" data-field="position.y" value="${
+                                            tr.position.y
+                                        }" /></label>
+                                        <label>vx <input class="hidden" type="number" step="0.01" data-field="velocity.x" value="${
+                                            tr.velocity.x
+                                        }" /></label>
+                                        <label>vy <input class="hidden" type="number" step="0.01" data-field="velocity.y" value="${
+                                            tr.velocity.y
+                                        }" /></label>
+                                </div>
+                                <div class="row">
+                                    <label>sx <input class="hidden" type="number" step="0.01" data-field="scale.x" value="${
+                                        tr.scale.x
+                                    }" /></label>
+                                    <label>sy <input class="hidden" type="number" step="0.01" data-field="scale.y" value="${
+                                        tr.scale.y
+                                    }" /></label>
+                                    <label>rot° <input class="hidden" type="number" step="0.1" data-field="rotation" value="${
+                                        tr.angle
+                                    }"  /></label>
+                                    <label>grounded<input class="hidden" type="checkbox" data-field="grounded" checked="${
+                                        tr.grounded
+                                    }" /> </label>
+                                </div>
+                            </div>
+                            </form>
+                        </details>
+
+                        ${st ? elState : ''}
+
+                        <menu>
+                                <div class="actions">
+                                    <li><button type="submit" data-action="save-component">Save</button></li>
+                                    <li><button type="submit" data-action="refresh-component">Refresh</button></li>
+                                    <li><button type="submit" data-action="delete-component"><i class="iconoir-xmark-circle-solid text-red icon-large"></i></button></li>
+                                </div>
+                        </menu>
+                    </article>
+                    </li>`;
+
+        elList.append(elEntity);
+    });
+    $('#entityList').html(elList);
+};
 
 export { createTabs };

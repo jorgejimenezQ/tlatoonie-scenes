@@ -6,7 +6,7 @@
                 "atlasPath": "/knight/knight_atlas.json",
                 "imagePath": "/knight/knight.png",
                 "trimmedRect": {
-                    "width": 28,
+                    "width": 20,
                     "height": 36
                 }
             },
@@ -28,6 +28,18 @@
             {
                 "id": "bitcount",
                 "fontPath": "/font/bitcount.ttf"
+            }
+        ]
+    },
+    "levelConfig": {
+        "attacks": [
+            {
+                "key": "PLAYER_ATTACK_ONE",
+                "animationId": "ENTITY_STATE_ATTACKING:ONE"
+            },
+            {
+                "key": "PLAYER_ATTACK_TWO",
+                "animationId": "ENTITY_STATE_ATTACKING:TWO"
             }
         ]
     }

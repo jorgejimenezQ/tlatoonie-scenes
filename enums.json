@@ -1,0 +1,497 @@
+{
+    "ComponentTypes": {
+        "CAnimation": { "value": "COMPONENT_TYPE_ANIMATION", "description": "Animation clip controller / player." },
+        "CBoundingBox": {
+            "value": "COMPONENT_TYPE_BOUNDING-BOX",
+            "description": "Axis-aligned (or oriented) bounds for collisions/queries."
+        },
+        "CGravity": { "value": "COMPONENT_TYPE_GRAVITY", "description": "Applies constant acceleration to velocity." },
+        "CInput": { "value": "COMPONENT_TYPE_INPUT", "description": "Binds entity to action/input events." },
+        "CInterpolation": {
+            "value": "COMPONENT_TYPE_INTERPOLATION",
+            "description": "Tweening/lerp data for smooth transitions."
+        },
+        "CLifespan": { "value": "COMPONENT_TYPE_LIFESPAN", "description": "Time-to-live tracking; auto-despawn." },
+        "CScore": { "value": "COMPONENT_TYPE_SCORE", "description": "Holds score/points or counters." },
+        "CShape": { "value": "COMPONENT_TYPE_SHAPE", "description": "Primitive geometry for debug or gameplay." },
+        "CState": { "value": "COMPONENT_TYPE_STATE", "description": "Finite-state / tags for the entity." },
+        "CTransform": { "value": "COMPONENT_TYPE_TRANSFORM", "description": "Position, rotation, scale." },
+        "CSpriteDimensions": {
+            "value": "COMPONENT_TYPE_SPRITE-DIMENSIONS",
+            "description": "Logical/trimmed sprite size metadata."
+        },
+        "CSprite": { "value": "COMPONENT_TYPE_SPRITE", "description": "Drawable sprite/atlas frame info." },
+        "CFlags": { "value": "COMPONENT_TYPE_FLAGS", "description": "Bitflags for engine-wide behaviors." },
+        "CTraits": { "value": "COMPONENT_TYPE_TRAITS", "description": "Human-readable trait tags." },
+        "CCollision": { "value": "COMPONENT_TYPE_Collision", "description": "Collision shape/filter/material info." }
+    },
+
+    "PlayerStates": {
+        "JUMPING": "PLAYER_STATE_JUMPING",
+        "ON_GROUND": "PLAYER_STATE_ON_GROUND",
+        "WALKING": {
+            "LEFT": "PLAYER_STATE_WALKING:LEFT",
+            "RIGHT": "PLAYER_STATE_WALKING:RIGHT"
+        },
+        "RUNNING": "PLAYER_STATE_RUNNING",
+        "FALLING": "PLAYER_STATE_FALLING",
+        "TAKING_DAMAGE": "PLAYER_STATE_TAKING_DAMAGE",
+        "CAN_ATTACK": "PLAYER_STATE_CAN_ATTACK",
+        "IDLE": "PLAYER_STATE_IDLE",
+        "IDLE_LEFT": "PLAYER_STATE_IDLE_LEFT",
+        "IDLE_RIGHT": "PLAYER_STATE_IDLE_RIGHT",
+        "ATTACKING": {
+            "ONE": "PLAYER_STATE_ATTACKING:ONE",
+            "TWO": "PLAYER_STATE_ATTACKING:TWO"
+        }
+    },
+
+    "EntityStates": {
+        "_note": "Includes all PlayerStates for convenience (spread/merge in code).",
+        "inherits": "PlayerStates"
+    },
+
+    "EntityTypes": {
+        "PLAYER": "ENTITY_TYPE_PLAYER",
+        "NPC": "ENTITY_TYPE_NPC",
+        "TILE": "ENTITY_TYPE_TILE",
+        "GROUND": "ENTITY_TYPE_GROUND"
+    },
+
+    "ScalePolicies": {
+        "FREE": "SCALE_POLICIES_FREE",
+        "UNIFORM_X": "SCALE_POLICIES_UNIFORM_X",
+        "UNIFORM_Y": "SCALE_POLICIES_UNIFORM_Y",
+        "FIT": "SCALE_POLICIES_FIT",
+        "COVER": "SCALE_POLICIES_COVER",
+        "NONE": "SCALE_POLICIES_NONE"
+    },
+
+    "Interpolations": {
+        "EASEIN_EXPO": "INTERPOLATION_EASEIN_EXPO",
+        "EASEIN_SINE": "INTERPOLATION_EASEIN_SINE",
+        "EASEINOUT_EXPO": "INTERPOLATION_EASEINOUT_EXPO",
+        "EASEINOUT_SINE": "INTERPOLATION_EASEINOUT_SINE",
+        "EASEINOUT_ELASTIC": "INTERPOLATION_EASEINOUT_ELASTIC",
+        "EASEIN_ELASTIC": "INTERPOLATION_EASEIN_ELASTIC",
+        "EASEOUT_ELASTIC": "INTERPOLATION_EASEOUT_ELASTIC",
+        "EASEOUT_SINE": "INTERPOLATION_EASEOUT_SINE"
+    },
+
+    "TabsEnum": {
+        "ID": {
+            "SPRITES": "TABS:ID_SPRITES",
+            "ENTITIES": "TABS:ID_ENTITIES"
+        }
+    },
+
+    "SceneTags": {
+        "MENU": "SCENE_NAME_MENU",
+        "PLAY": "SCENE_NAME_PLAY",
+        "SIMPLE": "SIMPLE"
+    },
+
+    "CustomEventEnums": {
+        "GAME_STOPPED": "CUSTOM_EVENT_GAME_STOPPED",
+        "GAME_RESUMED": "CUSTOM_EVENT_GAME_RESUMED",
+        "GAME_ENDED": "CUSTOM_EVENT_GAME_ENDED",
+        "GAME_STARTED": "CUSTOM_EVENT_GAME_STARTED",
+        "MOUSE_DOWN": "CUSTOM_EVENT_MOUSE_DOWN",
+        "MOUSE_UP": "CUSTOM_EVENT_MOUSE_UP",
+        "KEY_DOWN": "CUSTOM_EVENT_KEY_DOWN",
+        "KEY_UP": "CUSTOM_EVENT_KEY_UP",
+        "ACTION_START": "CUSTOM_EVENT_ACTION_START",
+        "ACTION_END": "CUSTOM_EVENT_ACTION_END",
+        "POINTER_DOWN": "CUSTOM_EVENT_POINTER_DOWN",
+        "POINTER_UP": "CUSTOM_EVENT_POINTER_UP",
+        "POINTER_MOVE": "CUSTOM_EVENT_POINTER_MOVE",
+        "WINDOW_RESIZED": "CUSTOM_EVENT_WINDOW_RESIZED",
+        "SPRITE": {
+            "SELECT": "CUSTOM_EVENT_SPRITE:SELECT",
+            "DELETE": "CUSTOM_EVENT_SPRITE:DELETE",
+            "CLEAR_SELECTION": "CUSTOM_EVENT_SPRITE:CLEAR_SELECTION"
+        },
+        "ENTITIES": {
+            "UPDATED": "CUSTOM_EVENT_ENTITIES:UPDATED"
+        },
+        "TAB": {
+            "SELECTED": "CUSTOM_EVENT_TAB:SELECTED"
+        }
+    },
+
+    "ActionEnums": {
+        "PAUSE": "ACTION_ENUM_PAUSE",
+        "QUIT": "ACTION_ENUM_QUIT",
+        "TOGGLE_TEXTURE": "ACTION_ENUM_TOGGLE_TEXTURE",
+        "TOGGLE_COLLISION": "ACTION_ENUM_TOGGLE_COLLISION",
+        "TOGGLE_GRID": "ACTION_ENUM_TOGGLE_GRID",
+        "RIGHT": "ACTION_ENUM_RIGHT",
+        "LEFT": "ACTION_ENUM_LEFT",
+        "UP": "ACTION_ENUM_UP",
+        "DOWN": "ACTION_ENUM_DOWN",
+        "CLICK": "ACTION_ENUM_CLICK",
+        "PRESS": "ACTION_ENUM_PRESS",
+        "RELEASE": "ACTION_ENUM_RELEASE",
+        "GRAB": "ACTION_ENUM_GRAB",
+        "RELEASE_GRAB": "ACTION_ENUM_RELEASE_GRAB",
+        "POINTER_POSITION": "ACTION_ENUM_POINTER_POSITION",
+        "JUMP": "ACTION_ENUM_JUMP",
+        "FALL": "ACTION_ENUM_FALL",
+        "ON_GROUND": "ACTION_ENUM_ON_GROUND"
+    },
+
+    "EntityFlags": {
+        "STATIC": { "value": 1, "bit": 0, "description": "Does not move (e.g., walls)." },
+        "DECORATION": { "value": 2, "bit": 1, "description": "Visual only; no gameplay impact." },
+        "COLLIDES": { "value": 4, "bit": 2, "description": "Participates in collision tests." },
+        "TRIGGER": { "value": 8, "bit": 3, "description": "Overlap-only (no physical response)." },
+        "INTERACTIVE": { "value": 16, "bit": 4, "description": "Can be clicked/used." },
+        "AI": { "value": 32, "bit": 5, "description": "Driven by AI logic." },
+        "PLAYER": { "value": 64, "bit": 6, "description": "Player-owned/controlled." },
+        "ENEMY": { "value": 128, "bit": 7, "description": "Enemy faction." },
+        "ANIMATED": { "value": 256, "bit": 8, "description": "Has animations." },
+        "CAN_DIE": { "value": 512, "bit": 9, "description": "Can die and be removed." },
+        "CAN_FALL": { "value": 1024, "bit": 10, "description": "Affected by gravity/falling." }
+    },
+
+    "EntityTraits": {
+        "STATIC": { "value": "ENTITY_TRAIT_STATIC", "description": "Doesn't move (e.g., walls)." },
+        "DECORATION": { "value": "ENTITY_TRAIT_DECORATION", "description": "Visual only." },
+        "COLLIDES": { "value": "ENTITY_TRAIT_COLLIDES", "description": "Collisions enabled." },
+        "TRIGGER": { "value": "ENTITY_TRAIT_TRIGGER", "description": "Overlap-only; no physics." },
+        "INTERACTIVE": { "value": "ENTITY_TRAIT_INTERACTIVE", "description": "Can be interacted with." },
+        "AI": { "value": "ENTITY_TRAIT_AI", "description": "AI-driven behavior." },
+        "PLAYER": { "value": "ENTITY_TRAIT_PLAYER", "description": "Player-controlled or owned." },
+        "ENEMY": { "value": "ENTITY_TRAIT_ENEMY", "description": "Enemy faction." },
+        "ANIMATED": { "value": "ENTITY_TRAIT_ANIMATED", "description": "Has animation(s)." },
+        "CAN_DIE": { "value": "ENTITY_TRAIT_CAN_DIE", "description": "Can die and be removed." }
+    },
+
+    "KeyCodes": {
+        "a": "a",
+        "b": "b",
+        "c": "c",
+        "d": "d",
+        "e": "e",
+        "f": "f",
+        "g": "g",
+        "h": "h",
+        "i": "i",
+        "j": "j",
+        "k": "k",
+        "l": "l",
+        "m": "m",
+        "n": "n",
+        "o": "o",
+        "p": "p",
+        "q": "q",
+        "r": "r",
+        "s": "s",
+        "t": "t",
+        "u": "u",
+        "v": "v",
+        "w": "w",
+        "x": "x",
+        "y": "y",
+        "z": "z",
+        "A": "A",
+        "B": "B",
+        "C": "C",
+        "D": "D",
+        "E": "E",
+        "F": "F",
+        "G": "G",
+        "H": "H",
+        "I": "I",
+        "J": "J",
+        "K": "K",
+        "L": "L",
+        "M": "M",
+        "N": "N",
+        "O": "O",
+        "P": "P",
+        "Q": "Q",
+        "R": "R",
+        "S": "S",
+        "T": "T",
+        "U": "U",
+        "V": "V",
+        "W": "W",
+        "X": "X",
+        "Y": "Y",
+        "Z": "Z",
+        "num_0": "0",
+        "num_1": "1",
+        "num_2": "2",
+        "num_3": "3",
+        "num_4": "4",
+        "num_5": "5",
+        "num_6": "6",
+        "num_7": "7",
+        "num_8": "8",
+        "num_9": "9",
+        "ArrowUp": "ArrowUp",
+        "ArrowDown": "ArrowDown",
+        "ArrowLeft": "ArrowLeft",
+        "ArrowRight": "ArrowRight",
+        "space": "space",
+        "enter": "enter",
+        "escape": "escape",
+        "tab": "tab",
+        "backspace": "backspace",
+        "shift": "shift",
+        "control": "control",
+        "alt": "alt",
+        "meta": "meta",
+        "capslock": "capslock",
+        "contextmenu": "contextmenu",
+        "insert": "insert",
+        "delete": "delete",
+        "home": "home",
+        "end": "end",
+        "pageup": "pageup",
+        "pagedown": "pagedown",
+        "F1": "F1",
+        "F2": "F2",
+        "F3": "F3",
+        "F4": "F4",
+        "F5": "F5",
+        "F6": "F6",
+        "F7": "F7",
+        "F8": "F8",
+        "F9": "F9",
+        "F10": "F10",
+        "F11": "F11",
+        "F12": "F12",
+        "numpad0": "numpad0",
+        "numpad1": "numpad1",
+        "numpad2": "numpad2",
+        "numpad3": "numpad3",
+        "numpad4": "numpad4",
+        "numpad5": "numpad5",
+        "numpad6": "numpad6",
+        "numpad7": "numpad7",
+        "numpad8": "numpad8",
+        "numpad9": "numpad9",
+        "numpadAdd": "numpadAdd",
+        "numpadSubtract": "numpadSubtract",
+        "numpadMultiply": "numpadMultiply",
+        "numpadDivide": "numpadDivide",
+        "numpadDecimal": "numpadDecimal",
+        "numpadEnter": "numpadEnter",
+        "minus": "minus",
+        "equal": "equal",
+        "bracketLeft": "bracketLeft",
+        "bracketRight": "bracketRight",
+        "backslash": "backslash",
+        "semicolon": "semicolon",
+        "quote": "quote",
+        "comma": "comma",
+        "period": "period",
+        "slash": "slash",
+        "backquote": "backquote",
+        "pointerDown": "mouseDown",
+        "pointerUp": "mouseUp",
+        "pointerMove": "mouseMove"
+    },
+
+    "ActionTypes": {
+        "START": "ACTION_TYPE_START",
+        "END": "ACTION_TYPE_END",
+        "MOUSE": "ACTION_TYPE_MOUSE"
+    },
+
+    "ActionKeys": {
+        "_note": "Equivalent to {...KeyCodes, MISC_MANUAL: 'MISC_MANUAL_KEY_ACTION'}",
+        "inherits": "KeyCodes",
+        "MISC_MANUAL": "MISC_MANUAL_KEY_ACTION"
+    },
+
+    "EngineLifecycleState": {
+        "UNINITIALIZED": {
+            "value": "ENGINE_LIFECYCLE_UNINITIALIZED",
+            "description": "Engine constructed but not set up."
+        },
+        "INITIALIZING": {
+            "value": "ENGINE_LIFECYCLE_INITIALIZING",
+            "description": "Booting subsystems (window, audio, input)."
+        },
+        "READY": { "value": "ENGINE_LIFECYCLE_READY", "description": "Boot complete; ready to run a scene." },
+        "RUNNING": { "value": "ENGINE_LIFECYCLE_RUNNING", "description": "Main loop active." },
+        "PAUSED": { "value": "ENGINE_LIFECYCLE_PAUSED", "description": "Updates halted; render may continue." },
+        "SUSPENDED": { "value": "ENGINE_LIFECYCLE_SUSPENDED", "description": "Backgrounded by OS." },
+        "STOPPING": { "value": "ENGINE_LIFECYCLE_STOPPING", "description": "Shutting down subsystems." },
+        "SHUTDOWN": { "value": "ENGINE_LIFECYCLE_SHUTDOWN", "description": "Fully closed/cleaned up." }
+    },
+
+    "GameState": {
+        "BOOT": { "value": "GAME_STATE_BOOT", "description": "Splash, settings, dependency checks." },
+        "MAIN_MENU": { "value": "GAME_STATE_MAIN_MENU", "description": "Title/menu UI." },
+        "LOADING": { "value": "GAME_STATE_LOADING", "description": "Streaming/constructing scene or save." },
+        "PLAYING": { "value": "GAME_STATE_PLAYING", "description": "Normal gameplay." },
+        "PAUSED": { "value": "GAME_STATE_PAUSED", "description": "In-game menu/pause." },
+        "GAME_OVER": { "value": "GAME_STATE_GAME_OVER", "description": "End-of-run screen." },
+        "CREDITS": { "value": "GAME_STATE_CREDITS", "description": "Rolling credits." },
+        "QUIT": { "value": "GAME_STATE_QUIT", "description": "Exiting to desktop/OS." }
+    },
+
+    "EditorModeState": {
+        "VIEW": { "value": "EDITOR_MODE_VIEW", "description": "Inspect only." },
+        "SELECT": { "value": "EDITOR_MODE_SELECT", "description": "Pick entities/components." },
+        "MOVE": { "value": "EDITOR_MODE_MOVE", "description": "Translate gizmo active." },
+        "ROTATE": { "value": "EDITOR_MODE_ROTATE", "description": "Rotate gizmo active." },
+        "SCALE": { "value": "EDITOR_MODE_SCALE", "description": "Scale gizmo active." },
+        "PLAYTEST": { "value": "EDITOR_MODE_PLAYTEST", "description": "Sim running inside editor." }
+    },
+
+    "SceneState": {
+        "UNLOADED": { "value": "SCENE_STATE_UNLOADED", "description": "No resources in memory." },
+        "PREFETCHING": { "value": "SCENE_STATE_PREFETCHING", "description": "IO queued; not resident yet." },
+        "LOADING": { "value": "SCENE_STATE_LOADING", "description": "Assets being created on CPU/GPU." },
+        "WARMING": { "value": "SCENE_STATE_WARMING", "description": "Prewarming shaders/animations." },
+        "ACTIVE": { "value": "SCENE_STATE_ACTIVE", "description": "Scene live and ticking." },
+        "UNLOADING": { "value": "SCENE_STATE_UNLOADING", "description": "Tear-down/freeing resources." },
+        "FAILED": { "value": "SCENE_STATE_FAILED", "description": "Could not load/activate." }
+    },
+
+    "ResourceState": {
+        "NONE": { "value": "RESOURCE_STATE_NONE", "description": "No handle." },
+        "REQUESTED": { "value": "RESOURCE_STATE_REQUESTED", "description": "Load requested/queued." },
+        "STREAMING": { "value": "RESOURCE_STATE_STREAMING", "description": "Bytes coming in." },
+        "DECODED": { "value": "RESOURCE_STATE_DECODED", "description": "CPU-parsed/decoded." },
+        "UPLOADED": { "value": "RESOURCE_STATE_UPLOADED", "description": "On GPU/ready to bind." },
+        "READY": { "value": "RESOURCE_STATE_READY", "description": "Ready for use." },
+        "ERROR": { "value": "RESOURCE_STATE_ERROR", "description": "Failed with diagnostics." }
+    },
+
+    "EntityActivityState": {
+        "DISABLED": { "value": "ENTITY_ACTIVITY_DISABLED", "description": "Not updated or rendered." },
+        "SPAWNING": { "value": "ENTITY_ACTIVITY_SPAWNING", "description": "Initialization phase." },
+        "ACTIVE": { "value": "ENTITY_ACTIVITY_ACTIVE", "description": "Normal update/render." },
+        "SLEEPING": { "value": "ENTITY_ACTIVITY_SLEEPING", "description": "Skipped until awoken." },
+        "DESPAWNING": { "value": "ENTITY_ACTIVITY_DESPAWNING", "description": "Exit effects/cleanup." },
+        "DESTROYED": { "value": "ENTITY_ACTIVITY_DESTROYED", "description": "Removed from ECS." }
+    },
+
+    "MovementState": {
+        "IDLE": { "value": "MOVE_STATE_IDLE", "description": "No movement intent." },
+        "WALKING": { "value": "MOVE_STATE_WALKING", "description": "Low-speed locomotion." },
+        "RUNNING": { "value": "MOVE_STATE_RUNNING", "description": "High-speed locomotion." },
+        "JUMPING": { "value": "MOVE_STATE_JUMPING", "description": "Upward impulse active." },
+        "FALLING": { "value": "MOVE_STATE_FALLING", "description": "Airborne; gravity only." },
+        "CLIMBING": { "value": "MOVE_STATE_CLIMBING", "description": "On ladder/rope." },
+        "DASHING": { "value": "MOVE_STATE_DASHING", "description": "Burst movement." },
+        "SWIMMING": { "value": "MOVE_STATE_SWIMMING", "description": "In fluid." },
+        "FLYING": { "value": "MOVE_STATE_FLYING", "description": "Free 3D movement." }
+    },
+
+    "PhysicsBodyState": {
+        "STATIC": { "value": "PHYS_BODY_STATIC", "description": "Infinite mass; never moves." },
+        "KINEMATIC": { "value": "PHYS_BODY_KINEMATIC", "description": "Script-driven; no forces." },
+        "DYNAMIC": { "value": "PHYS_BODY_DYNAMIC", "description": "Simulated by physics." },
+        "SENSOR": { "value": "PHYS_BODY_SENSOR", "description": "Triggers only; no response." },
+        "SLEEPING": { "value": "PHYS_BODY_SLEEPING", "description": "At rest; skipped by solver." }
+    },
+
+    "CollisionState": {
+        "SEPARATED": { "value": "COLLISION_SEPARATED", "description": "No contact." },
+        "OVERLAPPING": { "value": "COLLISION_OVERLAPPING", "description": "Interpenetration detected." },
+        "CONTACTING": { "value": "COLLISION_CONTACTING", "description": "Contact manifold exists." },
+        "RESOLVING": { "value": "COLLISION_RESOLVING", "description": "Solver applying impulses." },
+        "TRIGGERED": { "value": "COLLISION_TRIGGERED", "description": "Trigger enter/stay/exit fired." }
+    },
+
+    "InteractionState": {
+        "NEUTRAL": { "value": "INTERACT_NEUTRAL", "description": "Not interacting." },
+        "HOVERED": { "value": "INTERACT_HOVERED", "description": "Targeted by pointer/aim." },
+        "FOCUSED": { "value": "INTERACT_FOCUSED", "description": "Has input focus." },
+        "GRABBED": { "value": "INTERACT_GRABBED", "description": "Held/attached." },
+        "USING": { "value": "INTERACT_USING", "description": "Actively using an object." },
+        "COOLDOWN": { "value": "INTERACT_COOLDOWN", "description": "Temporarily unavailable." }
+    },
+
+    "CombatState": {
+        "PEACEFUL": { "value": "COMBAT_PEACEFUL", "description": "No threat." },
+        "ALERTED": { "value": "COMBAT_ALERTED", "description": "Aware of target." },
+        "ENGAGING": { "value": "COMBAT_ENGAGING", "description": "Closing distance/aiming." },
+        "ATTACKING": { "value": "COMBAT_ATTACKING", "description": "Performing attack." },
+        "RECOVERING": { "value": "COMBAT_RECOVERING", "description": "Post-attack recovery." },
+        "STUNNED": { "value": "COMBAT_STUNNED", "description": "Temporarily incapacitated." },
+        "DEAD": { "value": "COMBAT_DEAD", "description": "Defeated; no inputs/AI." }
+    },
+
+    "AIBehaviorState": {
+        "IDLE": { "value": "AI_IDLE", "description": "Ambient/idle behavior." },
+        "PATROL": { "value": "AI_PATROL", "description": "Follow waypoints." },
+        "CHASE": { "value": "AI_CHASE", "description": "Pursue target." },
+        "FLEE": { "value": "AI_FLEE", "description": "Avoid threat." },
+        "SEARCH": { "value": "AI_SEARCH", "description": "Investigate last-known position." },
+        "GUARD": { "value": "AI_GUARD", "description": "Hold/defend position." },
+        "INTERACT": { "value": "AI_INTERACT", "description": "Use objects/NPCs." },
+        "SCRIPTED": { "value": "AI_SCRIPTED", "description": "Cutscene or forced behavior." }
+    },
+
+    "AnimationState": {
+        "STOPPED": { "value": "ANIM_STOPPED", "description": "Not playing." },
+        "PLAYING": { "value": "ANIM_PLAYING", "description": "Forward playback." },
+        "PAUSED": { "value": "ANIM_PAUSED", "description": "Time frozen." },
+        "BLENDING": { "value": "ANIM_BLENDING", "description": "Transition between clips." },
+        "LOOPING": { "value": "ANIM_LOOPING", "description": "Repeats on end." },
+        "REVERSED": { "value": "ANIM_REVERSED", "description": "Backwards playback." }
+    },
+
+    "InputModeState": {
+        "GAMEPLAY": { "value": "INPUT_MODE_GAMEPLAY", "description": "Map inputs to gameplay actions." },
+        "UI": { "value": "INPUT_MODE_UI", "description": "Cursor/widgets active." },
+        "CINEMATIC": { "value": "INPUT_MODE_CINEMATIC", "description": "Inputs mostly ignored." },
+        "REMAP": { "value": "INPUT_MODE_REMAP", "description": "Capturing keybinds." },
+        "TEXT_ENTRY": { "value": "INPUT_MODE_TEXT_ENTRY", "description": "IME/keyboard text focus." }
+    },
+
+    "UIWidgetState": {
+        "HIDDEN": { "value": "UI_WIDGET_HIDDEN", "description": "Not visible." },
+        "VISIBLE": { "value": "UI_WIDGET_VISIBLE", "description": "Drawn but idle." },
+        "DISABLED": { "value": "UI_WIDGET_DISABLED", "description": "Visible, non-interactive." },
+        "FOCUSED": { "value": "UI_WIDGET_FOCUSED", "description": "Receives input." },
+        "ACTIVE": { "value": "UI_WIDGET_ACTIVE", "description": "Pressed/dragging/typing." },
+        "ANIMATING": { "value": "UI_WIDGET_ANIMATING", "description": "Transitioning." }
+    },
+
+    "AudioChannelState": {
+        "STOPPED": { "value": "AUDIO_STOPPED", "description": "No voice playing." },
+        "PLAYING": { "value": "AUDIO_PLAYING", "description": "Active voice." },
+        "PAUSED": { "value": "AUDIO_PAUSED", "description": "Suspended playback." },
+        "FADING_IN": { "value": "AUDIO_FADING_IN", "description": "Gain ramp up." },
+        "FADING_OUT": { "value": "AUDIO_FADING_OUT", "description": "Gain ramp down." },
+        "VIRTUALIZED": { "value": "AUDIO_VIRTUALIZED", "description": "Culled but logically playing." }
+    },
+
+    "NetworkConnectionState": {
+        "DISCONNECTED": { "value": "NET_DISCONNECTED", "description": "No link." },
+        "CONNECTING": { "value": "NET_CONNECTING", "description": "Handshake in progress." },
+        "CONNECTED": { "value": "NET_CONNECTED", "description": "Link established." },
+        "AUTHENTICATED": { "value": "NET_AUTHENTICATED", "description": "Session validated." },
+        "SYNCING": { "value": "NET_SYNCING", "description": "World/state catch-up." },
+        "DEGRADED": { "value": "NET_DEGRADED", "description": "High latency/packet loss." },
+        "RECONNECTING": { "value": "NET_RECONNECTING", "description": "Recovering from drop." }
+    },
+
+    "SaveLoadState": {
+        "IDLE": { "value": "SAVELOAD_IDLE", "description": "No IO in progress." },
+        "SAVE_QUEUED": { "value": "SAVELOAD_SAVE_QUEUED", "description": "Pending write." },
+        "SAVING": { "value": "SAVELOAD_SAVING", "description": "Writing to disk/cloud." },
+        "LOAD_QUEUED": { "value": "SAVELOAD_LOAD_QUEUED", "description": "Pending read." },
+        "LOADING": { "value": "SAVELOAD_LOADING", "description": "Reading/deserializing." },
+        "COMPLETED": { "value": "SAVELOAD_COMPLETED", "description": "Success." },
+        "FAILED": { "value": "SAVELOAD_FAILED", "description": "Error state." }
+    },
+
+    "JobTaskState": {
+        "PENDING": { "value": "JOB_PENDING", "description": "Enqueued, not started." },
+        "RUNNING": { "value": "JOB_RUNNING", "description": "Executing on worker." },
+        "AWAITING_DEPENDENCY": { "value": "JOB_AWAITING_DEPENDENCY", "description": "Waiting on other job." },
+        "COMPLETED": { "value": "JOB_COMPLETED", "description": "Finished successfully." },
+        "CANCELLED": { "value": "JOB_CANCELLED", "description": "Aborted intentionally." },
+        "FAILED": { "value": "JOB_FAILED", "description": "Error/exception thrown." }
+    }
+}

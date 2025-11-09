@@ -1,14 +1,17 @@
 import { resolveConfiguration, waitForSpriteSheets } from '../utils/file';
 import {
     ActionKeys,
-    ActionTypes,
-    CustomEvents,
-    SceneNames,
+    ActionLifeCycle,
+    CustomEventEnums,
     ScalePolicies,
     EntityTypes,
     KeyCodes,
+    EntityFlags,
+    TabsEnum,
+    SceneTags,
+    EntityTraits,
 } from '../utils/enums';
-import { Play_Scene } from '../scene/play_scene';
+import { PlayScene } from '../scene/playScene';
 import { Scene } from '../scene/scene';
 import { Vector } from 'vecti';
 import InputHandler from '../utils/userInput';
@@ -20,7 +23,7 @@ class GameEngine extends EventTarget {
     /**
      * Map of all scenes in the game
      *
-     * @type {Map<string, Play_Scene>}
+     * @type {Map<string, PlayScene>}
      */
     #sceneMap = new Map();
     // #assets = new Assets();
@@ -60,6 +63,8 @@ class GameEngine extends EventTarget {
     #spriteSelected = null;
     #input;
 
+    levelConfig;
+
     /**
      * Creates a new GameEngine instance
      * @param {string} path - the path to the game configuration file
@@ -77,10 +82,11 @@ class GameEngine extends EventTarget {
 
     async init() {
         this.#canvasCTX.imageSmoothingEnabled = false;
-        this.#assets = await resolveConfiguration(this.#configPath);
+        const { assets, config } = await resolveConfiguration(this.#configPath);
+        this.#assets = assets;
+        this.levelConfig = config;
         this.spriteCache = new SpriteCacheGPU(128 * 1024 * 1024);
 
-        ``;
         try {
             // Wait for all images to load before proceeding
             await waitForSpriteSheets(this.#assets);
@@ -98,18 +104,34 @@ class GameEngine extends EventTarget {
                 await this.spriteCache.prewarm(sheetImage, frames, 'flipX');
             }
 
-            console.log('assets loaded', this.#assets);
+            console.groupCollapsed('*****************************************************\nassets and config loaded');
+            console.log('');
+            console.info('assets and config loaded');
+            console.info(this.levelConfig);
+            console.info(this.#assets);
+            console.groupEnd();
         } catch (err) {
             console.error(err);
             this.stop();
-            this.dispatchEvent(new CustomEvent(CustomEvents.GAME_STOPPED));
+            this.dispatchEvent(new CustomEvent(CustomEventEnums.GAME_STOPPED));
         }
 
-        this.changeScene(SceneNames.Play, new Play_Scene(this));
-        console.log('sprite cache prewarmed', this.spriteCache.map, this.spriteCache.inflight);
+        const playScene = new PlayScene(this);
+        this.changeScene(SceneTags.Play, playScene);
+        // console.log('sprite cache prewarmed', this.spriteCache.map, this.spriteCache.inflight);
         printSpriteCacheStats(this.spriteCache);
 
         this.#addEventListeners();
+
+        // console.log(playScene.entityManager.getAllEntities());
+        this.dispatchEvent(
+            new CustomEvent(CustomEventEnums.ENTITIES.UPDATED, {
+                detail: {
+                    count: playScene.entityManager.getAllEntities().length,
+                    entities: playScene.entityManager.getAllEntities(),
+                },
+            })
+        );
     }
 
     changeScene(
@@ -129,7 +151,7 @@ class GameEngine extends EventTarget {
         }
 
         // Add an event listener to the scene to listen for the game stopped event
-        this.#sceneMap.get(this.#currentScene).addEventListener(CustomEvents.GAME_STOPPED, () => {
+        this.#sceneMap.get(this.#currentScene).addEventListener(CustomEventEnums.GAME_STOPPED, () => {
             this.setPaused(true);
         });
     }
@@ -354,6 +376,14 @@ class GameEngine extends EventTarget {
         return this.#assets.spriteSheets.get(sheetId).image;
     }
 
+    /**
+     * Gets the trimmed rectangle for a given spriteId.
+     * If the spriteId is invalid or the sprite sheet doesn't have a trimmed rectangle,
+     * returns null.
+     *
+     * @param {string} spriteId - The id of the sprite sheet to get the trimmed rectangle for.
+     * @returns {{width: number, height: number}} The trimmed rectangle of the sprite sheet, or null if invalid.
+     */
     getSpriteTrimmedRect(spriteId) {
         return this.#assets.spriteSheets.get(spriteId).trimmedRect || null;
     }
@@ -447,60 +477,64 @@ class GameEngine extends EventTarget {
 
     #addEventListeners() {
         /********************   Window Events          *******************/
-        this.addEventListener(CustomEvents.WINDOW_RESIZED, (e) => {
+        this.addEventListener(CustomEventEnums.WINDOW_RESIZED, (e) => {
             // resizeCanvas(this.#canvasCTX.canvas, this.#canvasCTX);
         });
 
         /********************   Keyboard/button Events *******************/
-        this.addEventListener(CustomEvents.ACTION_START, (e) => {
+        this.addEventListener(CustomEventEnums.ACTION_START, (e) => {
             if (e.detail.repeat) return;
             if (e.detail.key == ActionKeys.p) {
                 if (this.isRunning()) {
                     this.stop();
-                    this.dispatchEvent(new CustomEvent(CustomEvents.GAME_STOPPED));
+                    this.dispatchEvent(new CustomEvent(CustomEventEnums.GAME_STOPPED));
                     return;
                 }
                 if (!this.isRunning()) {
                     this.start();
-                    this.dispatchEvent(new CustomEvent(CustomEvents.GAME_STARTED));
+                    this.dispatchEvent(new CustomEvent(CustomEventEnums.GAME_STARTED));
                     return;
                 }
                 return;
             }
 
+            if (this.#DEBUG && e.detail.key == ActionKeys.escape && this.#spriteSelected) {
+                this.#spriteSelected = null;
+            }
+
             let scene = this.#sceneMap.get(this.#currentScene);
             if (!scene.actionMap.has(e.detail.key)) return;
-            let action = new Action(scene.actionMap.get(e.detail.key), ActionTypes.START);
-            scene.actionEnqueue(action);
+            let action = new Action(scene.actionMap.get(e.detail.key), ActionLifeCycle.START);
+            scene.addAction(action);
         });
 
-        this.addEventListener(CustomEvents.ACTION_END, (e) => {
+        this.addEventListener(CustomEventEnums.ACTION_END, (e) => {
             let scene = this.#sceneMap.get(this.#currentScene);
             if (!scene.actionMap.has(e.detail.key)) return;
-            let action = new Action(scene.actionMap.get(e.detail.key), ActionTypes.END);
-            scene.actionEnqueue(action);
+            let action = new Action(scene.actionMap.get(e.detail.key), ActionLifeCycle.END);
+            scene.addAction(action);
         });
 
         /********************   Pointer Events *******************/
 
-        this.addEventListener(CustomEvents.POINTER_MOVE, (e) => {
+        this.addEventListener(CustomEventEnums.POINTER_MOVE, (e) => {
             // console.log(e.detail);
             this.#pointerCoords = new Vector(e.detail.x, e.detail.y);
             let scene = this.#sceneMap.get(this.#currentScene);
             if (!scene.actionMap.has(ActionKeys.pointerMove)) return;
 
-            let action = new Action(scene.actionMap.get(ActionKeys.pointerMove), ActionTypes.END);
+            let action = new Action(scene.actionMap.get(ActionKeys.pointerMove), ActionLifeCycle.END);
             action.payload = this.#pointerCoords;
-            scene.sDoActionImm(action);
+            scene.doActionImm(action);
         });
 
-        this.addEventListener(CustomEvents.POINTER_DOWN, (e) => {
+        this.addEventListener(CustomEventEnums.POINTER_DOWN, (e) => {
             let scene = this.#sceneMap.get(this.#currentScene);
             if (!scene.actionMap.has(ActionKeys.pointerDown)) return;
 
-            let action = new Action(scene.actionMap.get(ActionKeys.pointerDown), ActionTypes.START);
+            let action = new Action(scene.actionMap.get(ActionKeys.pointerDown), ActionLifeCycle.START);
             action.payload = new Vector(e.detail.x, e.detail.y);
-            scene.sDoActionImm(action);
+            scene.doActionImm(action);
 
             // **** event:sprite select
             if (this.#DEBUG && this.#spriteSelected) {
@@ -510,31 +544,50 @@ class GameEngine extends EventTarget {
                     EntityTypes.GROUND,
                     e.detail.x,
                     e.detail.y,
+                    [EntityFlags.STATIC, EntityFlags.COLLIDES],
+                    [EntityTraits.STATIC, EntityTraits.COLLIDES],
                     this.#spriteSelected.sheetId,
-                    this.#spriteSelected.frame,
-
-                    false,
-                    true
+                    this.#spriteSelected.frame
                 );
+
                 // if (!this.#input.isKeyPressed(KeyCodes.alt)) this.#spriteSelected = null;
             }
         });
 
-        this.addEventListener(CustomEvents.POINTER_UP, (e) => {
+        this.addEventListener(CustomEventEnums.POINTER_UP, (e) => {
             let scene = this.#sceneMap.get(this.#currentScene);
             if (!scene.actionMap.has(ActionKeys.pointerUp)) return;
 
-            let action = new Action(scene.actionMap.get(ActionKeys.pointerUp), ActionTypes.START);
-            scene.sDoActionImm(action);
+            let action = new Action(scene.actionMap.get(ActionKeys.pointerUp), ActionLifeCycle.START);
+            scene.doActionImm(action);
         });
 
         /******************** Debugging   Sprite Events ******************* */
         if (this.#DEBUG) {
-            this.addEventListener(CustomEvents.SPRITE.SELECT, (e) => {
+            this.addEventListener(CustomEventEnums.SPRITE.SELECT, (e) => {
                 this.#spriteSelected = {
                     sheetId: e.detail.sheetId,
                     frame: e.detail.frame.frameName,
                 };
+            });
+
+            this.addEventListener(CustomEventEnums.SPRITE.CLEAR_SELECTION, () => {
+                this.#spriteSelected = null;
+            });
+
+            this.addEventListener(CustomEventEnums.TAB.SELECTED, (e) => {
+                // console.log('tab switched', e.detail);
+                const scene = this.getCurrentScene();
+                if (e.detail.id == TabsEnum.ID.ENTITIES && scene.tag == SceneTags.PLAY) {
+                    this.dispatchEvent(
+                        new CustomEvent(CustomEventEnums.ENTITIES.UPDATED, {
+                            detail: {
+                                count: scene.entityManager.getAllEntities().length,
+                                entities: scene.entityManager.getAllEntities(),
+                            },
+                        })
+                    );
+                }
             });
         }
     }

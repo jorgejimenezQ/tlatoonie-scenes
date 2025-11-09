@@ -49,27 +49,27 @@ async function resolveConfiguration(configJsonPath) {
         const data = await loadJSON(configJsonPath);
         const animationMap = new Map();
         const spriteSheetMap = new Map();
+        const levelData = {};
+
         const assets = {
             animations: animationMap,
             spriteSheets: spriteSheetMap,
             images: [],
+            levelData,
             // fonts: fontMap,
         };
 
         let assetsPath = configJsonPath.split('/');
         assetsPath.pop();
         assetsPath = assetsPath.join('/');
-
         for (const e of data.assets.spriteSheets) {
             // get the actual atlas from the path
-
             const atlas = await loadJSON(assetsPath + e.atlasPath); // await works here
             // delete unnecessary properties
             delete atlas.meta;
 
             let image = new Image();
             image.src = assetsPath + e.imagePath;
-
             // create an object with each frame of the sprite sheet for faster access
             var frameMap = new Map();
             for (const frame of atlas.frames) {
@@ -90,7 +90,6 @@ async function resolveConfiguration(configJsonPath) {
             });
         }
 
-        console.log('unpacked sprite sheets from config file: ', assets.spriteSheets);
         let animSheets = [];
         // do the same for the animations
         for (const e of data.assets.animations) {
@@ -99,7 +98,8 @@ async function resolveConfiguration(configJsonPath) {
             const animConfig = await loadJSON(assetsPath + e.animationPath);
             for (let animation of animConfig.anims) {
                 // console.log(animation);
-                assets.animations.set(animation.key, {
+                assets.animations.set(animation.state, {
+                    key: animation.key,
                     speed: e.speed,
                     sheetId: e.sheetId,
                     frames: [...animation.frames],
@@ -111,9 +111,19 @@ async function resolveConfiguration(configJsonPath) {
                 });
             }
         }
+
+        levelData.playerConfig = {
+            attacks: new Map(),
+        };
+
+        for (const attack of data.levelConfig.attacks) {
+            levelData.playerConfig.attacks.set(attack.key, {
+                animationId: attack.animationId,
+            });
+        }
         assets.sheets = animSheets;
-        // console.log(animSheets);
-        return assets;
+
+        return { assets, config: levelData };
     } catch (err) {
         console.error('(function => resolveConfiguration): ', err);
     }
@@ -157,7 +167,17 @@ async function waitForSpriteSheets(assets, { timeoutMs = 15000 } = {}) {
     await Promise.all(images.map((img) => waitForImage(img, { timeoutMs })));
 }
 
-// thresholdAlpha: 1..255 (often 1 to treat any non-zero alpha as visible)
+/**
+ * Builds a bit mask and trimmed bounding box for an image.
+ * The bit mask is an array of bytes where each bit corresponds to a pixel in the image.
+ * A set bit (1) indicates that the pixel is visible (alpha >= thresholdAlpha).
+ * The trimmed bounding box is the smallest rectangle that encloses all visible pixels.
+ * If no visible pixels are found, the trimmed bounds are set to {x: 0, y: 0, w: 0, h: 0}.
+ *
+ * @param {ImageData} imageData - The image data to process.
+ * @param {number} [thresholdAlpha=1] - The minimum alpha value for a pixel to be considered visible.
+ * @returns {{mask: Uint8Array, width: number, height: number, trimmedBounds: {x: number, y: number, w: number, h: number}}}
+ */
 function buildMaskAndTrimmedBounds(imageData, thresholdAlpha = 1) {
     const { data, width, height } = imageData;
     const bitlen = width * height;
@@ -225,4 +245,23 @@ function masksOverlap(m1, w1, h1, m2, w2, h2, dx, dy) {
     return false;
 }
 
-export { loadJSON, waitForSpriteSheets, resolveConfiguration };
+/****************************************************************************************/
+/** JSON file helpers */
+/****************************************************************************************/
+
+const printJSON = (obj) => {
+    console.log(JSON.stringify(obj, null, 2));
+};
+
+const printJSONToFile = (obj) => {
+    const json = JSON.stringify(obj, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data.json';
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
+export { loadJSON, waitForSpriteSheets, resolveConfiguration, printJSON, printJSONToFile };
