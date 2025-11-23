@@ -540,6 +540,17 @@ class GameEngine extends EventTarget {
             if (this.#DEBUG && this.#spriteSelected) {
                 console.log('placing sprite');
                 console.info(this.#spriteSelected);
+
+                // scene.placeSpriteEntityGrid(
+                //     EntityTypes.DECOR,
+                //     e.detail.x,
+                //     e.detail.y,
+                //     [EntityFlags.STATIC, EntityFlags.DECORATION],
+                //     [EntityTraits.STATIC, EntityTraits.COLLIDES],
+                //     this.#spriteSelected.sheetId,
+                //     this.#spriteSelected.frame
+                // );
+
                 scene.placeSpriteEntityGrid(
                     EntityTypes.GROUND,
                     e.detail.x,

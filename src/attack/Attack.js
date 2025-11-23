@@ -1,4 +1,4 @@
-import { EntityStates, PlayerAttacks } from '../utils/enums';
+import { EntityStates, EntityAttacks } from '../utils/enums';
 
 class Attack {
     /** @type {AttackComponent[]} */
@@ -6,7 +6,7 @@ class Attack {
 
     /**
      *
-     * @param {PlayerAttacks} name The tag that identifies the attack.
+     * @param {EntityAttacks} name The tag that identifies the attack.
      * @param {EntityStates} animation The name of the animation to run with this attack.
      */
     constructor(name, animation) {

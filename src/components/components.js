@@ -1,5 +1,5 @@
 import { Vector } from 'vecti';
-import { Interpolations, ComponentTypes, EntityFlags, PlayerAttacks, EntityStates } from '../utils/enums';
+import { Interpolations, ComponentTypes, EntityFlags, EntityAttacks, EntityStates } from '../utils/enums';
 import { Animation } from '../animation/animation';
 import { Attack } from '../attack/Attack';
 import { Entity } from '../entityManager/entityManager';
@@ -152,7 +152,7 @@ class Lifespan extends Component {
 
 class Attacks extends Component {
     /**
-     * @type {PlayerAttacks}
+     * @type {EntityAttacks}
      */
     selected;
     /**
@@ -162,11 +162,13 @@ class Attacks extends Component {
 
     /**
      *
-     * @param {PlayerAttacks} initial The attack we are initializing the component with.
+     * @param {EntityAttacks} initial An initial array of attacks of size greater than.
      */
-    constructor(initial) {
+    constructor(attacks) {
         super();
-        this.selected = initial;
+        attacks.forEach((atk) => this.addAttack(atk));
+        this.selected = attacks[0];
+        log('was added here');
     }
 
     /**
@@ -187,7 +189,7 @@ class Attacks extends Component {
 
     /**
      *
-     * @param {PlayerAttacks} attack
+     * @param {EntityAttacks} attack
      * @returns
      */
     setAttack(attack) {
@@ -263,6 +265,15 @@ class Flags extends Component {
      */
     has(flag) {
         return (this.mask & flag) !== 0;
+    }
+
+    /**
+     * Checks if a flag is present in the current mask.
+     * @param {EntityFlags} flag - The flag to check.
+     * @returns {boolean} - True if the flag is present, false otherwise.
+     */
+    static hasFlag(flag, mask) {
+        return (mask & flag) !== 0;
     }
 }
 
@@ -504,13 +515,16 @@ class State extends Component {
      *
      */
     previous_ = 'null';
-
     /**
      * A map storing the callbacks for the state machine
      * @type {Map<EntityStates, TypeStateCallback>}
      */
     stateCallbackMap = new Map();
-
+    /**
+     * Maps a state to an animation.
+     * @type {function}
+     */
+    stateToAnimation = null;
     /**
      * @type {TypeStateCallback} A state callback for no operations.
      */
@@ -521,10 +535,12 @@ class State extends Component {
         update: (entity) => {},
     };
 
-    constructor(state) {
+    constructor(state, stateToAnimationCallback) {
         super();
         this.#current_ = state;
         this.previous_ = state;
+
+        if (stateToAnimationCallback) this.stateToAnimation = stateToAnimationCallback;
     }
 
     /**

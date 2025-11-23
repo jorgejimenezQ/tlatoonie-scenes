@@ -32,15 +32,35 @@
         ]
     },
     "levelConfig": {
-        "attacks": [
-            {
-                "key": "PLAYER_ATTACK_ONE",
+        "attacks": {
+            "PLAYER_ATTACK_ONE": {
                 "animationId": "ENTITY_STATE_ATTACKING:ONE"
             },
-            {
-                "key": "PLAYER_ATTACK_TWO",
+            "PLAYER_ATTACK_TWO": {
                 "animationId": "ENTITY_STATE_ATTACKING:TWO"
             }
-        ]
+        },
+        "entityTypes": {
+            "ENTITY_TYPE_PLAYER": {
+                "type": "ENTITY_TYPE_PLAYER",
+                "initialState": "ENTITY_STATE_IDLE",
+                "animationSheet": "knight",
+                "flags": "1364",
+                "attacks": ["PLAYER_ATTACK_ONE", "PLAYER_ATTACK_TWO"]
+            },
+            "ENTITY_TYPE_DECOR": {
+                "flags": "3",
+                "sprite": "tiles"
+            },
+            "ENTITY_TYPE_GROUND_ANIMATED": {
+                "flags": "5",
+                "sprite": "tiles"
+            },
+            "ENTITY_TYPE_GROUND": {
+                "flags": "5",
+                "sprite": "tiles"
+            }
+        },
+        "entityListPath": "entities.json"
     }
 }

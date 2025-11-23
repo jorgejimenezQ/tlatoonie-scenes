@@ -49,6 +49,8 @@ const EntityStates = Object.freeze({
     ATTACKING_ONE: 'ENTITY_STATE_ATTACKING:ONE',
     ATTACKING_TWO: 'ENTITY_STATE_ATTACKING:TWO',
     ATTACKING: 'ENTITY_STATE_ATTACKING',
+    TAKING_DAMAGE: 'ENTITY_STATE_TAKING_DAMAGE',
+    UNCOVERED: 'ENTITY_STATE_UNCOVERED',
 });
 
 /**
@@ -58,7 +60,7 @@ const EntityStates = Object.freeze({
  * @see {@link }
  * @readonly
  */
-const PlayerAttacks = Object.freeze({
+const EntityAttacks = Object.freeze({
     ATTACK_ONE: 'PLAYER_ATTACK_ONE',
     ATTACK_TWO: 'PLAYER_ATTACK_TWO',
 });
@@ -75,6 +77,8 @@ const EntityTypes = Object.freeze({
     NPC: 'ENTITY_TYPE_NPC',
     TILE: 'ENTITY_TYPE_TILE',
     GROUND: 'ENTITY_TYPE_GROUND',
+    DECOR: 'ENTITY_TYPE_DECOR',
+    GROUND_ANIMATED: 'ENTITY_TYPE_GROUND_ANIMATED',
 });
 
 /**
@@ -208,6 +212,7 @@ const EntityFlags = Object.freeze({
     ANIMATED: 1 << 8, // the entity has animation/s
     CAN_DIE: 1 << 9, // can die and be deleted from the game
     CAN_FALL: 1 << 10, // the entity can fall
+    CAN_ATTACK: 1 << 11, // the entity has attacks
 });
 
 /**
@@ -410,5 +415,5 @@ export {
     EntityFlags,
     EntityTraits,
     TabsEnum,
-    PlayerAttacks,
+    EntityAttacks,
 };

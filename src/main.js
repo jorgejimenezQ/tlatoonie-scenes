@@ -122,12 +122,13 @@ const printSceneJson = (game) => {
             if (config) obj[type] = config;
         }
         obj.entityId = entity.id;
-
+        obj.tag = entity.tag;
+        console.log(obj);
         entityJson.push(obj);
     }
 
-    // console.log(printJSON(entityJson));
-    // printJSONToFile(entityJson);
+    printJSON(entityJson);
+    printJSONToFile(entityJson);
 };
 
 const componentToConfig = (type, component, scene, entity) => {
@@ -145,7 +146,7 @@ const componentToConfig = (type, component, scene, entity) => {
         case ComponentTypes.CFlags:
             return component.mask;
         case ComponentTypes.CGravity:
-            component.gravity;
+            return component.gravity;
         case ComponentTypes.CInput:
             break;
         case ComponentTypes.CInterpolation:

@@ -49,13 +49,15 @@ async function resolveConfiguration(configJsonPath) {
         const data = await loadJSON(configJsonPath);
         const animationMap = new Map();
         const spriteSheetMap = new Map();
-        const levelData = {};
+        const playSceneData = {};
 
         const assets = {
             animations: animationMap,
             spriteSheets: spriteSheetMap,
             images: [],
-            levelData,
+            sceneData: {
+                // playScene: playSceneData,
+            },
             // fonts: fontMap,
         };
 
@@ -112,18 +114,30 @@ async function resolveConfiguration(configJsonPath) {
             }
         }
 
-        levelData.playerConfig = {
-            attacks: new Map(),
-        };
+        playSceneData.attacks = { ...data.levelConfig.attacks };
+        // for (const attack of data.levelConfig.attacks) {
+        //     playSceneData.attacks[attack.key] = {
+        //         animationId: attack.animationId,
+        //     };
+        // }
 
-        for (const attack of data.levelConfig.attacks) {
-            levelData.playerConfig.attacks.set(attack.key, {
-                animationId: attack.animationId,
-            });
-        }
+        playSceneData.entityTypes = { ...data.levelConfig.entityTypes };
+        // for (const {key, entry} of Object.entries(data.levelConfig.entityTypes)) {
+        //     console.log(entities);
+        //     playSceneData.entityTypes[entities.type] = {
+        //         animationSheet: entities.animationSheet,
+        //         flags: parseInt(entities.flags),
+        //         initialState: entities.initialState,
+        //     };
+        // }
+
+        // Load entities into memory
+        const entitiesConfig = await loadJSON(assetsPath + '/' + data.levelConfig.entityListPath);
+        playSceneData.entities = entitiesConfig;
+
         assets.sheets = animSheets;
-
-        return { assets, config: levelData };
+        assets.sceneData.playScene = playSceneData;
+        return { assets, config: playSceneData };
     } catch (err) {
         console.error('(function => resolveConfiguration): ', err);
     }

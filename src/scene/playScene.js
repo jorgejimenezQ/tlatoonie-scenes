@@ -9,7 +9,6 @@ import {
     CustomEventEnums,
     EntityFlags,
     EntityTypes,
-    PlayerAttacks,
     EntityStates,
     ScalePolicies,
     SceneTags,
@@ -27,6 +26,7 @@ import {
     AnimationStackEntry,
     Actions as CActionsType,
     Component,
+    Sprite as CSpriteType,
 } from '../components/components';
 import { Animation } from '../animation/animation';
 import { getScaledSpriteSize } from '../utils/sprite';
@@ -34,6 +34,8 @@ import { initPlayerFSM } from './playerStates';
 import { CollisionSystem } from '../systems/collision';
 import { Action } from '../action/action';
 import { Attack } from '../attack/Attack';
+import { getStateToAnim } from '../config/stackToAnimation';
+import { groupEnd, groupStart, log } from '../utils/logging';
 
 /**
  * Play_Scene
@@ -57,68 +59,21 @@ class PlayScene extends Scene {
      *   transform.position = topLeftToCenter(tileTopLeft, scaledTileSize);
      *
      */
-
-    //TODO: refactor configs out into json files (entity)
-    #playerConfig = {
-        gridPos: new Vector(1, 5),
-        boundingBox: new Vector(8, 34),
-        boundingBoxOffset: new Vector(0, 0),
-        horizontalSpeed: 200,
-        verticalSpeed: 200,
-        jumpSpeed: 15,
-        maxSpeed: 20,
-        gravity: 0.001,
-        spriteRectangle: new Vector(16, 16),
-        animation: EntityStates.IDLE,
-        sprite: 'knight',
-        initialPosition: new Vector(0, 0),
-        initialVelocity: new Vector(5, 3),
-        size: new Vector(64, 64),
-        initialScale: new Vector(26, 34),
-    };
-
-    #entityConfig = {
-        [EntityTypes.PLAYER]: this.#playerConfig,
-        [EntityTypes.TILE]: {
-            gridPos: new Vector(1, 1),
-            boundingBox: null,
-            boundingBoxOffset: new Vector(0, 0),
-            horizontalSpeed: null,
-            jumpSpeed: 15,
-            maxSpeed: 20,
-            gravity: 1,
-            // spriteRectangle: new Vector(16, 16),
-            // animation: 'jump',
-            // sprite: 'knight',
-            // initialPosition: new Vector(0, 0),
-            // initialVelocity: new Vector(5, 3),
-            // size: new Vector(64, 64),
-            // initialScale: new Vector(26, 34),
-        },
-    };
-
     #playerAnimationMap = new Map();
-
-    #simTime = 0;
-
     #mapConfig = {
         tileSize: new Vector(64, 64),
         numTiles: 0,
     };
 
     #player = new Entity();
-    #drawTextures = true;
     #drawCollisions = true;
     #drawGrid = true;
     #drawHoverTile = true;
-    #gridText;
-    #gridTiles = new Map();
     #pointerX = null;
     #pointerY = null;
     #camera = new Vector(0, 0);
-    #fallingThreshold = 1; // in seconds
 
-    drawTexture = true;
+    drawTexture = false;
 
     #gridPattern = null; // CanvasPattern
     #gridPatternCanvas = null; // OffscreenCanvas | HTMLCanvasElement (debug/cleanup)
@@ -151,94 +106,127 @@ class PlayScene extends Scene {
         );
 
         // create a ready animation for each
-        console.groupCollapsed('-------------------------------------\nAnimation pool');
-        console.log('create an animation pool for the player to re-use');
+        groupStart('-------------------------------------\nAnimation pool');
+        log({ msg: 'create an animation pool for the player to re-use' });
         for (let anim of gameEngine.getAnimations().keys()) {
             this.#playerAnimationMap.set(anim, new Animation(anim, gameEngine.getAnimation(anim), gameEngine));
         }
 
-        console.log(this.#playerAnimationMap);
-        console.groupEnd();
+        log({ msg: this.#playerAnimationMap });
+        groupEnd();
 
         this.entityManager = new EntityManager();
         this.#loadLevel();
+
+        /** @type {CFlagsType} */
+        const flags = this.#player.getComponent(ComponentTypes.CFlags);
+        log(flags.mask.toString(2));
+        let str = '';
+        for (let flagKey in EntityFlags) {
+            str += `${flagKey} : ${flags.has(flagKey)} | `.toString();
+        }
+        log(str);
     }
 
     #loadLevel() {
-        // TODO: Use configuration files to create the components and entities
+        const playSceneData = this.gameEngine.getAssets().sceneData.playScene;
+        for (const e of playSceneData.entities) {
+            let entity = this.#addPlayerEntity(e);
+            if (e.tag == EntityTypes.PLAYER) {
+                this.#player = entity;
+            }
+        }
+    }
 
-        // sprite dimensions
-        let spriteDimensions = this.gameEngine.getSpriteDimensions(this.#playerConfig.sprite);
-        let trimmedRect = this.gameEngine.getSpriteTrimmedRect(this.#playerConfig.sprite);
-
-        // initial transformations
-        let pos = this.#playerConfig.initialPosition;
-        let vel = new Vector(0, 0);
-        let scale = new Vector(
-            this.#playerConfig.size.x / trimmedRect.width,
-            this.#playerConfig.size.y / trimmedRect.height
-        );
-        let angle = 0;
-        let hSpeed = this.#playerConfig.horizontalSpeed;
-        let vSpeed = this.#playerConfig.verticalSpeed;
-
+    #addPlayerEntity(e) {
         let attacks = [];
-        for (const [name, animation] of this.gameEngine.levelConfig.playerConfig.attacks) {
-            attacks.push(new Attack(name, animation.animationId));
+        let components;
+        /** @type {Animation} */
+        let animation;
+        const ts = e[ComponentTypes.CTransform];
+        const flags = e[ComponentTypes.CFlags];
+        const canFall = CFlagsType.hasFlag(EntityFlags.CAN_FALL, flags);
+        const isStatic = CFlagsType.hasFlag(EntityFlags.STATIC, flags);
+        const animated = CFlagsType.hasFlag(EntityFlags.ANIMATED, flags);
+        const canAttack = CFlagsType.hasFlag(EntityFlags.CAN_ATTACK, flags);
+        const collides = CFlagsType.hasFlag(EntityFlags.COLLIDES, flags);
+
+        // Create the components array for the entity
+        {
+            const playSceneData = this.gameEngine.getAssets().sceneData.playScene;
+            const entityConfig = playSceneData.entityTypes[e.tag];
+            if (!entityConfig) throw new Error(`Unknown entity tag: ${e.tag}`);
+
+            const playerSTA = getStateToAnim(e.tag);
+            const spriteD = e[ComponentTypes.CSpriteDimensions];
+            const bb = e[ComponentTypes.CBoundingBox];
+            const gravity = e[ComponentTypes.CGravity] ?? null;
+            const sprite = e[ComponentTypes.CSprite] ?? null;
+            if (CFlagsType.hasFlag(EntityFlags.CAN_ATTACK, flags)) {
+                for (let i = 0; i < entityConfig.attacks.length; i++) {
+                    attacks.push(
+                        new Attack(
+                            entityConfig.attacks[i],
+                            this.gameEngine.levelConfig.attacks[entityConfig.attacks[i]]
+                        )
+                    );
+                }
+            }
+
+            animation = CFlagsType.hasFlag(EntityFlags.ANIMATED, flags)
+                ? this.#playerAnimationMap.get(playerSTA(entityConfig.initialState))
+                : null;
+
+            components = {
+                [ComponentTypes.CActions]: [],
+                [ComponentTypes.CSpriteDimensions]: [
+                    new Vector(spriteD.dimensions.x, spriteD.dimensions.y),
+                    new Vector(spriteD.trimmedRectangle.x, spriteD.trimmedRectangle.y),
+                ],
+                [ComponentTypes.CTransform]: [
+                    new Vector(ts.position.x, ts.position.y),
+                    new Vector(ts.velocity.x, ts.velocity.y),
+                    new Vector(ts.scale.x, ts.scale.y),
+                    ts.angle,
+                    ts.hSpeed,
+                    ts.vSpeed,
+                ],
+                [ComponentTypes.CBoundingBox]: [
+                    new Vector(bb.rectangle.x, bb.rectangle.y),
+                    new Vector(bb.offset.x, bb.offset.y),
+                ],
+                [ComponentTypes.CState]: [entityConfig.initialState, playerSTA],
+                [ComponentTypes.CFlags]: [flags],
+            };
+
+            if (animated) components[ComponentTypes.CAnimation] = [animation ? animation.repeats : true];
+            if (!isStatic) components[ComponentTypes.CGravity] = [new Vector(gravity.x, gravity.y)];
+            if (collides) components[ComponentTypes.CCollision] = [];
+            if (canAttack) components[ComponentTypes.CAttacks] = [attacks];
+            if (!!sprite) components[ComponentTypes.CSprite] = [sprite.sheetId, sprite.frame];
+        }
+        // Create the entity
+        const entity = this.#spawnEntity(components, e.tag, ts.grid.x, ts.grid.y);
+        /** @type {CStateType} */
+        const cst = entity.getComponent(ComponentTypes.CState);
+
+        if (canFall && !isStatic) {
+            /** @type {CGravityType} */
+            const cg = entity.getComponent(ComponentTypes.CGravity) ?? new Vector(0, 0);
+            cg.timeBeforeFalling = 0.5;
+        }
+        if (animated && animation) {
+            /** @type {AnimationContainer} */
+            const cAnim = entity.getComponent(ComponentTypes.CAnimation);
+            // Add a pointer to an animation pool
+            cAnim.animationPool = this.#playerAnimationMap;
+            cAnim.pushAnimation(animation);
+        }
+        if (!isStatic) {
+            initPlayerFSM(cst);
         }
 
-        console.log(attacks);
-        /** @type {Animation} */
-        const animation = this.#playerAnimationMap.get(this.#stateToAnimation(this.#playerConfig.animation));
-        console.log('The initial animation', animation);
-
-        this.#player = this.#spawnEntity(
-            {
-                [ComponentTypes.CActions]: [],
-                [ComponentTypes.CAnimation]: [animation.repeats],
-                [ComponentTypes.CSpriteDimensions]: [
-                    new Vector(spriteDimensions.w, spriteDimensions.h),
-                    new Vector(trimmedRect.width, trimmedRect.height),
-                ],
-                [ComponentTypes.CTransform]: [pos, vel, scale, angle, hSpeed, vSpeed],
-                [ComponentTypes.CBoundingBox]: [
-                    new Vector(trimmedRect.width, trimmedRect.height),
-                    this.#playerConfig.boundingBoxOffset,
-                ],
-                [ComponentTypes.CState]: [EntityStates.IDLE],
-                [ComponentTypes.CFlags]: [
-                    EntityFlags.PLAYER |
-                        EntityFlags.INTERACTIVE |
-                        EntityFlags.COLLIDES |
-                        EntityFlags.ANIMATED |
-                        EntityFlags.CAN_FALL,
-                ],
-                [ComponentTypes.CCollision]: [],
-                [ComponentTypes.CGravity]: [new Vector(0, 600)],
-                [ComponentTypes.CAttacks]: [PlayerAttacks.ATTACK_ONE],
-            },
-            EntityTypes.PLAYER,
-            this.#playerConfig.gridPos.x,
-            this.#playerConfig.gridPos.y
-        );
-
-        /** @type {CStateType} */
-        const cst = this.#player.getComponent(ComponentTypes.CState);
-        /** @type {CAttacksType} */
-        const cAttacks = this.#player.getComponent(ComponentTypes.CAttacks);
-        /** @type {CGravityType} */
-        const cg = this.#player.getComponent(ComponentTypes.CGravity);
-
-        attacks.forEach((e) => cAttacks.addAttack(e));
-        cg.timeBeforeFalling = 0.5;
-
-        /** @type {AnimationContainer} */
-        const cAnim = this.#player.getComponent(ComponentTypes.CAnimation);
-        // Add a pointer to an animation pool
-        cAnim.animationPool = this.#playerAnimationMap;
-        cAnim.pushAnimation(animation);
-
-        initPlayerFSM(cst);
+        return entity;
     }
 
     /**
@@ -288,7 +276,7 @@ class PlayScene extends Scene {
 
         // Ensure there is a base animation.
         if (!current) {
-            const key = this.#stateToAnimation(cst.current);
+            const key = cst.stateToAnimation(cst.current);
             const base = ca.animationPool.get(key);
             ca.pushAnimation(base);
             current = ca.peekAnimation();
@@ -298,7 +286,7 @@ class PlayScene extends Scene {
             cst.current = cst.previous;
         }
 
-        const nextAnim = ca.animationPool.get(this.#stateToAnimation(cst.current));
+        const nextAnim = ca.animationPool.get(cst.stateToAnimation(cst.current));
         current = ca.peekAnimation();
         if (current.name !== nextAnim.name) {
             ca.pushAnimation(nextAnim, cst.previous);
@@ -312,21 +300,16 @@ class PlayScene extends Scene {
             /** @type {CFlagsType} */
             const cf = entity.getComponent(ComponentTypes.CFlags);
             if (cf.has(EntityFlags.DECORATION)) continue;
+
             /** @type {CStateType} */
             const cs = entity.getComponent(ComponentTypes.CState);
             /** @type { BoundingBox} */
             const bBox = entity.getComponent(ComponentTypes.CBoundingBox);
             /** @type { CTransformType } */
             const tr = entity.getComponent(ComponentTypes.CTransform);
-
-            // Update the animation for the entity
             if (cf.has(EntityFlags.ANIMATED)) this.#sAnimation(entity);
-
-            // Run the actions
-            // TODO: Actions for non-player entities.
-            if (cf.has(EntityFlags.PLAYER)) this.sActions(entity);
-
-            if (cs.current == EntityStates.JUMPING && cf.has(EntityFlags.CAN_FALL)) {
+            if (!cf.has(EntityFlags.STATIC)) this.sActions(entity);
+            if (cf.has(EntityFlags.CAN_FALL) && cs.current == EntityStates.JUMPING) {
                 /** @type {CGravityType} */
                 const cg = entity.getComponent(ComponentTypes.CGravity);
                 /** @type {CActionsType} */
@@ -334,8 +317,8 @@ class PlayScene extends Scene {
                 this.#sApplyForce(dt, entity, cg.gravity);
                 // Has the entity reached the apex from velocity, bring it down
                 if (tr.velocity.y >= 0) {
-                    console.log('******************************************************************************');
-                    // this.actionEnqueue(new Action(ActionEnums.FALL, ActionLifeCycle.START));
+                    log({ msg: '******************************************************************************' });
+                    ca.enqueue(new Action(ActionEnums.FALL, ActionLifeCycle.START));
                 }
             }
 
@@ -383,7 +366,7 @@ class PlayScene extends Scene {
             let tr = entity.getComponent(ComponentTypes.CTransform);
             /** @type {CFlagsType} */
             let bBox = entity.getComponent(ComponentTypes.CBoundingBox);
-
+            // log({ msg: entity });
             // show the sprite
             if (this.drawTexture && entity.getComponent(ComponentTypes.CAnimation)) {
                 /** @type {AnimationContainer} */
@@ -396,7 +379,11 @@ class PlayScene extends Scene {
                 // TODO: Rendering stalls risk. sRender awaits drawSprite inside the frame loop, serializing draws and inviting jank. Batch draws or ensure drawSprite is synchronous after assets are loaded.
                 await this.gameEngine.drawSprite(sheetId, frame, tr.position, tr.scale);
             } else if (this.drawTexture) {
+                /** @type {CSpriteType} */
                 let cSprite = entity.getComponent(ComponentTypes.CSprite);
+                if (!cSprite) {
+                    continue;
+                }
                 if (!tr.scale) {
                     tr.scale = new Vector(1, 1);
                 }
@@ -468,7 +455,7 @@ class PlayScene extends Scene {
             if (result.axis === 'x') {
                 tr.velocity.x = 0;
             } else if (tr.position.y > otherTr.position.y) {
-                console.log('hit top');
+                log({ msg: 'hit top' });
                 ca.enqueue(new Action(ActionEnums.FALL, ActionLifeCycle.START));
             } else {
                 tr.velocity.y = 0;
@@ -489,7 +476,10 @@ class PlayScene extends Scene {
     sActions(entity) {
         /** @type {CActionsType} */
         const actionsQ = entity.getComponent(ComponentTypes.CActions);
-
+        if (!actionsQ) {
+            // log('Actions should not be called', 'error');
+            return;
+        }
         // Nothing to do.
         if (actionsQ.isEmpty()) return;
 
@@ -532,7 +522,6 @@ class PlayScene extends Scene {
                 this.#pointerY = action.payload.y;
                 // get grid coords
                 const coords = this.#getTileUnderMouse();
-                // console.log(coords, { x: this.#pointerX, y: this.#pointerY });
                 break;
             default:
                 break;
@@ -542,12 +531,12 @@ class PlayScene extends Scene {
     sApplyGravity() {}
 
     onEnd() {
-        console.log('end');
+        log({ msg: 'end' });
     }
     changePlayerStateTo(state) {}
 
     setPaused(isPaused) {
-        console.log('setPaused', isPaused);
+        log({ msg: ['setPaused', isPaused] });
         this.paused = isPaused;
     }
 
@@ -564,7 +553,7 @@ class PlayScene extends Scene {
      * @returns {Entity} The entity that was spawned.
      *
      */
-    placeSpriteEntityGrid(type, x = 0, y = 0, flags = [], traits = [], sheetId, frame) {
+    placeSpriteEntityGrid(type, x = 0, y = 0, flags, traits = [], sheetId, frame) {
         let dims = this.gameEngine.getSpriteDimensions(sheetId);
         dims = new Vector(dims.w, dims.h);
         let trimmedRect = this.gameEngine.getSpriteTrimmedRect(sheetId);
@@ -575,26 +564,25 @@ class PlayScene extends Scene {
         let scale = new Vector(this.#mapConfig.tileSize.x / dims.x, this.#mapConfig.tileSize.y / dims.y);
         let pos = new Vector(x, y);
         let gridPos = this.#worldToGrid(new Vector(x, y));
-
         let components = {
             [ComponentTypes.CSprite]: [sheetId, frame],
             [ComponentTypes.CSpriteDimensions]: [dims, trimmedRect],
             [ComponentTypes.CTransform]: [pos, new Vector(0, 0), scale, 0],
             [ComponentTypes.CBoundingBox]: [hasTrimmedRect ? trimmedRect : dims, new Vector(0, 0)],
-            [ComponentTypes.CFlags]: [],
+            [ComponentTypes.CFlags]: [flags],
             [ComponentTypes.CTraits]: [],
             [ComponentTypes.CState]: [EntityStates.IDLE],
         };
 
         let entity = this.#spawnEntity(components, type, gridPos.x, gridPos.y);
 
-        if (flags.length > 0) {
-            /** @type { CFlagsType} */
-            let cf = entity.getComponent(ComponentTypes.CFlags);
-            for (let i = 0; i < flags.length; i++) {
-                cf.add(flags[i]);
-            }
-        }
+        // if (flags.length > 0) {
+        //     /** @type { CFlagsType} */
+        //     let cf = entity.getComponent(ComponentTypes.CFlags);
+        //     for (let i = 0; i < flags.length; i++) {
+        //         cf.add(flags[i]);
+        //     }
+        // }
 
         if (traits.length > 0) {
             /** @type {CTraitsType} */
@@ -603,7 +591,10 @@ class PlayScene extends Scene {
                 cTraits.add(traits[i]);
             }
         }
+        return entity;
     }
+
+    placeEntityWithAnim() {}
 
     /**
      * Gets the tile coordinates of the given entity.
@@ -857,41 +848,18 @@ class PlayScene extends Scene {
     #spawnEntity(components = {}, type, gridX = 0, gridY = 0) {
         /** @type {Entity} */
         let entity = this.entityManager.addEntity(type);
-
         for (let [componentType, args] of Object.entries(components)) {
             entity.addComponent(createComponent(componentType, ...args), componentType);
         }
 
         let worldCoords = this.#gridToWorldCentered(gridX, gridY);
         entity.getComponent(ComponentTypes.CTransform).position = worldCoords;
-
         let scaledBBox = this.#scaleBoundingRect(entity);
-
         let bBox = entity.getComponent(ComponentTypes.CBoundingBox);
         bBox.position = worldCoords;
         bBox.size = scaledBBox.scaledRect;
 
-        // console.log('spawn entity');
-        // console.log(components);
-        // console.log(entity);
         return entity;
-    }
-
-    #stateToAnimation(stateEnum) {
-        switch (stateEnum) {
-            case EntityStates.WALKING_RIGHT:
-            case EntityStates.WALKING_LEFT:
-                return EntityStates.WALKING;
-            case EntityStates.JUMPING:
-            case EntityStates.FALLING:
-                return EntityStates.JUMPING;
-            case EntityStates.IDLE:
-            case EntityStates.IDLE_LEFT:
-            case EntityStates.ON_GROUND:
-                return EntityStates.IDLE;
-            default:
-                return stateEnum;
-        }
     }
 }
 

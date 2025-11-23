@@ -1,4 +1,4 @@
-import { EntityStates } from '../utils/enums';
+import { EntityStates, EntityTypes } from '../utils/enums';
 
 /**
  *
@@ -22,4 +22,34 @@ const playerStateToAnimations = (stateEnum) => {
     }
 };
 
-export { playerStateToAnimations };
+/**
+ *
+ * @param {EntityStates} stateEnum
+ * @returns {string}
+ */
+const tileSTA = (stateEnum) => {
+    switch (stateEnum) {
+        case EntityStates.TAKING_DAMAGE:
+            return EntityStates.TAKING_DAMAGE;
+        case EntityStates.IDLE:
+        case EntityStates.UNCOVERED:
+            return EntityStates.IDLE;
+        default:
+            return stateEnum;
+    }
+};
+
+/**
+ *
+ * @param {EntityTypes} entityType
+ */
+const getStateToAnim = (entityType) => {
+    switch (entityType) {
+        case EntityTypes.PLAYER:
+            return playerStateToAnimations;
+        case EntityTypes.TILE:
+        case EntityTypes.GROUND:
+            return tileSTA;
+    }
+};
+export { getStateToAnim };

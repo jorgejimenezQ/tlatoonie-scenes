@@ -1,0 +1,358 @@
+[
+    {
+        "COMPONENT_TYPE_ANIMATION": {
+            "exists": true,
+            "animationStack": [
+                {
+                    "resumeState": null,
+                    "animation": {
+                        "onCompleteState": null
+                    }
+                }
+            ],
+            "animationPool": {}
+        },
+        "COMPONENT_TYPE_SPRITE_DIMENSIONS": {
+            "dimensions": {
+                "x": 96,
+                "y": 84
+            },
+            "trimmedRectangle": {
+                "x": 20,
+                "y": 36
+            }
+        },
+        "COMPONENT_TYPE_TRANSFORM": {
+            "position": {
+                "x": 96,
+                "y": 96
+            },
+            "velocity": {
+                "x": 0,
+                "y": 0
+            },
+            "scale": {
+                "x": 3.2,
+                "y": 1.7777777777777777
+            },
+            "angle": 0,
+            "hSpeed": 200,
+            "vSpeed": 200,
+            "grid": {
+                "x": 1,
+                "y": 1
+            }
+        },
+        "COMPONENT_TYPE_BOUNDING_BOX": {
+            "rectangle": {
+                "x": 35.55555555555556,
+                "y": 64
+            },
+            "offset": {
+                "x": 0,
+                "y": 0
+            }
+        },
+        "COMPONENT_TYPE_FLAGS": 1364,
+        "COMPONENT_TYPE_GRAVITY": {
+            "x": 0,
+            "y": 600
+        },
+        "entityId": 0,
+        "tag": "ENTITY_TYPE_PLAYER"
+    },
+    {
+        "COMPONENT_TYPE_SPRITE": {
+            "sheetId": "tiles",
+            "frame": "tile_0062"
+        },
+        "COMPONENT_TYPE_SPRITE_DIMENSIONS": {
+            "dimensions": {
+                "x": 18,
+                "y": 18
+            },
+            "trimmedRectangle": {
+                "x": 1,
+                "y": 1
+            }
+        },
+        "COMPONENT_TYPE_TRANSFORM": {
+            "position": {
+                "x": 32,
+                "y": 160
+            },
+            "velocity": {
+                "x": 0,
+                "y": 0
+            },
+            "scale": {
+                "x": 3.5555555555555554,
+                "y": 3.5555555555555554
+            },
+            "angle": 0,
+            "grid": {
+                "x": 0,
+                "y": 2
+            }
+        },
+        "COMPONENT_TYPE_BOUNDING_BOX": {
+            "rectangle": {
+                "x": 64,
+                "y": 64
+            },
+            "offset": {
+                "x": 0,
+                "y": 0
+            }
+        },
+        "COMPONENT_TYPE_FLAGS": 5,
+        "COMPONENT_TYPE_TRAITS": {},
+        "entityId": 1,
+        "tag": "ENTITY_TYPE_GROUND"
+    },
+    {
+        "COMPONENT_TYPE_SPRITE": {
+            "sheetId": "tiles",
+            "frame": "tile_0062"
+        },
+        "COMPONENT_TYPE_SPRITE_DIMENSIONS": {
+            "dimensions": {
+                "x": 18,
+                "y": 18
+            },
+            "trimmedRectangle": {
+                "x": 1,
+                "y": 1
+            }
+        },
+        "COMPONENT_TYPE_TRANSFORM": {
+            "position": {
+                "x": 96,
+                "y": 160
+            },
+            "velocity": {
+                "x": 0,
+                "y": 0
+            },
+            "scale": {
+                "x": 3.5555555555555554,
+                "y": 3.5555555555555554
+            },
+            "angle": 0,
+            "grid": {
+                "x": 1,
+                "y": 2
+            }
+        },
+        "COMPONENT_TYPE_BOUNDING_BOX": {
+            "rectangle": {
+                "x": 64,
+                "y": 64
+            },
+            "offset": {
+                "x": 0,
+                "y": 0
+            }
+        },
+        "COMPONENT_TYPE_FLAGS": 5,
+        "COMPONENT_TYPE_TRAITS": {},
+        "entityId": 2,
+        "tag": "ENTITY_TYPE_GROUND"
+    },
+    {
+        "COMPONENT_TYPE_SPRITE": {
+            "sheetId": "tiles",
+            "frame": "tile_0062"
+        },
+        "COMPONENT_TYPE_SPRITE_DIMENSIONS": {
+            "dimensions": {
+                "x": 18,
+                "y": 18
+            },
+            "trimmedRectangle": {
+                "x": 1,
+                "y": 1
+            }
+        },
+        "COMPONENT_TYPE_TRANSFORM": {
+            "position": {
+                "x": 160,
+                "y": 160
+            },
+            "velocity": {
+                "x": 0,
+                "y": 0
+            },
+            "scale": {
+                "x": 3.5555555555555554,
+                "y": 3.5555555555555554
+            },
+            "angle": 0,
+            "grid": {
+                "x": 2,
+                "y": 2
+            }
+        },
+        "COMPONENT_TYPE_BOUNDING_BOX": {
+            "rectangle": {
+                "x": 64,
+                "y": 64
+            },
+            "offset": {
+                "x": 0,
+                "y": 0
+            }
+        },
+        "COMPONENT_TYPE_FLAGS": 5,
+        "COMPONENT_TYPE_TRAITS": {},
+        "entityId": 3,
+        "tag": "ENTITY_TYPE_GROUND"
+    },
+    {
+        "COMPONENT_TYPE_SPRITE": {
+            "sheetId": "tiles",
+            "frame": "tile_0049"
+        },
+        "COMPONENT_TYPE_SPRITE_DIMENSIONS": {
+            "dimensions": {
+                "x": 18,
+                "y": 18
+            },
+            "trimmedRectangle": {
+                "x": 1,
+                "y": 1
+            }
+        },
+        "COMPONENT_TYPE_TRANSFORM": {
+            "position": {
+                "x": 224,
+                "y": 160
+            },
+            "velocity": {
+                "x": 0,
+                "y": 0
+            },
+            "scale": {
+                "x": 3.5555555555555554,
+                "y": 3.5555555555555554
+            },
+            "angle": 0,
+            "grid": {
+                "x": 3,
+                "y": 2
+            }
+        },
+        "COMPONENT_TYPE_BOUNDING_BOX": {
+            "rectangle": {
+                "x": 64,
+                "y": 64
+            },
+            "offset": {
+                "x": 0,
+                "y": 0
+            }
+        },
+        "COMPONENT_TYPE_FLAGS": 5,
+        "COMPONENT_TYPE_TRAITS": {},
+        "entityId": 4,
+        "tag": "ENTITY_TYPE_GROUND"
+    },
+    {
+        "COMPONENT_TYPE_SPRITE": {
+            "sheetId": "tiles",
+            "frame": "tile_0049"
+        },
+        "COMPONENT_TYPE_SPRITE_DIMENSIONS": {
+            "dimensions": {
+                "x": 18,
+                "y": 18
+            },
+            "trimmedRectangle": {
+                "x": 1,
+                "y": 1
+            }
+        },
+        "COMPONENT_TYPE_TRANSFORM": {
+            "position": {
+                "x": 288,
+                "y": 160
+            },
+            "velocity": {
+                "x": 0,
+                "y": 0
+            },
+            "scale": {
+                "x": 3.5555555555555554,
+                "y": 3.5555555555555554
+            },
+            "angle": 0,
+            "grid": {
+                "x": 4,
+                "y": 2
+            }
+        },
+        "COMPONENT_TYPE_BOUNDING_BOX": {
+            "rectangle": {
+                "x": 64,
+                "y": 64
+            },
+            "offset": {
+                "x": 0,
+                "y": 0
+            }
+        },
+        "COMPONENT_TYPE_FLAGS": 5,
+        "COMPONENT_TYPE_TRAITS": {},
+        "entityId": 5,
+        "tag": "ENTITY_TYPE_GROUND"
+    },
+    {
+        "COMPONENT_TYPE_SPRITE": {
+            "sheetId": "tiles",
+            "frame": "tile_0050"
+        },
+        "COMPONENT_TYPE_SPRITE_DIMENSIONS": {
+            "dimensions": {
+                "x": 18,
+                "y": 18
+            },
+            "trimmedRectangle": {
+                "x": 1,
+                "y": 1
+            }
+        },
+        "COMPONENT_TYPE_TRANSFORM": {
+            "position": {
+                "x": 352,
+                "y": 160
+            },
+            "velocity": {
+                "x": 0,
+                "y": 0
+            },
+            "scale": {
+                "x": 3.5555555555555554,
+                "y": 3.5555555555555554
+            },
+            "angle": 0,
+            "grid": {
+                "x": 5,
+                "y": 2
+            }
+        },
+        "COMPONENT_TYPE_BOUNDING_BOX": {
+            "rectangle": {
+                "x": 64,
+                "y": 64
+            },
+            "offset": {
+                "x": 0,
+                "y": 0
+            }
+        },
+        "COMPONENT_TYPE_FLAGS": 5,
+        "COMPONENT_TYPE_TRAITS": {},
+        "entityId": 6,
+        "tag": "ENTITY_TYPE_GROUND"
+    }
+]
